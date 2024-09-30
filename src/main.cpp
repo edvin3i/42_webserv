@@ -1,7 +1,10 @@
 #include <iostream>
+#include "../includes/TcpServer.hpp"
 
 int main(void) {
-	std::cout << "Hello, world!" << std::endl;
+	using namespace http;
+
+	TcpServer server = TcpServer();
 
 	return (0);
 }

@@ -16,7 +16,7 @@ OBJDIR      =   .obj/
 #                            Files                                           #
 #############################################################################
 
-MFLS        =	main.cpp
+MFLS        =	TcpServer.cpp main.cpp
 MSRC        =   $(addprefix $(MDIR), $(MFLS))
 MOBJS		=	$(addprefix $(OBJDIR), $(MFLS:.cpp=.o))
 #MOBJS       =   $(MSRC:.cpp=.o)
@@ -68,3 +68,6 @@ fclean:         clean
 re:             fclean all
 
 .PHONY:         all clean fclean re
+
+# Article about webserver on C++
+# https://osasazamegbe.medium.com/showing-building-an-http-server-from-scratch-in-c-2da7c0db6cb7

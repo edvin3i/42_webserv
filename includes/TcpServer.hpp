@@ -2,20 +2,26 @@
 #define TCPSERVER_HPP
 
 #include <sys/socket.h>
+#include <arpa/inet.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <iostream>
+#include <sstream>
 #include <string>
 
 void log(const std::string &message);
 void exitWithError(std::string &message);
 
+
 namespace http {
 
 	class TcpServer {
 	public:
-		TcpServer();
+		TcpServer(std::string ip_address, int port);
 		~TcpServer();
 
-		int startServer(std::string ip_addr, int port);
-		void closeServer();
+		void startListen();
+
 
 	private:
 		std::string m_ip_address;
@@ -26,6 +32,12 @@ namespace http {
 		struct sockaddr_in m_socketAddress;
 		unsigned int m_socketAddress_len;
 		std::string m_serverMessage;
+
+		int startServer();
+		void closeServer();
+		void acceptConnection(int &new_socket);
+		std::string buildResponce();
+		void sendResponce();
 
 
 

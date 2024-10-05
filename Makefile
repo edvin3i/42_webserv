@@ -27,7 +27,8 @@ MOBJS		=	$(addprefix $(OBJDIR), $(MFLS:.cpp=.o))
 #############################################################################
 
 CXX				=   c++
-CXXFLAGS		=   -std=c++98 -Wall -Werror -Wextra -MMD -MP -g
+CXXFLAGS		=   -std=c++98  -MMD -MP -g
+#CXXFLAGS		=	-Wall -Werror -Wextra
 CXXFLAGS		+=  -I$(INCDIR)
 
 #############################################################################

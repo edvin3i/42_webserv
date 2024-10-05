@@ -15,56 +15,57 @@ void exitWithError(const std::string &errorMessage) {
 namespace http {
 
 	http::TcpServer::TcpServer(std::string ip_address, int port)
-	: m_ip_address(ip_address), m_port(port), m_socket(),
-	m_new_socket(), m_incommingMessage(), m_socketAddress(),
-	m_socketAddress_len(sizeof(m_socketAddress)),
-	m_serverMessage(buildResponce()) {
+	: _srv_ip_address(ip_address), _srv_port(port), _srv_socket(),
+	  _srv_new_socket(), _srv_socketAddress(),
+//	_srv_incommingMessage(),
+	_srv_socketAddress_len(sizeof(_srv_socketAddress)),
+	  _srv_serverMessage(_buildResponce()) {
 
-		m_socketAddress.sin_family = AF_INET;
-		m_socketAddress.sin_port = htons(port);
-		m_socketAddress.sin_addr.s_addr = inet_addr(m_ip_address.c_str());
+		_srv_socketAddress.sin_family = AF_INET;
+		_srv_socketAddress.sin_port = htons(_srv_port);
+		_srv_socketAddress.sin_addr.s_addr = inet_addr(_srv_ip_address.c_str());
 
-		if (startServer() != 0) {
+		if (_startServer() != 0) {
 			std::ostringstream ss;
-			ss << "Failed to start server with PORT: " << htons(m_socketAddress.sin_port);
+			ss << "Failed to start server with PORT: " << htons(_srv_socketAddress.sin_port);
 			log(ss.str());
 		}
 	}
 
 	http::TcpServer::~TcpServer() {
-		closeServer();
+		_closeServer();
 	}
 
-	int http::TcpServer::startServer() {
-		m_socket = socket(AF_INET, SOCK_STREAM, 0);
-		if (m_socket < 0 ) {
+	int http::TcpServer::_startServer() {
+		_srv_socket = socket(AF_INET, SOCK_STREAM, 0);
+		if (_srv_socket < 0 ) {
 			exitWithError("Cannot create socket!");
 			return 1;
 		}
 
-		if (bind(m_socket, (sockaddr *)&m_socketAddress, m_socketAddress_len) < 0) {
+		if (bind(_srv_socket, (sockaddr *)&_srv_socketAddress, _srv_socketAddress_len) < 0) {
 			exitWithError("Cannot create socket to address!");
 			return 1;
 		}
 		return 0;
 	}
 
-	void http::TcpServer::closeServer() {
-		close(m_socket);
-		close(m_new_socket);
+	void http::TcpServer::_closeServer() {
+		close(_srv_socket);
+		close(_srv_new_socket);
 		exit(0);
 	}
 
-	void TcpServer::acceptConnection(int &new_socket) {
-		new_socket = accept(m_socket, (sockaddr *)&m_socketAddress, &m_socketAddress_len);
+	void TcpServer::_acceptConnection(int &new_socket) {
+		new_socket = accept(_srv_socket, (sockaddr *)&_srv_socketAddress, &_srv_socketAddress_len);
 		if (new_socket < 0) {
 			std::ostringstream ss;
-			ss << "Server failed to accept incoming connection from ADDRESS: " << inet_ntoa(m_socketAddress.sin_addr) << "; PORT: " << ntohs(m_socketAddress.sin_port);
+			ss << "Server failed to accept incoming connection from ADDRESS: " << inet_ntoa(_srv_socketAddress.sin_addr) << "; PORT: " << ntohs(_srv_socketAddress.sin_port);
 			exitWithError(ss.str());
 		}
 	}
 
-	std::string TcpServer::buildResponce() {
+	std::string TcpServer::_buildResponce() {
 		std::string htmlFile =  "<!DOCTYPE html><html lang=\"en\"><body><h1> HOME </h1><p> Hello from your Server :) </p></body></html>";
 		std::ostringstream ss;
 		ss << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " << htmlFile.size() << "\n\n" << htmlFile;
@@ -73,12 +74,12 @@ namespace http {
 		return ss.str();
 	}
 
-	void TcpServer::sendResponce() {
+	void TcpServer::_sendResponce() {
 		unsigned long bytesSent;
 
-		bytesSent = write(m_new_socket, m_serverMessage.c_str(), m_serverMessage.size());
+		bytesSent = write(_srv_new_socket, _srv_serverMessage.c_str(), _srv_serverMessage.size());
 
-		if (bytesSent == m_serverMessage.size()) {
+		if (bytesSent == _srv_serverMessage.size()) {
 			log("--- Server response sent to client ---\n\n");
 		}
 		else {
@@ -88,22 +89,22 @@ namespace http {
 	}
 
 	void TcpServer::startListen() {
-		if (listen(m_socket, 20) < 0) {
+		if (listen(_srv_socket, 20) < 0) {
 			exitWithError("Socket listen failed!");
 		}
 
 		std::ostringstream ss;
-		ss << "\n*** Listening on ADRESS: " << inet_ntoa(m_socketAddress.sin_addr) << " PORT: " << ntohs(m_socketAddress.sin_port) << " ***\n\n";
+		ss << "\n*** Listening on ADRESS: " << inet_ntoa(_srv_socketAddress.sin_addr) << " PORT: " << ntohs(_srv_socketAddress.sin_port) << " ***\n\n";
 		log(ss.str());
 
 		int bytesReceived;
 
 		while (true) {
 			log("=== Waiting new connection ===\n\n\n");
-			acceptConnection(m_new_socket);
+			_acceptConnection(_srv_new_socket);
 
 			char buffer[BUFFER_SIZE] = {0};
-			bytesReceived = read(m_new_socket, buffer, BUFFER_SIZE);
+			bytesReceived = read(_srv_new_socket, buffer, BUFFER_SIZE);
 			if (bytesReceived < 0) {
 				exitWithError("Failed to read data from client");
 			}
@@ -112,9 +113,9 @@ namespace http {
 			ss << "--- Received request from client ---\n\n";
 			log(ss.str());
 
-			sendResponce();
+			_sendResponce();
 
-			close(m_new_socket);
+			close(_srv_new_socket);
 		}
 
 

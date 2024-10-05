@@ -24,22 +24,20 @@ namespace http {
 
 
 	private:
-		std::string m_ip_address;
-		int	m_port;
-		int m_socket;
-		int m_new_socket;
-		long m_incommingMessage;
-		struct sockaddr_in m_socketAddress;
-		unsigned int m_socketAddress_len;
-		std::string m_serverMessage;
+		std::string _srv_ip_address;
+		int	_srv_port;
+		int _srv_socket;
+		int _srv_new_socket;
+//		long _srv_incommingMessage;
+		struct sockaddr_in _srv_socketAddress;
+		unsigned int _srv_socketAddress_len;
+		std::string _srv_serverMessage;
 
-		int startServer();
-		void closeServer();
-		void acceptConnection(int &new_socket);
-		std::string buildResponce();
-		void sendResponce();
-
-
+		int _startServer();
+		void _closeServer();
+		void _acceptConnection(int &new_socket);
+		std::string _buildResponce();
+		void _sendResponce();
 
 	};
 

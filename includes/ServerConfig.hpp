@@ -18,6 +18,7 @@ public:
 	int port; // need to check range 1-65535
 	std::vector<std::string > server_names;
 	std::string root_dir;
+	std::string index;
 	std::map<int, std::string > error_pages;
 	size_t client_max_body_size;
 	std::vector<LocationConfig > locations;

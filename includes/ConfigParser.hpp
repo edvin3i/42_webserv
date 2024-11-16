@@ -7,6 +7,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <cctype>
+#include <fstream>
 #include "ServerConfig.hpp"
 
 class ServerConfig;
@@ -23,8 +24,11 @@ public:
 private:
 	std::vector<ServerConfig > _servers;
 	std::string _config_path;
-	void _parseServerBlock(ServerConfig & srvConf);
-	void _parseLocationBlock(LocationConfig & locConf, ServerConfig & srvConf);
+	std::ifstream _config_file;
+	std::string _current_line;
+	size_t _line_number;
+	void _parseServerBlock(ServerConfig & server);
+	void _parseLocationBlock(LocationConfig & location, ServerConfig & server);
 	void _trim(std::string & rawString);
 	bool _startsWith(const std::string & str, const std::string & prefix);
 	std::vector<std::string> _tokenize(const std::string &rawString);

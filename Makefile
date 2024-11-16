@@ -16,7 +16,8 @@ OBJDIR      =   .obj/
 #                            Files                                           #
 #############################################################################
 
-MFLS        =	ServerConfig.cpp ConfigParser.cpp TcpServer.cpp main.cpp
+MFLS        =	LocationConfig.cpp ServerConfig.cpp ConfigParser.cpp \
+				TcpServer.cpp main.cpp
 MSRC        =   $(addprefix $(MDIR), $(MFLS))
 MOBJS		=	$(addprefix $(OBJDIR), $(MFLS:.cpp=.o))
 #MOBJS       =   $(MSRC:.cpp=.o)

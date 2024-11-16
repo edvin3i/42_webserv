@@ -4,7 +4,9 @@
 #include <map>
 #include <vector>
 #include <string>
+#include "LocationConfig.hpp"
 
+class LocationConfig;
 
 class ServerConfig {
 
@@ -12,11 +14,16 @@ public:
 	ServerConfig();
 	~ServerConfig();
 
-	std::vector<std::map<std::string, std::string> > getServerParams(int n);
-	int setServerParams(int n, std::map<std::string, std::string>);
+	std::string host;
+	int port; // need to check range 1-65535
+	std::vector<std::string > server_names;
+	std::string root_dir;
+	std::map<int, std::string > error_pages;
+	size_t client_max_body_size;
+	std::vector<LocationConfig > locations;
 
 private:
-	std::vector<std::map<std::string, std::string> > _server_config;
+	void _init();
 
 };
 

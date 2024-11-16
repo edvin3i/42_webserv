@@ -131,7 +131,7 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 					throw std::runtime_error("CONFIG ERROR: wrong root syntax on the line number " + \
 						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
 				}
-				server.root_dir = tokens[1];
+				server.root = tokens[1];
 			}
 			else if (directive == "index") {
 				if (tokens.size() != 2) {
@@ -140,7 +140,15 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 				}
 				server.index = tokens[1];
 			}
+			else if (directive == "client_max_body_size") {
+				if (tokens.size() != 2) {
+					throw std::runtime_error("CONFIG ERROR: wrong client max body size syntax on the line number " + \
+						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+				}
+				server.client_max_body_size = _convertDataSize(tokens[1]);
+			}
 			else {
+				std::cout << directive << std::endl;
 				throw std::runtime_error("CONFIG ERROR: unknown directive on the line number " + \
 						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
 			}
@@ -222,5 +230,17 @@ bool ConfigParser::_convertOnOff(const std::string & switchPosition) {
 
 bool ConfigParser::_startsWith(const std::string & str, const std::string & prefix) {
 	return str.substr(0, prefix.size()) == prefix;
+}
+
+void ConfigParser::printConfig() {
+	for (size_t i = 0; i < _servers.size(); ++i) {
+		std::cout << "Server number " << i << ":" << std::endl;
+		_servers[i].print_server_config();
+	}
+
+}
+
+std::vector<ServerConfig> ConfigParser::getConfig() {
+	return _servers;
 }
 

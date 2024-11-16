@@ -19,6 +19,9 @@ public:
 	ConfigParser(std::string & conf_filename);
 	~ConfigParser();
 	void parse();
+	std::vector<ServerConfig> getConfig();
+	void printConfig();
+
 
 
 private:

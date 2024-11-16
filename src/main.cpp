@@ -13,10 +13,21 @@ int main(int argc, char **argv) {
 //	server.startListen();
 
 	if (argc != 2) {
+		std::cout << "ERROR: wrong number of arguments!" << std::endl;
 		std::cout << "USAGE: ./webserv <config.cfg>" << std::endl;
-		throw std::invalid_argument("ERROR: wrong number of arguments!");
+		return 1;
 	}
 	std::string config_filename = argv[1];
+	ConfigParser conf_parser(config_filename);
+	conf_parser.parse();
+//	conf_parser.printConfig();
+
+	std::vector<ServerConfig> servers_configs = conf_parser.getConfig();
+	servers_configs[0].print_server_config();
+	servers_configs[1].print_server_config();
+
+
+
 
 
 	return (0);

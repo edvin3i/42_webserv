@@ -36,7 +36,7 @@ private:
 	bool _startsWith(const std::string & str, const std::string & prefix);
 	std::vector<std::string> _tokenize(const std::string &rawString);
 	size_t _convertDataSize(const std::string &dataSize);
-	bool _convertOnOff(const std::string & switchPosition);
+	bool _convertOnOff(const std::string & switchState);
 
 
 

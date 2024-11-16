@@ -158,8 +158,101 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 }
 
 void ConfigParser::_parseLocationBlock(LocationConfig & location, ServerConfig & server) {
+	while(std::getline(_config_file, _current_line)) {
+		++_line_number;
 
+		size_t comment_pos = _current_line.find('#');
+		if (comment_pos != std::string::npos) {
+			_current_line = _current_line.substr(0, comment_pos);
+		}
+
+		_trim(_current_line);
+		if (_current_line.empty())
+			continue;
+		if (_current_line == "}")
+			return;
+		std::vector<std::string> tokens = _tokenize(_current_line);
+		if (tokens.empty())
+			continue;
+
+		std::string directive = tokens[0];
+		if (directive == "upload_dir") {
+			if (tokens.size() != 2) {
+				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'upload_dir' on the line number " + \
+						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+			}
+			location.upload_dir = tokens[1];
+		}
+		else if (directive == "index") {
+			if (tokens.size() != 2) {
+				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'index' on the line number " + \
+						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+			}
+			location.index = tokens[1];
+		}
+		else if (directive == "root") {
+			if (tokens.size() != 2) {
+				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'root' on the line number " + \
+						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+			}
+			location.root = tokens[1];
+		}
+		else if (directive == "cgi_extension") {
+			if (tokens.size() != 2) {
+				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'cgi_extension' on the line number " + \
+						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+			}
+			location.cgi_extension = tokens[1];
+		}
+		else if (directive == "cgi_path") {
+			if (tokens.size() != 2) {
+				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'cgi_path' on the line number " + \
+						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+			}
+			location.cgi_path = tokens[1];
+		}
+		else if (directive == "return_url") {
+			if (tokens.size() != 2) {
+				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'return_url' on the line number " + \
+						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+			}
+			location.return_url = tokens[1];
+		}
+		else if (directive == "autoindex") {
+			if (tokens.size() != 2) {
+				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'autoindex' on the line number " + \
+						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+			}
+			location.autoindex = _convertOnOff(tokens[1]);
+		}
+		else if (directive == "methods") {
+			if (tokens.size() < 2) {
+				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'methods' on the line number " + \
+						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+			}
+			for (size_t i = 1; i < tokens.size(); ++i){
+				location.methods.push_back(tokens[i]);
+			}
+
+		}
+		else {
+			std::cout << directive << std::endl;
+			throw std::runtime_error("CONFIG ERROR: unknown directive in 'location' on the line number " + \
+						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+		}
+
+
+
+
+	}
+	throw std::runtime_error("CONFIG ERROR: awaiting '}' in the 'location' block but file is ended");
 }
+
+
+
+/*
+ * Utilites
+ */
 
 void ConfigParser::_trim(std::string & rawString) {
 	size_t start = rawString.find_first_not_of(" \t\r\n");
@@ -215,17 +308,17 @@ size_t ConfigParser::_convertDataSize(const std::string & dataSize) {
 	return num;
 }
 
-bool ConfigParser::_convertOnOff(const std::string & switchPosition) {
-	if (switchPosition.size() == 2 && switchPosition.size() == 3) {
+bool ConfigParser::_convertOnOff(const std::string & switchState) {
+	if (switchState.size() == 2 || switchState.size() == 3) {
 
-		if (switchPosition == "on" || switchPosition == "ON" || switchPosition == "On") {
+		if (switchState == "on" || switchState == "ON" || switchState == "On") {
 			return true;
 		}
-		else if (switchPosition == "off" || switchPosition == "OFF" || switchPosition == "Off") {
+		else if (switchState == "off" || switchState == "OFF" || switchState == "Off") {
 			return false;
 		}
 	}
-	throw std::invalid_argument("CONFIG ERROR: autoindex switch parameter is wrong: " + switchPosition);
+	throw std::invalid_argument("CONFIG ERROR: autoindex state parameter is wrong: " + switchState);
 }
 
 bool ConfigParser::_startsWith(const std::string & str, const std::string & prefix) {

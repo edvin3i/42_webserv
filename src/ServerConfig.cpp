@@ -27,6 +27,11 @@ void ServerConfig::print_server_config() {
 	std::cout << "Root Directory: " << root << std::endl;
 	std::cout << "Index Filename " << index << std::endl;
 	std::cout << "Clent Max Body size: " << client_max_body_size << " bytes" << std::endl;
+	std::cout << "Error pages:" << std::endl;
+	for (std::map<int, std::string>::const_iterator it = error_pages.begin(); it != error_pages.end(); ++it) {
+      std::cout << it->first << " = " << it->second << "; " << std::endl;
+
+	}
 	std::cout << "====================================================\n" << std::endl;
 
 }

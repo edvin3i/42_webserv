@@ -11,7 +11,7 @@ LocationConfig::~LocationConfig() {
 
 void LocationConfig::_init() {
 	upload_dir = "www/upload";
-	index_file = "index.html";
+	index = "index.html";
 	autoindex = false;
 	methods.push_back("GET");
 	methods.push_back("PUT");

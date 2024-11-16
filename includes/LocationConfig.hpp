@@ -15,9 +15,9 @@ public:
 	~LocationConfig();
 
 	std::string path;
-	std::vector<std::string > methods;
-	std::string root_dir;
-	std::string index_file;
+	std::vector<std::string> methods;
+	std::string root;
+	std::string index;
 	bool autoindex; // "on" or "off" directories listing
 	std::string cgi_extension;
 	std::string cgi_path;

@@ -1,5 +1,10 @@
 #include <cstdlib>
+#include <sstream>
 #include "ConfigParser.hpp"
+
+#define SSTR( x ) static_cast< std::ostringstream & >( \
+        ( std::ostringstream() << std::dec << x ) ).str()
+
 
 ConfigParser::ConfigParser(std::string &conf_filename) : _config_path(conf_filename) {
 	if (_config_path.empty()) {
@@ -42,16 +47,14 @@ void ConfigParser::parse() {
 
 			if (brace_pos == std::string::npos) {
 				if (!std::getline(_config_file, _current_line)) {
-					throw std::runtime_error("CONFIG ERROR: awaiting  '{' after 'server' on the line number " + \
-						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+					throw std::runtime_error("CONFIG ERROR: awaiting  '{' after 'server' on the line number " +	SSTR(_line_number));
 				}
 			}
 			_parseServerBlock(server);
 			_servers.push_back(server);
 		}
 		else {
-			throw std::runtime_error("CONFIG ERROR: unknown directive or block on the line number " + \
-				static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+			throw std::runtime_error("CONFIG ERROR: unknown directive or block on the line number " + SSTR(_line_number));
 		}
 	}
 	_config_file.close();
@@ -76,22 +79,19 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 
 			std::vector<std::string > tokens = _tokenize(_current_line);
 			if (tokens.size() < 2) {
-				throw std::runtime_error("CONFIG ERROR: wrong syntax of 'location' on the line number " + \
-				static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+				throw std::runtime_error("CONFIG ERROR: wrong syntax of 'location' on the line number " + SSTR(_line_number));
 			}
 			LocationConfig location;
 			location.path = tokens[1];
 
 			if (brace_pos == std::string::npos) {
 				if (!std::getline(_config_file, _current_line)) {
-					throw std::runtime_error("CONFIG ERROR: awaiting  '{' after 'location' on the line number " + \
-					static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+					throw std::runtime_error("CONFIG ERROR: awaiting  '{' after 'location' on the line number " + SSTR(_line_number));
 				}
 				_line_number++;
 				_trim(_current_line);
 				if (_current_line != "{") {
-					throw std::runtime_error("CONFIG ERROR: awaiting  '{' after 'server' on the line number " + \
-				static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+					throw std::runtime_error("CONFIG ERROR: awaiting  '{' after 'server' on the line number " + SSTR(_line_number));
 				}
 			}
 			_parseLocationBlock(location, server);
@@ -104,8 +104,7 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 			std::string directive = tokens[0];
 			if (directive == "listen") {
 				if (tokens.size() != 2) {
-					throw std::runtime_error("CONFIG ERROR: wrong syntax in 'listen' on the line number " + \
-						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+					throw std::runtime_error("CONFIG ERROR: wrong syntax in 'listen' on the line number " + SSTR(_line_number));
 				}
 				std::string listen_value = tokens[1];
 				size_t colon_pos = listen_value.find(':');
@@ -116,9 +115,8 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 				else {
 					server.port = atoi(listen_value.c_str());
 				}
-				if (server.port < 1 || server.port > 65535) {
-					throw std::runtime_error("CONFIG ERROR: wrong port number on the line number " + \
-						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+				if (server.port < 1024 || server.port > 65535) {
+					throw std::runtime_error("CONFIG ERROR: wrong port number on the line number " + SSTR(_line_number));
 				}
 			}
 			else if (directive == "server_name") {
@@ -128,29 +126,25 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 			}
 			else if (directive == "root") {
 				if (tokens.size() != 2) {
-					throw std::runtime_error("CONFIG ERROR: wrong root syntax on the line number " + \
-						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+					throw std::runtime_error("CONFIG ERROR: wrong root syntax on the line number " + SSTR(_line_number));
 				}
 				server.root = tokens[1];
 			}
 			else if (directive == "index") {
 				if (tokens.size() != 2) {
-					throw std::runtime_error("CONFIG ERROR: wrong index syntax on the line number " + \
-						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+					throw std::runtime_error("CONFIG ERROR: wrong index syntax on the line number " + SSTR(_line_number));
 				}
 				server.index = tokens[1];
 			}
 			else if (directive == "client_max_body_size") {
 				if (tokens.size() != 2) {
-					throw std::runtime_error("CONFIG ERROR: wrong client max body size syntax on the line number " + \
-						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+					throw std::runtime_error("CONFIG ERROR: wrong client max body size syntax on the line number " + SSTR(_line_number));
 				}
 				server.client_max_body_size = _convertDataSize(tokens[1]);
 			}
 			else {
 				std::cout << directive << std::endl;
-				throw std::runtime_error("CONFIG ERROR: unknown directive on the line number " + \
-						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+				throw std::runtime_error("CONFIG ERROR: unknown directive on the line number " + SSTR(_line_number));
 			}
 		}
 	}
@@ -178,57 +172,49 @@ void ConfigParser::_parseLocationBlock(LocationConfig & location, ServerConfig &
 		std::string directive = tokens[0];
 		if (directive == "upload_dir") {
 			if (tokens.size() != 2) {
-				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'upload_dir' on the line number " + \
-						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'upload_dir' on the line number " + SSTR(_line_number));
 			}
 			location.upload_dir = tokens[1];
 		}
 		else if (directive == "index") {
 			if (tokens.size() != 2) {
-				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'index' on the line number " + \
-						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'index' on the line number " + SSTR(_line_number));
 			}
 			location.index = tokens[1];
 		}
 		else if (directive == "root") {
 			if (tokens.size() != 2) {
-				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'root' on the line number " + \
-						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'root' on the line number " + SSTR(_line_number));
 			}
 			location.root = tokens[1];
 		}
 		else if (directive == "cgi_extension") {
 			if (tokens.size() != 2) {
-				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'cgi_extension' on the line number " + \
-						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'cgi_extension' on the line number " + SSTR(_line_number));
 			}
 			location.cgi_extension = tokens[1];
 		}
 		else if (directive == "cgi_path") {
 			if (tokens.size() != 2) {
-				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'cgi_path' on the line number " + \
-						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'cgi_path' on the line number " + SSTR(_line_number));
 			}
 			location.cgi_path = tokens[1];
 		}
 		else if (directive == "return_url") {
 			if (tokens.size() != 2) {
-				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'return_url' on the line number " + \
-						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'return_url' on the line number " +	SSTR(_line_number));
 			}
 			location.return_url = tokens[1];
 		}
 		else if (directive == "autoindex") {
 			if (tokens.size() != 2) {
-				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'autoindex' on the line number " + \
-						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'autoindex' on the line number " +	SSTR(_line_number));
 			}
 			location.autoindex = _convertOnOff(tokens[1]);
 		}
 		else if (directive == "methods") {
 			if (tokens.size() < 2) {
-				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'methods' on the line number " + \
-						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'methods' on the line number " + SSTR(_line_number));
 			}
 			for (size_t i = 1; i < tokens.size(); ++i){
 				location.methods.push_back(tokens[i]);
@@ -237,8 +223,7 @@ void ConfigParser::_parseLocationBlock(LocationConfig & location, ServerConfig &
 		}
 		else {
 			std::cout << directive << std::endl;
-			throw std::runtime_error("CONFIG ERROR: unknown directive in 'location' on the line number " + \
-						static_cast<std::ostringstream *> (&(std::ostringstream() << _line_number))->str());
+			throw std::runtime_error("CONFIG ERROR: unknown directive in 'location' on the line number " + SSTR(_line_number));
 		}
 
 

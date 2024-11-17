@@ -9,6 +9,7 @@
 #include <cctype>
 #include <fstream>
 #include "ServerConfig.hpp"
+#include "Logger.hpp"
 
 class ServerConfig;
 class LocationConfig;
@@ -16,7 +17,7 @@ class LocationConfig;
 class ConfigParser {
 
 public:
-	ConfigParser(std::string & conf_filename);
+	ConfigParser(std::string &conf_filename, Logger & logger);
 	~ConfigParser();
 	void parse();
 	std::vector<ServerConfig> getConfig();
@@ -30,6 +31,8 @@ private:
 	std::ifstream _config_file;
 	std::string _current_line;
 	size_t _line_number;
+	Logger &_logger;
+
 	void _parseServerBlock(ServerConfig & server);
 	void _parseLocationBlock(LocationConfig & location, ServerConfig & server);
 	void _trim(std::string & rawString);

@@ -20,6 +20,7 @@ public:
 	~Logger();
 	void printCurrentDateTime();
 	void writeToLog(const std::string & message);
+	void closeLogFile();
 
 private:
 	std::string _logFileName;

@@ -10,7 +10,7 @@
 int main(int argc, char **argv) {
 
 	Logger logger;
-	logger.printCurrentDateTime();
+//	logger.printCurrentDateTime();
 
 	if (argc != 2) {
 		logger.writeToLog(ERR_NUM_ARGS);
@@ -19,23 +19,23 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	std::string config_filename = argv[1];
-	ConfigParser conf_parser(config_filename);
+	ConfigParser conf_parser(config_filename, logger);
 	conf_parser.parse();
 //	conf_parser.printConfig();
 
 	std::vector<ServerConfig> servers_configs = conf_parser.getConfig();
-	servers_configs[0].print_server_config();
-	servers_configs[1].print_server_config();
-	std::cout << servers_configs[1].locations[0].autoindex << std::endl;
-	std::cout << servers_configs[1].locations[0].autoindex << std::endl;
+//	servers_configs[0].print_server_config();
+//	servers_configs[1].print_server_config();
+//	std::cout << servers_configs[1].locations[0].autoindex << std::endl;
+//	std::cout << servers_configs[1].locations[0].autoindex << std::endl;
 
 
 	logger.writeToLog("Program start!");
 
-	using namespace http;
-
-	TcpServer server = TcpServer(servers_configs[1].host, servers_configs[1].port);
-	server.startListen();
+//	using namespace http;
+//
+//	TcpServer server = TcpServer(servers_configs[1].host, servers_configs[1].port);
+//	server.startListen();
 
 
 

@@ -2,18 +2,36 @@
 #include <sstream>
 #include "ConfigParser.hpp"
 
+#define ERR_CONF_FNAME "CONFIG ERROR: config file name is wrong!"
+#define ERR_CONF_BRACE_OPN "CONFIG ERROR: awaiting  '{' after "
+#define ERR_CONF_BRACE_CLS "CONFIG ERROR: awaiting '}' "
+#define ERR_CONF_UNKN_DIRECTIVE "CONFIG ERROR: unknown directive "
+#define ERR_CONF_UNKN_DIRECTIVE_OR_BLOCK "CONFIG ERROR: unknown directive or block on the line number "
+#define ERR_CONF_WRNG_SYNTAX "CONFIG ERROR: wrong syntax of "
+#define ERR_CONF_WRNG_PORT "CONFIG ERROR: wrong port number on the line number "
+#define ERR_CONF_WRNG_DSIZE "CONFIG ERROR: wrong datasize suffix: "
+#define ERR_CONF_WRNG_SWSTATE "CONFIG ERROR: autoindex state parameter is wrong: "
+
+
 #define SSTR( x ) static_cast< std::ostringstream & >( \
         ( std::ostringstream() << std::dec << x ) ).str()
 
 
-ConfigParser::ConfigParser(std::string &conf_filename) : _config_path(conf_filename) {
+ConfigParser::ConfigParser(std::string &conf_filename, Logger & logger) : _config_path(conf_filename), _logger(logger) {
 	if (_config_path.empty()) {
-		throw std::runtime_error("CONFIG ERROR: config file name is wrong!");
+		_logger.writeToLog(ERR_CONF_FNAME);
+		throw std::runtime_error(ERR_CONF_FNAME);
 	}
 }
 
 
 ConfigParser::~ConfigParser() {
+	if (_config_file.is_open()) {
+		std::cout << "logfile is open" << std::endl;
+		_config_file.close();
+	} else {
+		std::cout << "logfile is closed" << std::endl;
+	}
 
 }
 
@@ -21,7 +39,8 @@ ConfigParser::~ConfigParser() {
 void ConfigParser::parse() {
 	_config_file.open(_config_path.c_str());
 	if (!_config_file.is_open()) {
-		throw std::runtime_error("ERROR: can not open the configuraton file" + _config_path);
+		_logger.writeToLog(ERR_CONF_FNAME);
+		throw std::runtime_error(ERR_CONF_FNAME + _config_path);
 	}
 
 	_line_number = 0;
@@ -47,14 +66,19 @@ void ConfigParser::parse() {
 
 			if (brace_pos == std::string::npos) {
 				if (!std::getline(_config_file, _current_line)) {
-					throw std::runtime_error("CONFIG ERROR: awaiting  '{' after 'server' on the line number " +	SSTR(_line_number));
+					std::string err_msg = ERR_CONF_BRACE_OPN + std::string("'server' on the line number ") + SSTR(_line_number);
+					_logger.writeToLog(err_msg);
+					throw std::runtime_error(err_msg);
 				}
 			}
 			_parseServerBlock(server);
 			_servers.push_back(server);
 		}
 		else {
-			throw std::runtime_error("CONFIG ERROR: unknown directive or block on the line number " + SSTR(_line_number));
+			std::string err_msg = ERR_CONF_UNKN_DIRECTIVE_OR_BLOCK + SSTR(_line_number);
+			_logger.writeToLog(err_msg);
+			_logger.closeLogFile();
+			throw std::runtime_error(err_msg);
 		}
 	}
 	_config_file.close();
@@ -79,19 +103,25 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 
 			std::vector<std::string > tokens = _tokenize(_current_line);
 			if (tokens.size() < 2) {
-				throw std::runtime_error("CONFIG ERROR: wrong syntax of 'location' on the line number " + SSTR(_line_number));
+				std::string err_msg = ERR_CONF_WRNG_SYNTAX + std::string("location  on the line number ") + SSTR(_line_number);
+				_logger.writeToLog(err_msg);
+				throw std::runtime_error(err_msg);
 			}
 			LocationConfig location;
 			location.path = tokens[1];
 
 			if (brace_pos == std::string::npos) {
 				if (!std::getline(_config_file, _current_line)) {
-					throw std::runtime_error("CONFIG ERROR: awaiting  '{' after 'location' on the line number " + SSTR(_line_number));
+					std::string err_msg = ERR_CONF_BRACE_OPN + std::string("'location' on the line number ") + SSTR(_line_number);
+					_logger.writeToLog(err_msg);
+					throw std::runtime_error(err_msg);;
 				}
 				_line_number++;
 				_trim(_current_line);
 				if (_current_line != "{") {
-					throw std::runtime_error("CONFIG ERROR: awaiting  '{' after 'server' on the line number " + SSTR(_line_number));
+					std::string err_msg = ERR_CONF_BRACE_OPN + std::string("'server' on the line number ") + SSTR(_line_number);
+					_logger.writeToLog(err_msg);
+					throw std::runtime_error(err_msg);
 				}
 			}
 			_parseLocationBlock(location, server);
@@ -104,7 +134,9 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 			std::string directive = tokens[0];
 			if (directive == "listen") {
 				if (tokens.size() != 2) {
-					throw std::runtime_error("CONFIG ERROR: wrong syntax in 'listen' on the line number " + SSTR(_line_number));
+					std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
+					_logger.writeToLog(err_msg);
+					throw std::runtime_error(err_msg);
 				}
 				std::string listen_value = tokens[1];
 				size_t colon_pos = listen_value.find(':');
@@ -116,7 +148,9 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 					server.port = atoi(listen_value.c_str());
 				}
 				if (server.port < 1024 || server.port > 65535) {
-					throw std::runtime_error("CONFIG ERROR: wrong port number on the line number " + SSTR(_line_number));
+					std::string err_msg = ERR_CONF_WRNG_PORT + SSTR(_line_number);
+					_logger.writeToLog(err_msg);
+					throw std::runtime_error(err_msg);
 				}
 			}
 			else if (directive == "server_name") {
@@ -126,29 +160,38 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 			}
 			else if (directive == "root") {
 				if (tokens.size() != 2) {
-					throw std::runtime_error("CONFIG ERROR: wrong root syntax on the line number " + SSTR(_line_number));
+					std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
+					_logger.writeToLog(err_msg);
+					throw std::runtime_error(err_msg);
 				}
 				server.root = tokens[1];
 			}
 			else if (directive == "index") {
 				if (tokens.size() != 2) {
-					throw std::runtime_error("CONFIG ERROR: wrong index syntax on the line number " + SSTR(_line_number));
+					std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
+					_logger.writeToLog(err_msg);
+					throw std::runtime_error(err_msg);
 				}
 				server.index = tokens[1];
 			}
 			else if (directive == "client_max_body_size") {
 				if (tokens.size() != 2) {
-					throw std::runtime_error("CONFIG ERROR: wrong client max body size syntax on the line number " + SSTR(_line_number));
+					std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
+					_logger.writeToLog(err_msg);
+					throw std::runtime_error(err_msg);
 				}
 				server.client_max_body_size = _convertDataSize(tokens[1]);
 			}
 			else {
-				std::cout << directive << std::endl;
-				throw std::runtime_error("CONFIG ERROR: unknown directive on the line number " + SSTR(_line_number));
+				std::string err_msg = ERR_CONF_UNKN_DIRECTIVE + directive + " on the line number " + SSTR(_line_number);
+				_logger.writeToLog(err_msg);
+				throw std::runtime_error(err_msg);
 			}
 		}
 	}
-	throw std::runtime_error("CONFIG ERROR: awaiting '}' in the 'server' block but file is ended");
+	std::string err_msg = ERR_CONF_BRACE_OPN + std::string("in the 'server' block but file is ended");
+	_logger.writeToLog(err_msg);
+	throw std::runtime_error(err_msg);
 }
 
 void ConfigParser::_parseLocationBlock(LocationConfig & location, ServerConfig & server) {
@@ -172,65 +215,76 @@ void ConfigParser::_parseLocationBlock(LocationConfig & location, ServerConfig &
 		std::string directive = tokens[0];
 		if (directive == "upload_dir") {
 			if (tokens.size() != 2) {
-				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'upload_dir' on the line number " + SSTR(_line_number));
+				std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
+				_logger.writeToLog(err_msg);
+				throw std::runtime_error(err_msg);
 			}
 			location.upload_dir = tokens[1];
 		}
 		else if (directive == "index") {
 			if (tokens.size() != 2) {
-				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'index' on the line number " + SSTR(_line_number));
+				std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
+				_logger.writeToLog(err_msg);
+				throw std::runtime_error(err_msg);
 			}
 			location.index = tokens[1];
 		}
 		else if (directive == "root") {
 			if (tokens.size() != 2) {
-				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'root' on the line number " + SSTR(_line_number));
+				std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
+				_logger.writeToLog(err_msg);
+				throw std::runtime_error(err_msg);
 			}
 			location.root = tokens[1];
 		}
 		else if (directive == "cgi_extension") {
 			if (tokens.size() != 2) {
-				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'cgi_extension' on the line number " + SSTR(_line_number));
-			}
+				std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
+				_logger.writeToLog(err_msg);
+				throw std::runtime_error(err_msg);			}
 			location.cgi_extension = tokens[1];
 		}
 		else if (directive == "cgi_path") {
 			if (tokens.size() != 2) {
-				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'cgi_path' on the line number " + SSTR(_line_number));
-			}
+				std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
+				_logger.writeToLog(err_msg);
+				throw std::runtime_error(err_msg);			}
 			location.cgi_path = tokens[1];
 		}
 		else if (directive == "return_url") {
 			if (tokens.size() != 2) {
-				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'return_url' on the line number " +	SSTR(_line_number));
-			}
+				std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
+				_logger.writeToLog(err_msg);
+				throw std::runtime_error(err_msg);			}
 			location.return_url = tokens[1];
 		}
 		else if (directive == "autoindex") {
 			if (tokens.size() != 2) {
-				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'autoindex' on the line number " +	SSTR(_line_number));
-			}
+				std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
+				_logger.writeToLog(err_msg);
+				throw std::runtime_error(err_msg);			}
 			location.autoindex = _convertOnOff(tokens[1]);
 		}
 		else if (directive == "methods") {
 			if (tokens.size() < 2) {
-				throw std::runtime_error("CONFIG ERROR: wrong syntax in 'methods' on the line number " + SSTR(_line_number));
-			}
+				std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
+				_logger.writeToLog(err_msg);
+				throw std::runtime_error(err_msg);			}
 			for (size_t i = 1; i < tokens.size(); ++i){
 				location.methods.push_back(tokens[i]);
 			}
 
 		}
 		else {
-			std::cout << directive << std::endl;
-			throw std::runtime_error("CONFIG ERROR: unknown directive in 'location' on the line number " + SSTR(_line_number));
+			std::string err_msg = ERR_CONF_UNKN_DIRECTIVE + directive + " in 'location' on the line number " + SSTR(_line_number);
+			_logger.writeToLog(err_msg);
+			throw std::runtime_error(err_msg);
+
 		}
-
-
-
-
 	}
-	throw std::runtime_error("CONFIG ERROR: awaiting '}' in the 'location' block but file is ended");
+		std::string err_msg = ERR_CONF_BRACE_CLS + std::string("in the 'location' block but file is ended =(");
+		_logger.writeToLog(err_msg);
+		throw std::runtime_error(err_msg);
 }
 
 
@@ -286,7 +340,9 @@ size_t ConfigParser::_convertDataSize(const std::string & dataSize) {
 				num = num * 1024 * 1024 * 1024;
 				break;
 			default:
-				throw std::invalid_argument("CONFIG ERROR: wrong datasize suffix: " + dataSize);
+				std::string err_msg = ERR_CONF_WRNG_DSIZE + dataSize;
+				_logger.writeToLog(err_msg);
+				throw std::runtime_error(err_msg);
 		}
 	}
 
@@ -303,7 +359,9 @@ bool ConfigParser::_convertOnOff(const std::string & switchState) {
 			return false;
 		}
 	}
-	throw std::invalid_argument("CONFIG ERROR: autoindex state parameter is wrong: " + switchState);
+	std::string err_msg = ERR_CONF_WRNG_SWSTATE + switchState;
+	_logger.writeToLog(err_msg);
+	throw std::runtime_error(err_msg);
 }
 
 bool ConfigParser::_startsWith(const std::string & str, const std::string & prefix) {

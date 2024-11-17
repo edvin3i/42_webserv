@@ -42,3 +42,7 @@ void Logger::writeToLog(const std::string &message) {
 	_logFile << _getCurrentDateTimeString() << ": " + message << std::endl;
 
 }
+
+void Logger::closeLogFile() {
+	_logFile.close();
+}

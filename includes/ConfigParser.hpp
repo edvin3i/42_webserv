@@ -40,6 +40,7 @@ private:
 	std::vector<std::string> _tokenize(const std::string &rawString);
 	size_t _convertDataSize(const std::string &dataSize);
 	bool _convertOnOff(const std::string & switchState);
+	void _handleError(const std::string & err_message);
 
 
 

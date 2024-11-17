@@ -11,16 +11,17 @@
 #define ERR_CONF_WRNG_PORT "CONFIG ERROR: wrong port number on the line number "
 #define ERR_CONF_WRNG_DSIZE "CONFIG ERROR: wrong datasize suffix: "
 #define ERR_CONF_WRNG_SWSTATE "CONFIG ERROR: autoindex state parameter is wrong: "
+#define TOKEN_SERVER "server"
+#define TOKEN_LOCATION "location"
 
 
 #define SSTR( x ) static_cast< std::ostringstream & >( \
         ( std::ostringstream() << std::dec << x ) ).str()
 
 
-ConfigParser::ConfigParser(std::string &conf_filename, Logger & logger) : _config_path(conf_filename), _logger(logger) {
+ConfigParser::ConfigParser(std::string & conf_filename, Logger & logger) : _config_path(conf_filename), _logger(logger) {
 	if (_config_path.empty()) {
-		_logger.writeToLog(ERR_CONF_FNAME);
-		throw std::runtime_error(ERR_CONF_FNAME);
+		_handleError(ERR_CONF_FNAME);
 	}
 }
 
@@ -39,8 +40,7 @@ ConfigParser::~ConfigParser() {
 void ConfigParser::parse() {
 	_config_file.open(_config_path.c_str());
 	if (!_config_file.is_open()) {
-		_logger.writeToLog(ERR_CONF_FNAME);
-		throw std::runtime_error(ERR_CONF_FNAME + _config_path);
+		_handleError(ERR_CONF_FNAME + _config_path);
 	}
 
 	_line_number = 0;
@@ -59,26 +59,21 @@ void ConfigParser::parse() {
 			continue;
 
 
-		if (_startsWith(_current_line, "server")) {
+		if (_startsWith(_current_line, TOKEN_SERVER)) {
 			size_t brace_pos = _current_line.find('{');
 
 			ServerConfig server;
 
 			if (brace_pos == std::string::npos) {
 				if (!std::getline(_config_file, _current_line)) {
-					std::string err_msg = ERR_CONF_BRACE_OPN + std::string("'server' on the line number ") + SSTR(_line_number);
-					_logger.writeToLog(err_msg);
-					throw std::runtime_error(err_msg);
+					_handleError(ERR_CONF_BRACE_OPN + std::string("'server' on the line number ") + SSTR(_line_number));
 				}
 			}
 			_parseServerBlock(server);
 			_servers.push_back(server);
 		}
 		else {
-			std::string err_msg = ERR_CONF_UNKN_DIRECTIVE_OR_BLOCK + SSTR(_line_number);
-			_logger.writeToLog(err_msg);
-			_logger.closeLogFile();
-			throw std::runtime_error(err_msg);
+			_handleError( ERR_CONF_UNKN_DIRECTIVE_OR_BLOCK + SSTR(_line_number));
 		}
 	}
 	_config_file.close();
@@ -98,32 +93,28 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 		if (_current_line == "}")
 			return;
 
-		if (_startsWith(_current_line, "location")) {
+		if (_startsWith(_current_line, TOKEN_LOCATION)) {
 			size_t brace_pos = _current_line.find('{');
 
 			std::vector<std::string > tokens = _tokenize(_current_line);
 			if (tokens.size() < 2) {
-				std::string err_msg = ERR_CONF_WRNG_SYNTAX + std::string("location  on the line number ") + SSTR(_line_number);
-				_logger.writeToLog(err_msg);
-				throw std::runtime_error(err_msg);
+				_handleError(ERR_CONF_WRNG_SYNTAX + std::string("location  on the line number ") + SSTR(_line_number));
 			}
+
 			LocationConfig location;
 			location.path = tokens[1];
 
 			if (brace_pos == std::string::npos) {
 				if (!std::getline(_config_file, _current_line)) {
-					std::string err_msg = ERR_CONF_BRACE_OPN + std::string("'location' on the line number ") + SSTR(_line_number);
-					_logger.writeToLog(err_msg);
-					throw std::runtime_error(err_msg);;
+					_handleError(ERR_CONF_BRACE_OPN + std::string("'location' on the line number ") + SSTR(_line_number));
 				}
 				_line_number++;
 				_trim(_current_line);
 				if (_current_line != "{") {
-					std::string err_msg = ERR_CONF_BRACE_OPN + std::string("'server' on the line number ") + SSTR(_line_number);
-					_logger.writeToLog(err_msg);
-					throw std::runtime_error(err_msg);
+					_handleError(ERR_CONF_BRACE_OPN + std::string("'server' on the line number ") + SSTR(_line_number));
 				}
 			}
+
 			_parseLocationBlock(location, server);
 			server.locations.push_back(location);
 		}
@@ -134,9 +125,7 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 			std::string directive = tokens[0];
 			if (directive == "listen") {
 				if (tokens.size() != 2) {
-					std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
-					_logger.writeToLog(err_msg);
-					throw std::runtime_error(err_msg);
+					_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
 				}
 				std::string listen_value = tokens[1];
 				size_t colon_pos = listen_value.find(':');
@@ -148,9 +137,7 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 					server.port = atoi(listen_value.c_str());
 				}
 				if (server.port < 1024 || server.port > 65535) {
-					std::string err_msg = ERR_CONF_WRNG_PORT + SSTR(_line_number);
-					_logger.writeToLog(err_msg);
-					throw std::runtime_error(err_msg);
+					_handleError(ERR_CONF_WRNG_PORT + SSTR(_line_number));
 				}
 			}
 			else if (directive == "server_name") {
@@ -160,38 +147,28 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 			}
 			else if (directive == "root") {
 				if (tokens.size() != 2) {
-					std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
-					_logger.writeToLog(err_msg);
-					throw std::runtime_error(err_msg);
+					_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
 				}
 				server.root = tokens[1];
 			}
 			else if (directive == "index") {
 				if (tokens.size() != 2) {
-					std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
-					_logger.writeToLog(err_msg);
-					throw std::runtime_error(err_msg);
+					_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
 				}
 				server.index = tokens[1];
 			}
 			else if (directive == "client_max_body_size") {
 				if (tokens.size() != 2) {
-					std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
-					_logger.writeToLog(err_msg);
-					throw std::runtime_error(err_msg);
+					_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
 				}
 				server.client_max_body_size = _convertDataSize(tokens[1]);
 			}
 			else {
-				std::string err_msg = ERR_CONF_UNKN_DIRECTIVE + directive + " on the line number " + SSTR(_line_number);
-				_logger.writeToLog(err_msg);
-				throw std::runtime_error(err_msg);
+				_handleError(ERR_CONF_UNKN_DIRECTIVE + directive + " on the line number " + SSTR(_line_number));
 			}
 		}
 	}
-	std::string err_msg = ERR_CONF_BRACE_OPN + std::string("in the 'server' block but file is ended");
-	_logger.writeToLog(err_msg);
-	throw std::runtime_error(err_msg);
+	_handleError(ERR_CONF_BRACE_OPN + std::string("in the 'server' block but file is ended"));
 }
 
 void ConfigParser::_parseLocationBlock(LocationConfig & location, ServerConfig & server) {
@@ -215,76 +192,61 @@ void ConfigParser::_parseLocationBlock(LocationConfig & location, ServerConfig &
 		std::string directive = tokens[0];
 		if (directive == "upload_dir") {
 			if (tokens.size() != 2) {
-				std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
-				_logger.writeToLog(err_msg);
-				throw std::runtime_error(err_msg);
+				_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
 			}
 			location.upload_dir = tokens[1];
 		}
 		else if (directive == "index") {
 			if (tokens.size() != 2) {
-				std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
-				_logger.writeToLog(err_msg);
-				throw std::runtime_error(err_msg);
+				_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
 			}
 			location.index = tokens[1];
 		}
 		else if (directive == "root") {
 			if (tokens.size() != 2) {
-				std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
-				_logger.writeToLog(err_msg);
-				throw std::runtime_error(err_msg);
+				_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
 			}
 			location.root = tokens[1];
 		}
 		else if (directive == "cgi_extension") {
 			if (tokens.size() != 2) {
-				std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
-				_logger.writeToLog(err_msg);
-				throw std::runtime_error(err_msg);			}
+				_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
 			location.cgi_extension = tokens[1];
 		}
 		else if (directive == "cgi_path") {
 			if (tokens.size() != 2) {
-				std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
-				_logger.writeToLog(err_msg);
-				throw std::runtime_error(err_msg);			}
+				_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
+			}
 			location.cgi_path = tokens[1];
 		}
 		else if (directive == "return_url") {
 			if (tokens.size() != 2) {
-				std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
-				_logger.writeToLog(err_msg);
-				throw std::runtime_error(err_msg);			}
+				_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
+			}
 			location.return_url = tokens[1];
 		}
 		else if (directive == "autoindex") {
 			if (tokens.size() != 2) {
-				std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
-				_logger.writeToLog(err_msg);
-				throw std::runtime_error(err_msg);			}
+				_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
+			}
 			location.autoindex = _convertOnOff(tokens[1]);
 		}
 		else if (directive == "methods") {
 			if (tokens.size() < 2) {
-				std::string err_msg = ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number);
-				_logger.writeToLog(err_msg);
-				throw std::runtime_error(err_msg);			}
+				_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
+			}
 			for (size_t i = 1; i < tokens.size(); ++i){
 				location.methods.push_back(tokens[i]);
 			}
 
 		}
 		else {
-			std::string err_msg = ERR_CONF_UNKN_DIRECTIVE + directive + " in 'location' on the line number " + SSTR(_line_number);
-			_logger.writeToLog(err_msg);
-			throw std::runtime_error(err_msg);
+				_handleError(ERR_CONF_UNKN_DIRECTIVE + directive + " in 'location' on the line number " + SSTR(_line_number));
+		}
 
 		}
 	}
-		std::string err_msg = ERR_CONF_BRACE_CLS + std::string("in the 'location' block but file is ended =(");
-		_logger.writeToLog(err_msg);
-		throw std::runtime_error(err_msg);
+	_handleError(ERR_CONF_BRACE_CLS + std::string("in the 'location' block but file is ended =("));
 }
 
 
@@ -378,5 +340,11 @@ void ConfigParser::printConfig() {
 
 std::vector<ServerConfig> ConfigParser::getConfig() {
 	return _servers;
+}
+
+void ConfigParser::_handleError(const std::string & err_message) {
+	std::string err_msg = err_message;
+	_logger.writeToLog(err_msg);
+	throw std::runtime_error(err_msg);
 }
 

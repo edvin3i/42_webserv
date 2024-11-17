@@ -15,7 +15,11 @@ void ServerConfig::_init() {
 	root = "www";
 	index = "index.html";
 	client_max_body_size = 512 * 1024;
+	error_pages[400] = "html/error_pages/400.html";
+	error_pages[403] = "html/error_pages/403.html";
 	error_pages[404] = "html/error_pages/404.html";
+	error_pages[500] = "html/error_pages/500.html";
+	error_pages[501] = "html/error_pages/501.html";
 
 
 }

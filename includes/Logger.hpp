@@ -15,7 +15,7 @@
 
 class Logger {
 public:
-	Logger(const std::string &logfile_name);
+	Logger(const std::string & logfile_name);
 	Logger();
 	~Logger();
 	void printCurrentDateTime();

@@ -8,7 +8,8 @@ Logger::Logger(const std::string & logfile_name): _logFileName(logfile_name), \
 	_logFile << "Web Server START\n";
 }
 
-Logger::Logger(): _logFileName("webserv_log_" + _getCurrentDateTimeString() + ".log"), _logFile(_logFileName.c_str()) {
+Logger::Logger(): _logFileName("webserv_log_" + _getCurrentDateTimeString() + ".log"),
+					_logFile(_logFileName.c_str()) {
 	if (!_logFile.is_open())
 		throw std::runtime_error("ERROR: can not open the logfile!");
 

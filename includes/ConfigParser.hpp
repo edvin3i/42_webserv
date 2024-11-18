@@ -42,8 +42,6 @@ private:
 	bool _convertOnOff(const std::string & switchState);
 	void _handleError(const std::string & err_message);
 
-
-
 };
 
 

@@ -22,6 +22,7 @@ class Logger;
 class TcpServer {
 public:
 	TcpServer(std::string ip_address, int port, Logger & logger);
+	TcpServer(const TcpServer & other);
 	~TcpServer();
 	void startListen();
 

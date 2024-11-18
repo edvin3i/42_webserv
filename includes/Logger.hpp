@@ -17,9 +17,11 @@ class Logger {
 public:
 	Logger(const std::string & logfile_name);
 	Logger();
+	//Logger(const Logger & other);
 	~Logger();
 	void printCurrentDateTime();
 	void writeToLog(const std::string & message);
+	//const std::ofstream & getLogFile() const;
 	void closeLogFile();
 
 private:

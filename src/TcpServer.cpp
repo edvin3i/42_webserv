@@ -20,7 +20,9 @@ TcpServer::TcpServer(std::string ip_address, int port, Logger & logger)
 	_srv_socketAddress.sin_addr.s_addr = inet_addr(_srv_ip_address.c_str());
 
 	if (_startServer() != 0) {
-		_logger.writeToLog("Failed to start server with PORT: " + htons(_srv_socketAddress.sin_port));
+		std::ostringstream ss;
+		ss << "Failed to start server with PORT: " << htons(_srv_socketAddress.sin_port);
+		_logger.writeToLog(ss.str());
 	}
 }
 
@@ -32,6 +34,8 @@ TcpServer::~TcpServer() {
 
 int TcpServer::_startServer() {
 	_srv_socket = socket(AF_INET, SOCK_STREAM, 0);
+	int flags = fcntl(_srv_socket, F_GETFL, 0);
+	fcntl(_srv_socket, F_SETFL, flags | O_NONBLOCK);
 
 
 	if (_srv_socket < 0 ) {
@@ -125,4 +129,12 @@ void TcpServer::_handleError(const std::string & err_message) {
 	throw std::runtime_error(err_msg);
 }
 
-
+TcpServer::TcpServer(const TcpServer & other)
+		: _srv_ip_address(other._srv_ip_address),
+		  _srv_port(other._srv_port),
+		  _logger(other._logger),
+		  _srv_socket(),
+		  _srv_new_socket(),
+		  _srv_socketAddress(other._srv_socketAddress),
+		  _srv_socketAddress_len(other._srv_socketAddress_len),
+		  _srv_serverMessage(other._srv_serverMessage) {}

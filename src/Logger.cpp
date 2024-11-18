@@ -41,9 +41,20 @@ Logger::~Logger() {
 
 void Logger::writeToLog(const std::string &message) {
 	_logFile << _getCurrentDateTimeString() << ": " + message << std::endl;
+	if (_logFile.fail())
+		std::cout << "LOG out stream error!" << std::endl;
+	_logFile.flush();
 
 }
 
 void Logger::closeLogFile() {
 	_logFile.close();
 }
+
+//Logger::Logger(const Logger & other): _logFile(other.getLogFile()) {
+
+//}
+
+//const std::ofstream & Logger::getLogFile() const {
+//	return _logFile;
+//}

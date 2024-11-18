@@ -3,6 +3,7 @@
 #include "../includes/ServerConfig.hpp"
 #include "../includes/ConfigParser.hpp"
 #include "../includes/Logger.hpp"
+#include "../includes/MasterServer.hpp"
 
 #define ERR_NUM_ARGS "ERROR: wrong number of arguments!"
 
@@ -32,11 +33,8 @@ int main(int argc, char **argv) {
 
 	logger.writeToLog("Program start!");
 
-//	using namespace http;
-//
-//	TcpServer server = TcpServer(servers_configs[1].host, servers_configs[1].port);
-//	server.startListen();
-
+	std::vector<ServerConfig> configs = conf_parser.getConfig();
+	MasterServer masterServer(configs, logger);
 
 
 	return (0);

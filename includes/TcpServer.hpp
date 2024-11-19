@@ -4,7 +4,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <unistd.h>
 #include <iostream>
 #include <sstream>
@@ -21,13 +21,14 @@ class Logger;
 
 class TcpServer {
 public:
-	TcpServer(std::string ip_address, int port, Logger & logger);
+	TcpServer(Logger & logger, const std::string & ip_address, int port);
 	TcpServer(const TcpServer & other);
 	~TcpServer();
 	void startListen();
 
 
 private:
+	Logger &_logger;
 	std::string _srv_ip_address;
 	int	_srv_port;
 	int _srv_socket;
@@ -36,7 +37,6 @@ private:
 	struct sockaddr_in _srv_socketAddress;
 	unsigned int _srv_socketAddress_len;
 	std::string _srv_serverMessage;
-	Logger &_logger;
 
 	int _startServer();
 	void _closeServer();

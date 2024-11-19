@@ -4,10 +4,10 @@
 const int BUFFER_SIZE = 8192;
 
 
-TcpServer::TcpServer(std::string ip_address, int port, Logger & logger)
-				: _srv_ip_address(ip_address),
+TcpServer::TcpServer(Logger & logger, const std::string & ip_address, int port)
+				:	_logger(logger),
+					_srv_ip_address(ip_address),
 					_srv_port(port),
-					_logger(logger),
 					_srv_socket(),
 					_srv_new_socket(),
 					_srv_socketAddress(),
@@ -21,7 +21,8 @@ TcpServer::TcpServer(std::string ip_address, int port, Logger & logger)
 
 	if (_startServer() != 0) {
 		std::ostringstream ss;
-		ss << "Failed to start server with PORT: " << htons(_srv_socketAddress.sin_port);
+		ss << "Failed to start server with PORT: " \
+			<< htons(_srv_socketAddress.sin_port);
 		_logger.writeToLog(ss.str());
 	}
 }
@@ -63,16 +64,22 @@ void TcpServer::_acceptConnection(int &new_socket) {
 	new_socket = accept(_srv_socket, (sockaddr *)&_srv_socketAddress, &_srv_socketAddress_len);
 	if (new_socket < 0) {
 		std::ostringstream ss;
-		ss << "Server failed to accept incoming connection from ADDRESS: " << inet_ntoa(_srv_socketAddress.sin_addr) << "; PORT: " << ntohs(_srv_socketAddress.sin_port);
+		ss << "Server failed to accept incoming connection from ADDRESS: " \
+			<< inet_ntoa(_srv_socketAddress.sin_addr) \
+			<< "; PORT: " \
+			<< ntohs(_srv_socketAddress.sin_port);
 		_handleError(ss.str());
 	}
 }
 
 
 std::string TcpServer::_buildResponce() {
-	std::string htmlFile =  "<!DOCTYPE html><html lang=\"en\"><body><h1> HOME </h1><p> Hello from your Server :) </p></body></html>";
+	std::string htmlFile =  "<!DOCTYPE html><html lang=\"en\"><body><h1> HOME </h1><p> Hello from my WEBSERV42  :) </p></body></html>";
 	std::ostringstream ss;
-	ss << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " << htmlFile.size() << "\n\n" << htmlFile;
+	ss << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " \
+		<< htmlFile.size() \
+		<< "\n\n" \
+		<< htmlFile;
 	return ss.str();
 }
 
@@ -99,7 +106,10 @@ void TcpServer::startListen() {
 
 
 	std::ostringstream ss;
-	ss << "\n*** Listening on ADRESS: " << inet_ntoa(_srv_socketAddress.sin_addr) << " PORT: " << ntohs(_srv_socketAddress.sin_port) << " ***\n\n";
+	ss << "\n*** Listening on ADRESS: " \
+		<< inet_ntoa(_srv_socketAddress.sin_addr) \
+		<< " PORT: " << ntohs(_srv_socketAddress.sin_port) \
+		<< " ***\n\n";
 	_logger.writeToLog(ss.str());
 
 
@@ -130,9 +140,9 @@ void TcpServer::_handleError(const std::string & err_message) {
 }
 
 TcpServer::TcpServer(const TcpServer & other)
-		: _srv_ip_address(other._srv_ip_address),
+		: _logger(other._logger),
+		  _srv_ip_address(other._srv_ip_address),
 		  _srv_port(other._srv_port),
-		  _logger(other._logger),
 		  _srv_socket(),
 		  _srv_new_socket(),
 		  _srv_socketAddress(other._srv_socketAddress),

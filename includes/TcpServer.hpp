@@ -25,6 +25,7 @@ public:
 	TcpServer(const TcpServer & other);
 	~TcpServer();
 	void startListen();
+	void start();
 
 
 private:
@@ -40,7 +41,7 @@ private:
 
 	int _startServer();
 	void _closeServer();
-	void _acceptConnection(int &new_socket);
+	void _acceptConnection(int & new_socket);
 	std::string _buildResponce();
 	void _sendResponce();
 

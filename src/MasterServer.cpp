@@ -1,6 +1,8 @@
 #include "../includes/MasterServer.hpp"
 
-MasterServer::MasterServer(std::vector<ServerConfig> configs, Logger & logger): _configs(configs), _logger(logger) {
+MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & configs)
+						: _logger(logger),
+						  _configs(configs) {
 
 	std::ostringstream oss;
 	oss << "MasterServer constructor called!\n";
@@ -10,22 +12,24 @@ MasterServer::MasterServer(std::vector<ServerConfig> configs, Logger & logger): 
 	_servers.reserve(_configs.size());
 
 	for (size_t i = 0; i < _configs.size(); ++i) {
-		std::cout << "here" << std::endl;
 		_servers.push_back(
-				TcpServer(_configs[i].host,
-						 _configs[i].port,
-						 logger)
+				new TcpServer(
+						logger, _configs[i].host,
+						_configs[i].port)
 						 );
-		std::cout << "There" << std::endl; // this is does not works
+
+		_servers.back()->start();
+
 		std::ostringstream ss;
-		ss << "Created server number: " << _servers.size();
-		_logger.writeToLog(ss.str()); // this is does not works
+		ss << "Created server number: " << i;
+		_logger.writeToLog(ss.str());
 
-
-
+		_servers.back()->startListen(); // DOES NOT WORK. Need to use poll()
 	}
 }
 
 MasterServer::~MasterServer() {
-
+	for (size_t i = 0; i < _servers.size(); ++i) {
+		delete _servers[i];
+	}
 }

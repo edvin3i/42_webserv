@@ -1,0 +1,15 @@
+Web Server START
+[2024.11.19]_[16:24:15]: Program start!
+[2024.11.19]_[16:24:15]: MasterServer constructor called!
+Size of configs: 2
+
+[2024.11.19]_[16:24:15]: Created server number: 0
+[2024.11.19]_[16:24:15]: 
+*** Listening on ADRESS: 127.0.0.1 PORT: 9500 ***
+
+
+[2024.11.19]_[16:24:15]: === Waiting new connection ===
+
+
+
+[2024.11.19]_[16:24:15]: Server failed to accept incoming connection from ADDRESS: 127.0.0.1; PORT: 9500

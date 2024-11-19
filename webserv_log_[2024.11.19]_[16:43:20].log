@@ -1,0 +1,14 @@
+Web Server START
+[2024.11.19]_[16:43:20]: Program start!
+[2024.11.19]_[16:43:20]: MasterServer constructor called!
+Size of configs: 2
+
+[2024.11.19]_[16:43:20]: Created server number: 0
+[2024.11.19]_[16:43:20]: 
+*** Listening on ADRESS: 127.0.0.1 PORT: 8230 ***
+
+
+[2024.11.19]_[16:43:20]: === Waiting new connection ===
+
+
+

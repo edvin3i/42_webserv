@@ -20,9 +20,9 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	std::string config_filename = argv[1];
-	ConfigParser conf_parser(config_filename, logger);
+	ConfigParser conf_parser(logger, config_filename);
 	conf_parser.parse();
-//	conf_parser.printConfig();
+	conf_parser.printConfig();
 
 	std::vector<ServerConfig> servers_configs = conf_parser.getConfig();
 //	servers_configs[0].print_server_config();
@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
 	logger.writeToLog("Program start!");
 
 	std::vector<ServerConfig> configs = conf_parser.getConfig();
-	MasterServer masterServer(configs, logger);
+	MasterServer masterServer(logger, configs);
 
 
 	return (0);

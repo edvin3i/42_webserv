@@ -16,9 +16,11 @@ OBJDIR      =   .obj/
 #                            Files                                           #
 #############################################################################
 
-MFLS        =	LocationConfig.cpp ServerConfig.cpp ConfigParser.cpp \
-				MasterServer.cpp ClientConnection.cpp Logger.cpp \
-				TcpServer.cpp main.cpp
+MFLS        =   \
+				ServerConfig.cpp \
+				LocationConfig.cpp ConfigParser.cpp \
+				MasterServer.cpp ClientConnection.cpp Logger.cpp TcpServer.cpp \
+				main.cpp
 MSRC        =   $(addprefix $(MDIR), $(MFLS))
 MOBJS		=	$(addprefix $(OBJDIR), $(MFLS:.cpp=.o))
 #MOBJS       =   $(MSRC:.cpp=.o)
@@ -30,11 +32,13 @@ MOBJS		=	$(addprefix $(OBJDIR), $(MFLS:.cpp=.o))
 
 CXX				=   c++
 CXXFLAGS		=   -std=c++98
-#CXXFLAGS		+=	-Wall -Werror -Wextra
+CXXFLAGS		+=	-Wall -Werror -Wextra
 CXXFLAGS		+=	-MMD -MP
 CXXFLAGS		+=	-g
 CXXFLAGS		+=  -I$(INCDIR)
+CXXFLAGS		+=	-fPIE
 
+LDFLAGS += -pie
 #############################################################################
 #                            Makefile Dependency                            #
 #############################################################################
@@ -57,11 +61,11 @@ all:            $(NAME)
 
 $(OBJDIR)%.o:   $(MDIR)%.cpp
 				@mkdir -p $(OBJDIR)
-				@$(CXX) $(CXXFLAGS) -c $< -o $@
+				@$(CXX) $(CXXFLAGS)  -c $< -o $@
 
 $(NAME):        $(MOBJS) $(MKFL)
 				@echo "\e[35mCompiling\e[0m $(*F)"
-				@$(CXX) $(MOBJS) -o $(NAME)
+				@$(CXX) $(LDFLAGS) $(MOBJS) -o $(NAME)
 				@echo "\e[32mDone!\e[0m"
 
 clean:

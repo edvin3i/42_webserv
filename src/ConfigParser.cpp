@@ -15,11 +15,7 @@
 #define TOKEN_LOCATION "location"
 
 
-#define SSTR( x ) static_cast< std::ostringstream & >( \
-        ( std::ostringstream() << std::dec << x ) ).str()
-
-
-ConfigParser::ConfigParser(std::string & conf_filename, Logger & logger) : _config_path(conf_filename), _logger(logger) {
+ConfigParser::ConfigParser(Logger &logger, std::string &conf_filename) : _logger(logger), _config_path(conf_filename) {
 	if (_config_path.empty()) {
 		_handleError(ERR_CONF_FNAME);
 	}
@@ -115,7 +111,7 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 				}
 			}
 
-			_parseLocationBlock(location, server);
+			_parseLocationBlock(location);
 			server.locations.push_back(location);
 		}
 		else {
@@ -171,7 +167,7 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 	_handleError(ERR_CONF_BRACE_OPN + std::string("in the 'server' block but file is ended"));
 }
 
-void ConfigParser::_parseLocationBlock(LocationConfig & location, ServerConfig & server) {
+void ConfigParser::_parseLocationBlock(LocationConfig &location) {
 	while(std::getline(_config_file, _current_line)) {
 		++_line_number;
 
@@ -192,48 +188,64 @@ void ConfigParser::_parseLocationBlock(LocationConfig & location, ServerConfig &
 		std::string directive = tokens[0];
 		if (directive == "upload_dir") {
 			if (tokens.size() != 2) {
-				_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
+				std::ostringstream ss;
+				ss << ERR_CONF_WRNG_SYNTAX << directive << " on the line number " << _line_number << "\n";
+				_handleError(ss.str());
 			}
 			location.upload_dir = tokens[1];
 		}
 		else if (directive == "index") {
 			if (tokens.size() != 2) {
-				_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
+				std::ostringstream ss;
+				ss << ERR_CONF_WRNG_SYNTAX << directive << " on the line number " << _line_number;
+				_handleError(ss.str());
 			}
 			location.index = tokens[1];
 		}
 		else if (directive == "root") {
 			if (tokens.size() != 2) {
-				_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
+				std::ostringstream ss;
+				ss << ERR_CONF_WRNG_SYNTAX << directive << " on the line number " << _line_number;
+				_handleError(ss.str());
 			}
 			location.root = tokens[1];
 		}
 		else if (directive == "cgi_extension") {
 			if (tokens.size() != 2) {
-				_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
+				std::ostringstream ss;
+				ss << ERR_CONF_WRNG_SYNTAX << directive << " on the line number " << _line_number;
+				_handleError(ss.str());
 			location.cgi_extension = tokens[1];
 		}
 		else if (directive == "cgi_path") {
 			if (tokens.size() != 2) {
-				_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
+				std::ostringstream ss;
+				ss << ERR_CONF_WRNG_SYNTAX << directive << " on the line number " << _line_number;
+				_handleError(ss.str());
 			}
 			location.cgi_path = tokens[1];
 		}
 		else if (directive == "return_url") {
 			if (tokens.size() != 2) {
-				_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
+				std::ostringstream ss;
+				ss << ERR_CONF_WRNG_SYNTAX << directive << " on the line number "  << _line_number;
+				_handleError(ss.str());
 			}
 			location.return_url = tokens[1];
 		}
 		else if (directive == "autoindex") {
 			if (tokens.size() != 2) {
-				_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
+				std::ostringstream ss;
+				ss << ERR_CONF_WRNG_SYNTAX << directive << " on the line number " << _line_number;
+				_handleError(ss.str());
 			}
 			location.autoindex = _convertOnOff(tokens[1]);
 		}
 		else if (directive == "methods") {
 			if (tokens.size() < 2) {
-				_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
+				std::ostringstream ss;
+				ss << ERR_CONF_WRNG_SYNTAX << directive << " on the line number " << _line_number;
+				_handleError(ss.str());
 			}
 			for (size_t i = 1; i < tokens.size(); ++i){
 				location.methods.push_back(tokens[i]);
@@ -241,7 +253,9 @@ void ConfigParser::_parseLocationBlock(LocationConfig & location, ServerConfig &
 
 		}
 		else {
-				_handleError(ERR_CONF_UNKN_DIRECTIVE + directive + " in 'location' on the line number " + SSTR(_line_number));
+				std::ostringstream ss;
+				ss << ERR_CONF_UNKN_DIRECTIVE << directive << " in 'location' on the line number " << _line_number;
+				_handleError(ss.str());
 		}
 
 		}
@@ -334,9 +348,31 @@ void ConfigParser::printConfig() {
 	for (size_t i = 0; i < _servers.size(); ++i) {
 		std::cout << "Server number " << i << ":" << std::endl;
 		_servers[i].print_server_config();
-	}
-
+		if (!_servers[i].locations.empty()){
+			for (size_t j = 0; j <_servers[i].locations.size(); ++j){
+				std::ostringstream ss;
+				ss << "===================== LOCATION " << j << " =======================\n";
+				ss << "Path: " << _servers[i].locations[j].path.c_str() << "\n";
+				ss << "Methods: ";
+				for (size_t k = 0; k < _servers[i].locations[j].methods.size(); ++k) {
+					ss << " " << _servers[i].locations[j].methods[k];
+				}
+				ss << "\n";
+				ss << "Root Directory: " << _servers[i].locations[j].root << "\n";
+				ss << "Index Filename: " << _servers[i].locations[j].index << '\n';
+				ss << "Autoindex: " << _servers[i].locations[j].autoindex << "\n";
+				ss << "CGI extension: " << _servers[i].locations[j].cgi_extension << "\n";
+				ss << "CGI path: " << _servers[i].locations[j].cgi_path << "\n";
+				ss << "Upload dir: " << _servers[i].locations[j].upload_dir << "\n";
+				ss << "Return URL: " << _servers[i].locations[j].return_url << std::endl;
+				std::cout << ss.str();
+				ss.flush();
+				}
+			}
+		}
 }
+
+
 
 std::vector<ServerConfig> ConfigParser::getConfig() {
 	return _servers;

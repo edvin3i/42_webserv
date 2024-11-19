@@ -17,7 +17,7 @@ class LocationConfig;
 class ConfigParser {
 
 public:
-	ConfigParser(std::string &conf_filename, Logger & logger);
+	ConfigParser(Logger & logger, std::string & conf_filename);
 	~ConfigParser();
 	void parse();
 	std::vector<ServerConfig> getConfig();
@@ -26,15 +26,15 @@ public:
 
 
 private:
+	Logger &_logger;
 	std::vector<ServerConfig > _servers;
 	std::string _config_path;
 	std::ifstream _config_file;
 	std::string _current_line;
 	size_t _line_number;
-	Logger &_logger;
 
 	void _parseServerBlock(ServerConfig & server);
-	void _parseLocationBlock(LocationConfig & location, ServerConfig & server);
+	void _parseLocationBlock(LocationConfig &location);
 	void _trim(std::string & rawString);
 	bool _startsWith(const std::string & str, const std::string & prefix);
 	std::vector<std::string> _tokenize(const std::string &rawString);

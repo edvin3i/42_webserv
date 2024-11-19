@@ -25,17 +25,19 @@ void ServerConfig::_init() {
 }
 
 void ServerConfig::print_server_config() {
-	std::cout << "===================== SERVER =======================\n" << std::endl;
-	std::cout << "Hostname: " << host << std::endl;
-	std::cout << "Port: " << port << std::endl;
-	std::cout << "Root Directory: " << root << std::endl;
-	std::cout << "Index Filename " << index << std::endl;
-	std::cout << "Clent Max Body size: " << client_max_body_size << " bytes" << std::endl;
-	std::cout << "Error pages:" << std::endl;
+	std::ostringstream ss;
+	ss << "===================== SERVER =======================\n";
+	ss << "Hostname: " << host << "\n";
+	ss << "Port: " << port << "\n";
+	ss << "Root Directory: " << root << "\n";
+	ss << "Index Filename " << index << "\n";
+	ss << "Clent Max Body size: " << client_max_body_size << " bytes" << "\n";
+	ss << "Error pages: " << "\n";
 	for (std::map<int, std::string>::const_iterator it = error_pages.begin(); it != error_pages.end(); ++it) {
-      std::cout << it->first << " = " << it->second << "; " << std::endl;
-
+      ss << it->first << " = " << it->second << "; " << "\n";
 	}
-	std::cout << "====================================================\n" << std::endl;
+	ss << "====================================================\n";
+	std::cout << ss;
+	ss.flush();
 
 }

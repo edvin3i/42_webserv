@@ -24,12 +24,14 @@ std::string Logger::_getCurrentDateTimeString() {
 	localTime = localtime(& currentTime);
 
 	std::ostringstream ss;
-	ss << "[" << (localTime->tm_year + 1900) << "." \
-		<< (localTime->tm_mon + 1) \
-		<< "." << localTime->tm_mday \
-		<< "]_[" << localTime->tm_hour << ":" \
+	ss << "["
+		<< (localTime->tm_year + 1900) << "." \
+		<< (localTime->tm_mon + 1) << "." \
+		<< localTime->tm_mday << "]_[" \
+		<< localTime->tm_hour << ":" \
 		<< localTime->tm_min << ":" \
-		<< localTime->tm_sec << "]";
+		<< localTime->tm_sec \
+		<< "]";
 
 	return ss.str();
 }

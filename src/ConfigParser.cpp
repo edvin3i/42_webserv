@@ -62,14 +62,18 @@ void ConfigParser::parse() {
 
 			if (brace_pos == std::string::npos) {
 				if (!std::getline(_config_file, _current_line)) {
-					_handleError(ERR_CONF_BRACE_OPN + std::string("'server' on the line number ") + SSTR(_line_number));
+					std::ostringstream ss;
+					ss << ERR_CONF_BRACE_OPN << "'server' on the line number " << _line_number;
+					_handleError(ss.str());
 				}
 			}
 			_parseServerBlock(server);
 			_servers.push_back(server);
 		}
 		else {
-			_handleError( ERR_CONF_UNKN_DIRECTIVE_OR_BLOCK + SSTR(_line_number));
+			std::ostringstream ss;
+			ss << ERR_CONF_UNKN_DIRECTIVE_OR_BLOCK << _line_number;
+			_handleError(ss.str());
 		}
 	}
 	_config_file.close();
@@ -94,7 +98,9 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 
 			std::vector<std::string > tokens = _tokenize(_current_line);
 			if (tokens.size() < 2) {
-				_handleError(ERR_CONF_WRNG_SYNTAX + std::string("location  on the line number ") + SSTR(_line_number));
+				std::ostringstream ss;
+				ss << ERR_CONF_WRNG_SYNTAX << "location  on the line number " << _line_number;
+				_handleError(ss.str());
 			}
 
 			LocationConfig location;
@@ -102,12 +108,16 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 
 			if (brace_pos == std::string::npos) {
 				if (!std::getline(_config_file, _current_line)) {
-					_handleError(ERR_CONF_BRACE_OPN + std::string("'location' on the line number ") + SSTR(_line_number));
+					std::ostringstream ss;
+					ss << ERR_CONF_BRACE_OPN << "'location' on the line number " << _line_number;
+					_handleError(ss.str());
 				}
 				_line_number++;
 				_trim(_current_line);
 				if (_current_line != "{") {
-					_handleError(ERR_CONF_BRACE_OPN + std::string("'server' on the line number ") + SSTR(_line_number));
+					std::ostringstream ss;
+					ss << ERR_CONF_BRACE_OPN << "'server' on the line number " << _line_number;
+					_handleError(ss.str());
 				}
 			}
 
@@ -121,7 +131,9 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 			std::string directive = tokens[0];
 			if (directive == "listen") {
 				if (tokens.size() != 2) {
-					_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
+					std::ostringstream ss;
+					ss << ERR_CONF_WRNG_SYNTAX << directive << " on the line number " << _line_number;
+					_handleError(ss.str());
 				}
 				std::string listen_value = tokens[1];
 				size_t colon_pos = listen_value.find(':');
@@ -133,7 +145,9 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 					server.port = atoi(listen_value.c_str());
 				}
 				if (server.port < 1024 || server.port > 65535) {
-					_handleError(ERR_CONF_WRNG_PORT + SSTR(_line_number));
+					std::ostringstream ss;
+					ss << ERR_CONF_WRNG_PORT << _line_number;
+					_handleError(ss.str());
 				}
 			}
 			else if (directive == "server_name") {
@@ -143,28 +157,38 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 			}
 			else if (directive == "root") {
 				if (tokens.size() != 2) {
-					_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
+					std::ostringstream ss;
+					ss << ERR_CONF_WRNG_SYNTAX << directive << " on the line number " << _line_number;
+					_handleError(ss.str());
 				}
 				server.root = tokens[1];
 			}
 			else if (directive == "index") {
 				if (tokens.size() != 2) {
-					_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
+					std::ostringstream ss;
+					ss << ERR_CONF_WRNG_SYNTAX << directive << " on the line number " << _line_number;
+					_handleError(ss.str());
 				}
 				server.index = tokens[1];
 			}
 			else if (directive == "client_max_body_size") {
 				if (tokens.size() != 2) {
-					_handleError(ERR_CONF_WRNG_SYNTAX + directive + " on the line number " + SSTR(_line_number));
+					std::ostringstream ss;
+					ss << ERR_CONF_WRNG_SYNTAX << directive << " on the line number " << _line_number;
+					_handleError(ss.str());
 				}
 				server.client_max_body_size = _convertDataSize(tokens[1]);
 			}
 			else {
-				_handleError(ERR_CONF_UNKN_DIRECTIVE + directive + " on the line number " + SSTR(_line_number));
+				std::ostringstream ss;
+				ss << ERR_CONF_UNKN_DIRECTIVE << directive << " on the line number " << _line_number;
+				_handleError(ss.str());
 			}
 		}
 	}
-	_handleError(ERR_CONF_BRACE_OPN + std::string("in the 'server' block but file is ended"));
+	std::ostringstream ss;
+	ss << ERR_CONF_BRACE_OPN << "in the 'server' block but file is ended";
+	_handleError(ss.str() );
 }
 
 void ConfigParser::_parseLocationBlock(LocationConfig &location) {

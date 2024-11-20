@@ -11,6 +11,7 @@ MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & co
 
 	_servers.reserve(_configs.size());
 
+	// Creating new TcpServer instances in the for loop
 	for (size_t i = 0; i < _configs.size(); ++i) {
 		_servers.push_back(
 				new TcpServer(
@@ -24,7 +25,18 @@ MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & co
 		ss << "Created server number: " << i;
 		_logger.writeToLog(ss.str());
 
-		_servers.back()->startListen(); // DOES NOT WORK. Need to use poll()
+		// Creating new pollfd element and setup it
+		pollfd server_fd;
+		server_fd.fd = _servers.back()->getSrvSocket();
+		server_fd.events = POLLIN;
+		server_fd.revents = 0;
+
+		// Adding the new element to list of pollfds
+		_fds.push_back(server_fd);
+
+
+
+		//_servers.back()->startListen(); // DOES NOT WORK. Need to use poll()
 	}
 }
 

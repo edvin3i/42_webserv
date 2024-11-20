@@ -24,6 +24,8 @@ public:
 	TcpServer(Logger & logger, const std::string & ip_address, int port);
 	TcpServer(const TcpServer & other);
 	~TcpServer();
+	int getSrvSocket() const;
+
 	void startListen();
 	void start();
 

@@ -154,3 +154,7 @@ void TcpServer::start() {
 	}
 
 }
+
+int TcpServer::getSrvSocket() const {
+	return _srv_socket;
+}

@@ -8,11 +8,6 @@
 #include <sstream>
 #include <ctime>
 
-#define SSTR( x ) static_cast< std::ostringstream & >( \
-        ( std::ostringstream() << std::dec << x ) ).str()
-
-
-
 class Logger {
 public:
 	Logger(const std::string & logfile_name);

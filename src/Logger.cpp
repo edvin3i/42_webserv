@@ -19,16 +19,19 @@ Logger::Logger(): _logFileName("webserv_log_" + _getCurrentDateTimeString() + ".
 std::string Logger::_getCurrentDateTimeString() {
 	time_t currentTime;
 	struct tm *localTime;
-	std::string dateTimeString;
 
 	time(& currentTime);
 	localTime = localtime(& currentTime);
 
-	dateTimeString = "[" + SSTR(localTime->tm_year + 1900) + "." + SSTR(localTime->tm_mon + 1) \
- 			+ "." + SSTR(localTime->tm_mday) + "]_[" + SSTR(localTime->tm_hour) + ":" \
- 			+ SSTR(localTime->tm_min) + ":" + SSTR(localTime->tm_sec) + "]";
+	std::ostringstream ss;
+	ss << "[" << (localTime->tm_year + 1900) << "." \
+		<< (localTime->tm_mon + 1) \
+		<< "." << localTime->tm_mday \
+		<< "]_[" << localTime->tm_hour << ":" \
+		<< localTime->tm_min << ":" \
+		<< localTime->tm_sec << "]";
 
-	return dateTimeString;
+	return ss.str();
 }
 
 void Logger::printCurrentDateTime() {
@@ -39,7 +42,7 @@ Logger::~Logger() {
 	_logFile.close();
 }
 
-void Logger::writeToLog(const std::string &message) {
+void Logger::writeToLog(const std::string & message) {
 	_logFile << _getCurrentDateTimeString() << ": " + message << std::endl;
 	if (_logFile.fail())
 		std::cout << "LOG out stream error!" << std::endl;

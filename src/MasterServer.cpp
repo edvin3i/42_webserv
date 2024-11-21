@@ -80,8 +80,11 @@ void MasterServer::run() {
 				}
 			}
 			else if (_clientsMap.find(_fds[i].fd) != _clientsMap.end()) {
-				if (_fds[i].revents & POLLIN) {
-					_clientsMap[_fds[i].fd]->readData();
+				ClientConnection *client = _clientsMap[_fds[i].fd];
+				short revents = _fds[i].revents;
+				if (revents & POLLIN) {
+					client->setState(READING);
+					client->readData();
 				}
 				if (_fds[i].revents & POLLOUT) {
 					_clientsMap[_fds[i].fd]->buildResponse();

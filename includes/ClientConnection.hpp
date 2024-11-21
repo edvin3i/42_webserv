@@ -9,12 +9,15 @@
 #include "Logger.hpp"
 #include "ServerConfig.hpp"
 
+const int BUFFER_SIZE = 8192;
+
+
 class Logger;
 
 enum ConnectionState {
 	READING,
 	WRITING,
-	CLOSED
+	CLOSING
 };
 
 class ClientConnection {
@@ -24,6 +27,7 @@ public:
 	void readData();
 	void buildResponse();
 	void sendResponse();
+	void setState(ConnectionState state);
 
 
 

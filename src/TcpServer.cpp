@@ -1,9 +1,6 @@
 #include "../includes/TcpServer.hpp"
 
 
-//const int BUFFER_SIZE = 8192;
-
-
 TcpServer::TcpServer(Logger & logger, const ServerConfig & config)
 				: _logger(logger),
 				  _config(config),

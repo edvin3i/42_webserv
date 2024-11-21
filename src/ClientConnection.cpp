@@ -4,7 +4,8 @@ ClientConnection::ClientConnection(Logger & logger, const ServerConfig & config)
 									:	_logger(logger),
 										_serverConfig(config),
 										//_currentLocationConfig(),
-										_clientSocketFD()
+										_clientSocketFD(),
+										_connectionState(READING)
 									{
 
 }
@@ -39,5 +40,18 @@ void ClientConnection::sendResponse() {
 }
 
 void ClientConnection::readData() {
+	char buffer[BUFFER_SIZE] = {0};
+	int bytesReceived = read(_clientSocketFD, buffer, BUFFER_SIZE);
 
+	if (bytesReceived > 0) {
+		_readBuffer.insert(_readBuffer.end(), buffer, buffer + bytesReceived);
+		// maybe need to write to log counter of bytes here
+	}
+	else {
+		_connectionState = CLOSING;
+	}
+}
+
+void ClientConnection::setState(ConnectionState state) {
+	_connectionState = state;
 }

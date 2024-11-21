@@ -22,7 +22,7 @@ enum ConnectionState {
 
 class ClientConnection {
 public:
-	ClientConnection(Logger & logger, const ServerConfig & config);
+	ClientConnection(Logger & logger, int socketFD, const ServerConfig & config);
 	~ClientConnection();
 
 	ConnectionState getState() const;
@@ -37,12 +37,12 @@ public:
 
 private:
 	Logger &_logger;
+	int _clientSocketFD;
 	const ServerConfig &_serverConfig;
 	ConnectionState _connectionState;
-//	const LocationConfig *_currentLocationConfig;
-	int _clientSocketFD;
-	int _newServerSocket;
-	std::string _responseMessage;
+	std::string _responseMessage; // needs to replace to _responceBuffer
+	//	int _newServerSocket;
+	//	const LocationConfig *_currentLocationConfig;
 
 
 	std::vector<char> _readBuffer;

@@ -62,8 +62,11 @@ void MasterServer::run() {
 
 		for (size_t i = 0; i < _fds.size(); ++i) {
 			if (_serversMap.find(_fds[i].fd) != _serversMap.end()) {
-				if (_fds[i].revents & POLLIN) {
-					int new_socket = _serversMap[_fds[i].fd]->acceptConnection();
+				TcpServer *server = _serversMap[_fds[i].fd];
+				short revents = _fds[i].revents;
+
+				if (revents & POLLIN) {
+					int new_socket = server->acceptConnection();
 					if (new_socket >= 0) {
 						fcntl(new_socket, F_SETFL, O_NONBLOCK);
 
@@ -73,7 +76,11 @@ void MasterServer::run() {
 						client_fd.revents = 0;
 
 						_fds.push_back(client_fd);
-						_clientsMap[new_socket] = new ClientConnection(_logger, _serversMap[_fds[i].fd]->getConfig());
+						_clientsMap[new_socket] = new ClientConnection(
+																_logger,
+																client_fd.fd,
+																_serversMap[_fds[i].fd]->getConfig()
+																);
 
 
 					}
@@ -82,6 +89,7 @@ void MasterServer::run() {
 			else if (_clientsMap.find(_fds[i].fd) != _clientsMap.end()) {
 				ClientConnection *client = _clientsMap[_fds[i].fd];
 				short revents = _fds[i].revents;
+
 				switch (client->getState()) {
 					case READING:
 						if (revents & POLLIN) {

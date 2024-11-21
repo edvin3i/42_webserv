@@ -1,10 +1,9 @@
 #include "../includes/ClientConnection.hpp"
 
-ClientConnection::ClientConnection(Logger & logger, const ServerConfig & config)
+ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerConfig & config)
 									:	_logger(logger),
+										_clientSocketFD(socketFD),
 										_serverConfig(config),
-										//_currentLocationConfig(),
-										_clientSocketFD(),
 										_connectionState(READING)
 									{
 
@@ -27,7 +26,7 @@ void ClientConnection::buildResponse() {
 
 void ClientConnection::sendResponse() {
 	unsigned long bytesSent;
-	bytesSent = write(_newServerSocket,
+	bytesSent = write(_clientSocketFD,
 					  _responseMessage.c_str(),
 					  _responseMessage.size());
 
@@ -37,6 +36,8 @@ void ClientConnection::sendResponse() {
 	else {
 		_logger.writeToLog("Error sending response to client");
 	}
+
+	_responseMessage.clear();
 }
 
 void ClientConnection::readData() {

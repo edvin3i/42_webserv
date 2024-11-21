@@ -32,20 +32,19 @@ public:
 
 private:
 	Logger &_logger;
+
 	const ServerConfig &_config;
-	std::string _srv_ip_address;
-	int	_srv_port;
-	int _srv_socket;
-	int _srv_new_socket;
+	std::string _serverIPAddress;
+	int	_serverPort;
+	int _serverSocket;
+
 //		long _srv_incommingMessage;
-	struct sockaddr_in _srv_socketAddress;
-	unsigned int _srv_socketAddress_len;
-	std::string _srv_serverMessage;
+	struct sockaddr_in _serverSocketAddress;
+	unsigned int _serverSocketAddressLen;
 
 	int _startServer();
 	void _closeServer();
-	std::string _buildResponce();
-	void _sendResponce();
+
 
 	void _handleError(const std::string & err_message);
 

@@ -1,0 +1,30 @@
+Web Server START
+[2024.11.21]_[13:37:53]: Program startServer!
+[2024.11.21]_[13:37:53]: MasterServer constructor called!
+Size of configs: 2
+
+[2024.11.21]_[13:37:53]: Cannot create socket to address!
+Web Server START
+[2024.11.21]_[13:37:56]: Program startServer!
+[2024.11.21]_[13:37:56]: MasterServer constructor called!
+Size of configs: 2
+
+[2024.11.21]_[13:37:56]: Cannot create socket to address!
+Web Server START
+[2024.11.21]_[13:38:4]: Program startServer!
+[2024.11.21]_[13:38:4]: MasterServer constructor called!
+Size of configs: 2
+
+[2024.11.21]_[13:38:4]: Cannot create socket to address!
+Web Server START
+[2024.11.21]_[13:43:47]: Program startServer!
+[2024.11.21]_[13:43:47]: MasterServer constructor called!
+Size of configs: 2
+
+[2024.11.21]_[13:43:47]: Cannot create socket to address!
+Web Server START
+[2024.11.21]_[13:44:5]: Program startServer!
+[2024.11.21]_[13:44:5]: MasterServer constructor called!
+Size of configs: 2
+
+[2024.11.21]_[13:44:5]: Cannot create socket to address!

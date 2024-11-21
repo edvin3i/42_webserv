@@ -55,3 +55,11 @@ void ClientConnection::readData() {
 void ClientConnection::setState(ConnectionState state) {
 	_connectionState = state;
 }
+
+ConnectionState ClientConnection::getState() const {
+	return _connectionState;
+}
+
+void ClientConnection::closeConnection() {
+// just empty yet
+}

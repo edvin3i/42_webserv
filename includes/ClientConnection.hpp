@@ -24,10 +24,14 @@ class ClientConnection {
 public:
 	ClientConnection(Logger & logger, const ServerConfig & config);
 	~ClientConnection();
+
+	ConnectionState getState() const;
+	void setState(ConnectionState state);
+
 	void readData();
 	void buildResponse();
 	void sendResponse();
-	void setState(ConnectionState state);
+	void closeConnection();
 
 
 

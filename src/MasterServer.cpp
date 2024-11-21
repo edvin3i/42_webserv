@@ -82,21 +82,36 @@ void MasterServer::run() {
 			else if (_clientsMap.find(_fds[i].fd) != _clientsMap.end()) {
 				ClientConnection *client = _clientsMap[_fds[i].fd];
 				short revents = _fds[i].revents;
-				if (revents & POLLIN) {
-					client->setState(READING);
-					client->readData();
+				switch (client->getState()) {
+					case READING:
+						if (revents & POLLIN) {
+							client->readData();
+							client->setState(WRITING);
+						}
+						if (revents & POLLERR) {
+							client->setState(CLOSING);
+						}
+						break;
+					case WRITING:
+						if (revents & POLLOUT) {
+							client->buildResponse();
+							client->sendResponse();
+							client->setState(CLOSING);
+						}
+						if (revents & POLLERR) {
+							client->setState(CLOSING);
+						}
+						break;
+					case CLOSING:
+//						client->closeConnection();
+						close(_fds[i].fd);
+						delete client;
+						_clientsMap.erase(_fds[i].fd);
+						_fds.erase(_fds.begin() + i);
+						--i;
+						break;
 				}
-				if (_fds[i].revents & POLLOUT) {
-					_clientsMap[_fds[i].fd]->buildResponse();
-					_clientsMap[_fds[i].fd]->sendResponse();
-				}
-				if (_fds[i].revents & (POLLERR | POLLHUP)) {
-					close(_fds[i].fd);
-					delete _clientsMap[_fds[i].fd];
-					_clientsMap.erase(_fds[i].fd);
-					_fds.erase(_fds.begin() + i);
-					--i;
-				}
+
 			}
 		}
 

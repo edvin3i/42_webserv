@@ -53,7 +53,7 @@ MasterServer::~MasterServer() {
 }
 
 void MasterServer::run() {
-	while(_servers.size()) {
+	while(true) {
 		int polling = poll(_fds.data(), _fds.size(), TIMEOUT);
 		if (polling < 0) {
 			_logger.writeToLog("ERROR: poll() return -1!");
@@ -119,11 +119,7 @@ void MasterServer::run() {
 						--i;
 						break;
 				}
-
 			}
 		}
-
-
 	}
-
 }

@@ -19,12 +19,12 @@ int main(int argc, char **argv) {
 		std::cout << "USAGE: ./webserv <config.cfg>" << std::endl;
 		return 1;
 	}
+
 	std::string config_filename = argv[1];
 	ConfigParser conf_parser(logger, config_filename);
 	conf_parser.parse();
-	conf_parser.printConfig();
+	// conf_parser.printConfig();
 
-	std::vector<ServerConfig> servers_configs = conf_parser.getConfig();
 //	servers_configs[0].print_server_config();
 //	servers_configs[1].print_server_config();
 //	std::cout << servers_configs[1].locations[0].autoindex << std::endl;
@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
 
 	std::vector<ServerConfig> configs = conf_parser.getConfig();
 	MasterServer masterServer(logger, configs);
-
+	masterServer.run();
 
 	return (0);
 }

@@ -7,9 +7,8 @@ TcpServer::TcpServer(Logger & logger, const ServerConfig & config)
 				  _serverIPAddress(_config.host),
 				  _serverPort(config.port),
 				  _serverSocket(),
-				  _serverSocketAddress()
-//					_srv_incommingMessage(),
-//					_srv_socketAddress_len(sizeof(_serverSocketAddress))
+				  _serverSocketAddress(),
+				  _serverSocketAddressLen(sizeof(_serverSocketAddress))
 					{
 
 						_serverSocketAddress.sin_family = AF_INET;
@@ -34,6 +33,12 @@ int TcpServer::_startServer() {
 		_handleError("Cannot create socket!");
 		return 1;
 	}
+	std::ostringstream ss;
+	ss << "Server Socket: " << _serverSocket << "\n";
+	ss << "Server Socket Addr: " << (sockaddr *)&_serverSocketAddress << "\n";
+	ss << "Server Socket Addr Len: " << _serverSocketAddressLen << std::endl;
+
+	std::cout << ss.str();
 
 	int bnd = bind(_serverSocket, (sockaddr *)&_serverSocketAddress, _serverSocketAddressLen);
 	if (bnd < 0) {

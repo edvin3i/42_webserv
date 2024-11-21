@@ -1,13 +1,14 @@
 #include "../includes/TcpServer.hpp"
 
 
-const int BUFFER_SIZE = 8192;
+//const int BUFFER_SIZE = 8192;
 
 
-TcpServer::TcpServer(Logger & logger, const std::string & ip_address, int port)
+TcpServer::TcpServer(Logger & logger, const ServerConfig & config)
 				:	_logger(logger),
-					_srv_ip_address(ip_address),
-					_srv_port(port),
+					_config(config),
+					_srv_ip_address(_config.host),
+					_srv_port(config.port),
 					_srv_socket(),
 					_srv_new_socket(),
 					_srv_socketAddress(),
@@ -53,8 +54,13 @@ void TcpServer::_closeServer() {
 }
 
 
-void TcpServer::_acceptConnection(int & new_socket) {
-	new_socket = accept(_srv_socket, (sockaddr *)&_srv_socketAddress, &_srv_socketAddress_len);
+int TcpServer::acceptConnection() {
+	int new_socket = accept(
+					_srv_socket,
+					(sockaddr *)&_srv_socketAddress,
+					&_srv_socketAddress_len
+					);
+
 	if (new_socket < 0) {
 		std::ostringstream ss;
 		ss << "Server failed to accept incoming connection from ADDRESS: " \
@@ -63,6 +69,8 @@ void TcpServer::_acceptConnection(int & new_socket) {
 			<< ntohs(_srv_socketAddress.sin_port);
 		_handleError(ss.str());
 	}
+
+	return new_socket;
 }
 
 
@@ -105,7 +113,7 @@ void TcpServer::startListen() {
 	ss.flush();
 
 
-	int bytesReceived;
+	/*int bytesReceived;
 	while (true) {
 		_logger.writeToLog("=== Waiting new connection ===\n\n\n");
 		_acceptConnection(_srv_new_socket);
@@ -121,7 +129,7 @@ void TcpServer::startListen() {
 
 		_sendResponce();
 		close(_srv_new_socket);
-	}
+	}*/
 }
 
 
@@ -134,6 +142,7 @@ void TcpServer::_handleError(const std::string & err_message) {
 
 TcpServer::TcpServer(const TcpServer & other)
 		: _logger(other._logger),
+		  _config(other.getConfig()),
 		  _srv_ip_address(other._srv_ip_address),
 		  _srv_port(other._srv_port),
 		  _srv_socket(),
@@ -145,10 +154,10 @@ TcpServer::TcpServer(const TcpServer & other)
 }
 
 
-void TcpServer::start() {
+void TcpServer::startServer() {
 	if (_startServer() != 0) {
 		std::ostringstream ss;
-		ss << "Failed to start server with PORT: " \
+		ss << "Failed to startServer server with PORT: " \
 			<< htons(_srv_socketAddress.sin_port);
 		_logger.writeToLog(ss.str());
 	}
@@ -157,4 +166,8 @@ void TcpServer::start() {
 
 int TcpServer::getSrvSocket() const {
 	return _srv_socket;
+}
+
+const ServerConfig &TcpServer::getConfig() const {
+	return _config;
 }

@@ -10,28 +10,29 @@
 #include <sstream>
 #include <string>
 #include "Logger.hpp"
-
-void log(const std::string &message);
-void exitWithError(std::string &message);
+#include "ServerConfig.hpp"
 
 
 class Logger;
-
+class ServerConfig;
 
 
 class TcpServer {
 public:
-	TcpServer(Logger & logger, const std::string & ip_address, int port);
+	TcpServer(Logger & logger, const ServerConfig & config);
 	TcpServer(const TcpServer & other);
 	~TcpServer();
 	int getSrvSocket() const;
+	const ServerConfig &getConfig() const;
 
 	void startListen();
-	void start();
+	void startServer();
+	int acceptConnection();
 
 
 private:
 	Logger &_logger;
+	const ServerConfig &_config;
 	std::string _srv_ip_address;
 	int	_srv_port;
 	int _srv_socket;
@@ -43,7 +44,6 @@ private:
 
 	int _startServer();
 	void _closeServer();
-	void _acceptConnection(int & new_socket);
 	std::string _buildResponce();
 	void _sendResponce();
 

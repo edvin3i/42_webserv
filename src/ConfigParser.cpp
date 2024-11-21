@@ -14,6 +14,9 @@
 #define TOKEN_SERVER "server"
 #define TOKEN_LOCATION "location"
 
+#define PORT_MIN 1024
+#define PORT_MAX 65535
+
 
 ConfigParser::ConfigParser(Logger &logger, std::string &conf_filename) : _logger(logger), _config_path(conf_filename) {
 	if (_config_path.empty()) {
@@ -144,7 +147,7 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 				else {
 					server.port = atoi(listen_value.c_str());
 				}
-				if (server.port < 1024 || server.port > 65535) {
+				if (server.port < PORT_MIN || server.port > PORT_MAX) {
 					std::ostringstream ss;
 					ss << ERR_CONF_WRNG_PORT << _line_number;
 					_handleError(ss.str());

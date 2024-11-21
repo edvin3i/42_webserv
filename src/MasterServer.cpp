@@ -1,5 +1,7 @@
 #include "../includes/MasterServer.hpp"
 
+const int TIMEOUT = 32;
+
 MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & configs)
 						: _logger(logger),
 						  _configs(configs) {
@@ -9,17 +11,18 @@ MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & co
 	oss << "Size of configs: " << _configs.size() << "\n";
 	_logger.writeToLog(oss.str());
 
+	_fds.reserve(_configs.size());
 	_servers.reserve(_configs.size());
 
-	// Creating new TcpServer instances in the for loop
+	// Creating new TcpServer instances in the 'for' loop
 	for (size_t i = 0; i < _configs.size(); ++i) {
 		_servers.push_back(
 				new TcpServer(
-						logger, _configs[i].host,
-						_configs[i].port)
-						 );
+						logger,
+						_configs[i])
+						);
 
-		_servers.back()->start();
+		_servers.back()->startServer();
 
 		std::ostringstream ss;
 		ss << "Created server number: " << i;
@@ -34,9 +37,11 @@ MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & co
 		// Adding the new element to list of pollfds
 		_fds.push_back(server_fd);
 
+		// Adding new server instance to the map of servers
+		_serversMap[server_fd.fd] = _servers.back();
 
-
-		//_servers.back()->startListen(); // DOES NOT WORK. Need to use poll()
+		// Set the server to listen mode
+		_servers.back()->startListen();
 	}
 }
 
@@ -44,4 +49,39 @@ MasterServer::~MasterServer() {
 	for (size_t i = 0; i < _servers.size(); ++i) {
 		delete _servers[i];
 	}
+	_servers.clear();
+}
+
+void MasterServer::run() {
+	while(_servers.size()) {
+		int polling = poll(_fds.data(), _fds.size(), TIMEOUT);
+		if (polling < 0) {
+			_logger.writeToLog("ERROR: poll() return -1!");
+			break;
+		}
+
+		for (size_t i = 0; i < _fds.size(); ++i) {
+			if (_serversMap.find(_fds[i].fd) != _serversMap.end()) {
+				if (_fds[i].revents & POLLIN) {
+					int new_socket = _serversMap[_fds[i].fd]->acceptConnection();
+					if (new_socket >= 0) {
+						fcntl(new_socket, F_SETFL, O_NONBLOCK);
+
+						pollfd client_fd;
+						client_fd.fd = new_socket;
+						client_fd.events = POLLIN;
+						client_fd.revents = 0;
+
+						_fds.push_back(client_fd);
+						_clientsMap[new_socket] = new ClientConnection(_logger, _serversMap[_fds[i].fd]->getConfig());
+
+
+					}
+				}
+			}
+		}
+
+
+	}
+
 }

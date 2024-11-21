@@ -16,8 +16,9 @@ class Logger;
 
 class MasterServer {
 public:
-	MasterServer(Logger & logger, const std::vector<ServerConfig> &configs);
+	MasterServer(Logger & logger, const std::vector<ServerConfig> & configs);
 	~MasterServer();
+	void run();
 
 private:
 	Logger &_logger;

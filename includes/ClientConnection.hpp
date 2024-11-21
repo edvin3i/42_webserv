@@ -18,19 +18,18 @@ enum ConnectionState {
 
 class ClientConnection {
 public:
-	ClientConnection(const ServerConfig & config, Logger & logger);
+	ClientConnection(Logger & logger, const ServerConfig & config);
 	~ClientConnection();
 
 
 private:
+	Logger &_logger;
+	const ServerConfig &_serverConfig;
+	ConnectionState _connectionState;
+//	const LocationConfig *_currentLocationConfig;
 	int _clientSocketFD;
 	std::vector<char> _readBuffer;
 	std::vector<char> _responceBuffer;
-	ConnectionState _connectionState;
-	Logger &_logger;
-
-	const ServerConfig &_serverConfig;
-	const LocationConfig *_currentLocationConfig;
 
 };
 

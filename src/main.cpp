@@ -10,7 +10,7 @@
 
 int main(int argc, char **argv) {
 
-	Logger logger;
+	Logger logger("webserv.log");
 //	logger.printCurrentDateTime();
 
 	if (argc != 2) {
@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 //	std::cout << servers_configs[1].locations[0].autoindex << std::endl;
 
 
-	logger.writeToLog("Program start!");
+	logger.writeToLog("Program startServer!");
 
 	std::vector<ServerConfig> configs = conf_parser.getConfig();
 	MasterServer masterServer(logger, configs);

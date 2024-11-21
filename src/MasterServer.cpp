@@ -79,6 +79,22 @@ void MasterServer::run() {
 					}
 				}
 			}
+			else if (_clientsMap.find(_fds[i].fd) != _clientsMap.end()) {
+				if (_fds[i].revents & POLLIN) {
+					_clientsMap[_fds[i].fd]->readData();
+				}
+				if (_fds[i].revents & POLLOUT) {
+					_clientsMap[_fds[i].fd]->buildResponse();
+					_clientsMap[_fds[i].fd]->sendResponse();
+				}
+				if (_fds[i].revents & (POLLERR | POLLHUP)) {
+					close(_fds[i].fd);
+					delete _clientsMap[_fds[i].fd];
+					_clientsMap.erase(_fds[i].fd);
+					_fds.erase(_fds.begin() + i);
+					--i;
+				}
+			}
 		}
 
 

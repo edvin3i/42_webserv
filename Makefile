@@ -16,7 +16,7 @@ OBJDIR      =   .obj/
 #                            Files                                           #
 #############################################################################
 
-MFLS        =   config/ServerConfig.cpp config/LocationConfig.cpp config/ConfigParser.cpp \
+MFLS        =   config/ConfigParser.cpp config/ServerConfig.cpp config/LocationConfig.cpp \
 				server/MasterServer.cpp server/ClientConnection.cpp server/TcpServer.cpp \
 				logger/Logger.cpp \
 				main.cpp

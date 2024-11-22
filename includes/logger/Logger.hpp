@@ -29,7 +29,7 @@ public:
 	std::string getTime() const;
 	std::string getCurrentDateTime() const;
 	void printCurrentDateTime();
-	void writeToLog(LogDetail mode, const std::string & message);
+	void writeToLog(LogDetail detail, const std::string & message);
 	void closeLogFile();
 
 private:

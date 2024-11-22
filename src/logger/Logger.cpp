@@ -1,13 +1,17 @@
 #include "../../includes/logger/Logger.hpp"
 
+
 Logger::Logger(LogDetail detail, LogMode mode, const std::string & logfile_name)
 				:	_detail(detail), \
 					_mode(mode), \
 					_logFileName(logfile_name), \
-					_logFile(_logFileName.c_str(), \
-				std::ofstream::app) {
-	if (!_logFile.is_open())
-		throw std::runtime_error("ERROR: can not open the logfile!");
+					_logFile() {
+
+	if (_mode != CONSOLE) {
+		_logFile.open(_logFileName.c_str(), std::ofstream::app);
+		if (!_logFile.is_open())
+			throw std::runtime_error("ERROR: can not open the logfile!");
+	}
 }
 
 Logger::Logger()
@@ -15,13 +19,53 @@ Logger::Logger()
 					_mode(DUAL), \
 					_logFileName("webserv_log_" \
 					+ getCurrentDateTime() + ".log"),
-					_logFile(_logFileName.c_str()) {
-	if (!_logFile.is_open())
-		throw std::runtime_error("ERROR: can not open the logfile!");
+					_logFile() {
+
+	if (_mode != CONSOLE) {
+		_logFile.open(_logFileName.c_str(), std::ofstream::app);
+		if (!_logFile.is_open())
+			throw std::runtime_error("ERROR: can not open the logfile!");
+	}
 }
 
 
+Logger::~Logger() {
+	_logFile.close();
+}
 
+
+std::string Logger::getDate() const {
+	time_t currentTime;
+	struct tm *localTime;
+
+	time(& currentTime);
+	localTime = localtime(& currentTime);
+
+	std::ostringstream ss;
+	ss << "["
+		<< (localTime->tm_year + 1900) << "." \
+		<< (localTime->tm_mon + 1) << "." \
+		<< localTime->tm_mday << "]";
+	return ss.str();
+}
+
+
+std::string Logger::getTime() const {
+	time_t currentTime;
+	struct tm *localTime;
+
+	time(& currentTime);
+	localTime = localtime(& currentTime);
+
+	std::ostringstream ss;
+	ss << "[" \
+		<< localTime->tm_hour << ":" \
+		<< localTime->tm_min << ":" \
+		<< localTime->tm_sec \
+		<< "]";
+
+	return ss.str();
+}
 
 
 std::string Logger::getCurrentDateTime() const {
@@ -48,42 +92,6 @@ void Logger::printCurrentDateTime() {
 	std::cout << getCurrentDateTime() << std::endl;
 }
 
-Logger::~Logger() {
-	_logFile.close();
-}
-
-std::string Logger::getDate() const {
-	time_t currentTime;
-	struct tm *localTime;
-
-	time(& currentTime);
-	localTime = localtime(& currentTime);
-
-	std::ostringstream ss;
-	ss << "["
-		<< (localTime->tm_year + 1900) << "." \
-		<< (localTime->tm_mon + 1) << "." \
-		<< localTime->tm_mday << "]";
-	return ss.str();
-}
-
-std::string Logger::getTime() const {
-	time_t currentTime;
-	struct tm *localTime;
-
-	time(& currentTime);
-	localTime = localtime(& currentTime);
-
-	std::ostringstream ss;
-	ss << "[" \
-		<< localTime->tm_hour << ":" \
-		<< localTime->tm_min << ":" \
-		<< localTime->tm_sec \
-		<< "]";
-
-	return ss.str();
-}
-
 
 void Logger::_writeToFile(const std::string & message) {
 	_logFile << message;
@@ -94,28 +102,34 @@ void Logger::_writeToConsole(const std::string & message) {
 }
 
 
-void Logger::writeToLog(LogDetail mode, const std::string & message) {
-	_setMessagePrefix(mode);
+void Logger::writeToLog(LogDetail detail, const std::string & message) {
+	_setMessagePrefix(detail);
 
 	std::ostringstream ss;
 	ss << getCurrentDateTime() << _msgPrefix;
 
+	/*
+	 * Chose detail level for logging
+	 */
 	switch (_detail) {
 		case DEBUG:
 				ss << message << std::endl;
 				break;
 		case INFO:
-			if (mode == _detail || mode == ERROR) {
+			if (detail == _detail || detail == ERROR) {
 				_logFile << ss.str();
 				break;
 			}
 		// fall through
 		case ERROR:
-			if (mode == _detail) {
+			if (detail == _detail) {
 				_logFile << ss.str();
 			}
 	}
 
+	/*
+	 * Chose the way to write log message
+	 */
 	switch (_mode) {
 		case DUAL:
 			_writeToFile(ss.str());
@@ -131,12 +145,8 @@ void Logger::writeToLog(LogDetail mode, const std::string & message) {
 
 	if (_logFile.fail())
 		std::cout << "LOG out stream error!" << std::endl;
-//	_logFile.flush();
+	_logFile.flush();
 
-}
-
-void Logger::closeLogFile() {
-	_logFile.close();
 }
 
 
@@ -153,6 +163,10 @@ void Logger::_setMessagePrefix(LogDetail mode) {
 	}
 }
 
+
+void Logger::closeLogFile() {
+	_logFile.close();
+}
 
 //Logger::Logger(const Logger & other): _logFile(other.getLogFile()) {
 

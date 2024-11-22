@@ -56,7 +56,7 @@ void MasterServer::run() {
 	while(true) {
 		int polling = poll(_fds.data(), _fds.size(), TIMEOUT);
 		if (polling < 0) {
-			_logger.writeToLog(ERROR, "ERROR: poll() return -1!");
+			_logger.writeToLog(ERROR, "poll() return -1!");
 			break;
 		}
 
@@ -93,7 +93,6 @@ void MasterServer::run() {
 				switch (client->getState()) {
 					case READING:
 						if (revents & POLLIN) {
-							std::cout << "Case READING" << std::endl;
 							client->readData();
 							_fds[i].events = POLLOUT;
 							client->setState(WRITING);
@@ -104,7 +103,6 @@ void MasterServer::run() {
 						break;
 					case WRITING:
 						if (revents & POLLOUT) {
-							std::cout << "Case WRITING" << std::endl;
 							client->buildResponse();
 							client->sendResponse();
 							client->setState(CLOSING);
@@ -114,7 +112,6 @@ void MasterServer::run() {
 						}
 						break;
 					case CLOSING:
-						std::cout << "Case CLOSING" << std::endl;
 //						client->closeConnection();
 						close(_fds[i].fd);
 						delete client;

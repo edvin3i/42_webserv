@@ -90,12 +90,9 @@ void Logger::writeToLog(LogMode mode, const std::string & message) {
 
 	switch (_mode) {
 		case DEBUG:
-			if (mode == _mode || mode == ERROR || mode == INFO) {
 				ss << message << std::endl;
 				_logFile << ss.str();
 				break;
-			}
-		// fall through
 		case INFO:
 			if (mode == _mode || mode == ERROR) {
 				ss << message << std::endl;

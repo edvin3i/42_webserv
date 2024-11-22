@@ -9,7 +9,7 @@ MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & co
 	std::ostringstream oss;
 	oss << "MasterServer constructor called!\n";
 	oss << "Size of configs: " << _configs.size() << "\n";
-	_logger.writeToLog(oss.str());
+	_logger.writeToLog(DEBUG, oss.str());
 
 	_fds.reserve(_configs.size());
 	_servers.reserve(_configs.size());
@@ -26,7 +26,7 @@ MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & co
 
 		std::ostringstream ss;
 		ss << "Created server number: " << i;
-		_logger.writeToLog(ss.str());
+		_logger.writeToLog(DEBUG, ss.str());
 
 		// Creating new pollfd element and setup it
 		pollfd server_fd;
@@ -56,7 +56,7 @@ void MasterServer::run() {
 	while(true) {
 		int polling = poll(_fds.data(), _fds.size(), TIMEOUT);
 		if (polling < 0) {
-			_logger.writeToLog("ERROR: poll() return -1!");
+			_logger.writeToLog(ERROR, "ERROR: poll() return -1!");
 			break;
 		}
 

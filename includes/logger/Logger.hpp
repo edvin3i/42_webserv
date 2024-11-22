@@ -8,21 +8,34 @@
 #include <sstream>
 #include <ctime>
 
+enum LogMode {
+	ERROR,
+	INFO,
+	DEBUG
+};
+
 class Logger {
 public:
-	Logger(const std::string & logfile_name);
+	Logger(LogMode mode, const std::string & logfile_name);
 	Logger();
 	//Logger(const Logger & other);
 	~Logger();
+	std::string getDate() const;
+	std::string getTime() const;
+	std::string getCurrentDateTime() const;
 	void printCurrentDateTime();
-	void writeToLog(const std::string & message);
+	void writeToLog(LogMode mode, const std::string & message);
 	//const std::ofstream & getLogFile() const;
 	void closeLogFile();
 
 private:
+	LogMode _mode;
 	std::string _logFileName;
 	std::ofstream _logFile;
-	std::string _getCurrentDateTimeString();
+	std::string _msgPrefix;
+
+	void _setMessagePrefix(LogMode mode);
+
 
 
 

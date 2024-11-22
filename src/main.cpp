@@ -10,11 +10,11 @@
 
 int main(int argc, char **argv) {
 
-	Logger logger("webserv.log");
+	Logger logger(DEBUG,"webserv.log");
 //	logger.printCurrentDateTime();
 
 	if (argc != 2) {
-		logger.writeToLog(ERR_NUM_ARGS);
+		logger.writeToLog(ERROR, ERR_NUM_ARGS);
 		std::cout << ERR_NUM_ARGS << std::endl;
 		std::cout << "USAGE: ./webserv <config.cfg>" << std::endl;
 		return 1;
@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 //	std::cout << servers_configs[1].locations[0].autoindex << std::endl;
 
 
-	logger.writeToLog("Program startServer!");
+	logger.writeToLog(INFO, "Program Start Server!");
 
 	std::vector<ServerConfig> configs = conf_parser.getConfig();
 	MasterServer masterServer(logger, configs);

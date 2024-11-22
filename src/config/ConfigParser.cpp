@@ -344,7 +344,7 @@ size_t ConfigParser::_convertDataSize(const std::string & dataSize) {
 				break;
 			default:
 				std::string err_msg = ERR_CONF_WRNG_DSIZE + dataSize;
-				_logger.writeToLog(err_msg);
+				_logger.writeToLog(ERROR, err_msg);
 				throw std::runtime_error(err_msg);
 		}
 	}
@@ -363,7 +363,7 @@ bool ConfigParser::_convertOnOff(const std::string & switchState) {
 		}
 	}
 	std::string err_msg = ERR_CONF_WRNG_SWSTATE + switchState;
-	_logger.writeToLog(err_msg);
+	_logger.writeToLog(ERROR, err_msg);
 	throw std::runtime_error(err_msg);
 }
 
@@ -407,7 +407,7 @@ std::vector<ServerConfig> ConfigParser::getConfig() {
 
 void ConfigParser::_handleError(const std::string & err_message) {
 	std::string err_msg = err_message;
-	_logger.writeToLog(err_msg);
+	_logger.writeToLog(ERROR, err_msg);
 	throw std::runtime_error(err_msg);
 }
 

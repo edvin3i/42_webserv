@@ -87,7 +87,7 @@ void TcpServer::startListen() {
  		<< inet_ntoa(_serverSocketAddress.sin_addr) \
  		<< " PORT: " << ntohs(_serverSocketAddress.sin_port) \
  		<< " ***\n\n";
-	_logger.writeToLog(ss.str());
+	_logger.writeToLog(INFO, ss.str());
 	ss.flush();
 
 
@@ -113,7 +113,7 @@ void TcpServer::startListen() {
 
 void TcpServer::_handleError(const std::string & err_message) {
 	std::string err_msg = err_message;
-	_logger.writeToLog(err_msg);
+	_logger.writeToLog(ERROR, err_msg);
 	throw std::runtime_error(err_msg);
 }
 
@@ -135,7 +135,7 @@ void TcpServer::startServer() {
 		std::ostringstream ss;
 		ss << "Failed to startServer server with PORT: " \
 			<< htons(_serverSocketAddress.sin_port);
-		_logger.writeToLog(ss.str());
+		_logger.writeToLog(ERROR, ss.str());
 	}
 
 }

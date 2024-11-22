@@ -21,7 +21,7 @@ void ClientConnection::buildResponse() {
 		<< "\n\n" \
 		<< htmlFile;
 	_responseMessage = ss.str();
-	_logger.writeToLog("Response ready!");
+	_logger.writeToLog(DEBUG, "Response ready!");
 	//ss.flush();
 }
 
@@ -32,10 +32,10 @@ void ClientConnection::sendResponse() {
 					  _responseMessage.size());
 
 	if (bytesSent == _responseMessage.size()) {
-		_logger.writeToLog("--- Server response sent to client ---\n\n");
+		_logger.writeToLog(DEBUG, "--- Server response sent to client ---\n\n");
 	}
 	else {
-		_logger.writeToLog("Error sending response to client");
+		_logger.writeToLog(DEBUG, "Error sending response to client");
 	}
 
 	//_responseMessage.clear();
@@ -55,8 +55,8 @@ void ClientConnection::readData() {
 
 		std::ostringstream ss;
 		ss << "Read request from client. Len = " << bytesReceived << "\n";
-		std::cout << ss.str();
-		_logger.writeToLog(ss.str());
+		//std::cout << ss.str();
+		_logger.writeToLog(DEBUG, ss.str());
 	}
 	else {
 		_connectionState = CLOSING;

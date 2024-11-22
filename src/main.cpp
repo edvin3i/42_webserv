@@ -10,7 +10,7 @@
 
 int main(int argc, char **argv) {
 
-	Logger logger(INFO,"webserv.log");
+	Logger logger(DEBUG, CONSOLE, "webserv.log");
 //	logger.printCurrentDateTime();
 
 	if (argc != 2) {

@@ -1,7 +1,8 @@
 #include "../../includes/logger/Logger.hpp"
 
-Logger::Logger(LogMode mode, const std::string & logfile_name)
-				:	_mode(mode), \
+Logger::Logger(LogDetail detail, LogMode mode, const std::string & logfile_name)
+				:	_detail(detail), \
+					_mode(mode), \
 					_logFileName(logfile_name), \
 					_logFile(_logFileName.c_str(), \
 				std::ofstream::app) {
@@ -10,7 +11,8 @@ Logger::Logger(LogMode mode, const std::string & logfile_name)
 }
 
 Logger::Logger()
-				:	_mode(ERROR), \
+				:	_detail(ERROR), \
+					_mode(DUAL), \
 					_logFileName("webserv_log_" \
 					+ getCurrentDateTime() + ".log"),
 					_logFile(_logFileName.c_str()) {
@@ -82,35 +84,54 @@ std::string Logger::getTime() const {
 	return ss.str();
 }
 
-void Logger::writeToLog(LogMode mode, const std::string & message) {
+
+void Logger::_writeToFile(const std::string & message) {
+	_logFile << message;
+}
+
+void Logger::_writeToConsole(const std::string & message) {
+	std::cout << message;
+}
+
+
+void Logger::writeToLog(LogDetail mode, const std::string & message) {
 	_setMessagePrefix(mode);
 
 	std::ostringstream ss;
 	ss << getCurrentDateTime() << _msgPrefix;
 
-	switch (_mode) {
+	switch (_detail) {
 		case DEBUG:
 				ss << message << std::endl;
-				_logFile << ss.str();
 				break;
 		case INFO:
-			if (mode == _mode || mode == ERROR) {
-				ss << message << std::endl;
+			if (mode == _detail || mode == ERROR) {
 				_logFile << ss.str();
 				break;
 			}
 		// fall through
 		case ERROR:
-			if (mode == _mode) {
-				ss << message << std::endl;
+			if (mode == _detail) {
 				_logFile << ss.str();
 			}
 	}
 
+	switch (_mode) {
+		case DUAL:
+			_writeToFile(ss.str());
+			_writeToConsole(ss.str());
+			break;
+		case LOGFILE:
+			_writeToFile(ss.str());
+			break;
+		case CONSOLE:
+			_writeToConsole(ss.str());
+			break;
+	}
 
 	if (_logFile.fail())
 		std::cout << "LOG out stream error!" << std::endl;
-	_logFile.flush();
+//	_logFile.flush();
 
 }
 
@@ -118,7 +139,8 @@ void Logger::closeLogFile() {
 	_logFile.close();
 }
 
-void Logger::_setMessagePrefix(LogMode mode) {
+
+void Logger::_setMessagePrefix(LogDetail mode) {
 	switch (mode) {
 		case INFO:
 			_msgPrefix = " INFO: ";

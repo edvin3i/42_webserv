@@ -93,7 +93,9 @@ void MasterServer::run() {
 				switch (client->getState()) {
 					case READING:
 						if (revents & POLLIN) {
+							std::cout << "Case READING" << std::endl;
 							client->readData();
+							_fds[i].events = POLLOUT;
 							client->setState(WRITING);
 						}
 						if (revents & POLLERR) {
@@ -102,15 +104,17 @@ void MasterServer::run() {
 						break;
 					case WRITING:
 						if (revents & POLLOUT) {
+							std::cout << "Case WRITING" << std::endl;
 							client->buildResponse();
 							client->sendResponse();
 							client->setState(CLOSING);
 						}
-						if (revents & POLLERR) {
+						if (revents & (POLLERR | POLLHUP)) {
 							client->setState(CLOSING);
 						}
 						break;
 					case CLOSING:
+						std::cout << "Case CLOSING" << std::endl;
 //						client->closeConnection();
 						close(_fds[i].fd);
 						delete client;

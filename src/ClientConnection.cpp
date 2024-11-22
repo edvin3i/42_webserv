@@ -21,7 +21,8 @@ void ClientConnection::buildResponse() {
 		<< "\n\n" \
 		<< htmlFile;
 	_responseMessage = ss.str();
-	ss.flush();
+	_logger.writeToLog("Response ready!");
+	//ss.flush();
 }
 
 void ClientConnection::sendResponse() {
@@ -37,16 +38,25 @@ void ClientConnection::sendResponse() {
 		_logger.writeToLog("Error sending response to client");
 	}
 
-	_responseMessage.clear();
+	//_responseMessage.clear();
 }
 
 void ClientConnection::readData() {
 	char buffer[BUFFER_SIZE] = {0};
 	int bytesReceived = read(_clientSocketFD, buffer, BUFFER_SIZE);
 
+	// std::ostringstream ss;
+	// ss << buffer << "\n";
+	// std::cout << ss.str();
+
 	if (bytesReceived > 0) {
 		_readBuffer.insert(_readBuffer.end(), buffer, buffer + bytesReceived);
 		// maybe need to write to log counter of bytes here
+
+		std::ostringstream ss;
+		ss << "Read request from client. Len = " << bytesReceived << "\n";
+		std::cout << ss.str();
+		_logger.writeToLog(ss.str());
 	}
 	else {
 		_connectionState = CLOSING;

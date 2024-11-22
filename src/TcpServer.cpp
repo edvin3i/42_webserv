@@ -33,12 +33,13 @@ int TcpServer::_startServer() {
 		_handleError("Cannot create socket!");
 		return 1;
 	}
-	std::ostringstream ss;
-	ss << "Server Socket: " << _serverSocket << "\n";
-	ss << "Server Socket Addr: " << (sockaddr *)&_serverSocketAddress << "\n";
-	ss << "Server Socket Addr Len: " << _serverSocketAddressLen << std::endl;
 
-	std::cout << ss.str();
+	// std::ostringstream ss;
+	// ss << "Server Socket: " << _serverSocket << "\n";
+	// ss << "Server Socket Addr: " << (sockaddr *)&_serverSocketAddress << "\n";
+	// ss << "Server Socket Addr Len: " << _serverSocketAddressLen << std::endl;
+	//
+	// std::cout << ss.str();
 
 	int bnd = bind(_serverSocket, (sockaddr *)&_serverSocketAddress, _serverSocketAddressLen);
 	if (bnd < 0) {
@@ -51,7 +52,6 @@ int TcpServer::_startServer() {
 
 void TcpServer::_closeServer() {
 	close(_serverSocket);
-	//close(_srv_new_socket);
 	exit(0);
 }
 

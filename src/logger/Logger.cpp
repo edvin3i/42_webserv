@@ -89,23 +89,27 @@ void Logger::writeToLog(LogMode mode, const std::string & message) {
 	ss << getCurrentDateTime() << _msgPrefix;
 
 	switch (_mode) {
-		case ERROR:
-			if (mode == _mode) {
+		case DEBUG:
+			if (mode == _mode || mode == ERROR || mode == INFO) {
 				ss << message << std::endl;
+				_logFile << ss.str();
 				break;
 			}
-			// fall through
+		// fall through
 		case INFO:
 			if (mode == _mode || mode == ERROR) {
 				ss << message << std::endl;
+				_logFile << ss.str();
 				break;
 			}
-			// fall through
-		case DEBUG:
-			ss << message << std::endl;
-			break;
+		// fall through
+		case ERROR:
+			if (mode == _mode) {
+				ss << message << std::endl;
+				_logFile << ss.str();
+			}
 	}
-		_logFile << ss.str();
+
 
 	if (_logFile.fail())
 		std::cout << "LOG out stream error!" << std::endl;

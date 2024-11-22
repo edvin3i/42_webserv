@@ -5,12 +5,12 @@
 #include "../includes/logger/Logger.hpp"
 #include "../includes/server/MasterServer.hpp"
 
-#define ERR_NUM_ARGS "ERROR: wrong number of arguments!"
+#define ERR_NUM_ARGS "wrong number of arguments!"
 
 
 int main(int argc, char **argv) {
 
-	Logger logger(DEBUG,"webserv.log");
+	Logger logger(INFO,"webserv.log");
 //	logger.printCurrentDateTime();
 
 	if (argc != 2) {

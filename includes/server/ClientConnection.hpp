@@ -6,8 +6,8 @@
 #include <map>
 #include <unistd.h>
 #include <iostream>
-#include "Logger.hpp"
-#include "ServerConfig.hpp"
+#include "../logger/Logger.hpp"
+#include "../config/ServerConfig.hpp"
 
 const int BUFFER_SIZE = 8192;
 

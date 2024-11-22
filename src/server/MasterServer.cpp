@@ -1,4 +1,4 @@
-#include "../includes/MasterServer.hpp"
+#include "../../includes/server/MasterServer.hpp"
 
 const int TIMEOUT = 32;
 

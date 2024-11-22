@@ -1,4 +1,4 @@
-#include "../includes/ClientConnection.hpp"
+#include "../../includes/server/ClientConnection.hpp"
 
 ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerConfig & config)
 									:	_logger(logger),

@@ -1,9 +1,9 @@
 #include <iostream>
-#include "../includes/TcpServer.hpp"
-#include "../includes/ServerConfig.hpp"
-#include "../includes/ConfigParser.hpp"
-#include "../includes/Logger.hpp"
-#include "../includes/MasterServer.hpp"
+#include "../includes/server/TcpServer.hpp"
+#include "../includes/config/ServerConfig.hpp"
+#include "../includes/config/ConfigParser.hpp"
+#include "../includes/logger/Logger.hpp"
+#include "../includes/server/MasterServer.hpp"
 
 #define ERR_NUM_ARGS "ERROR: wrong number of arguments!"
 

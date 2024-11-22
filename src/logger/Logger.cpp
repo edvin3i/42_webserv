@@ -1,4 +1,4 @@
-#include "../includes/Logger.hpp"
+#include "../../includes/logger/Logger.hpp"
 
 Logger::Logger(const std::string & logfile_name): _logFileName(logfile_name), \
 				_logFile(_logFileName.c_str(), std::ofstream::app) {

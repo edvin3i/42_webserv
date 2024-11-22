@@ -1,6 +1,6 @@
 #include <cstdlib>
 #include <sstream>
-#include "ConfigParser.hpp"
+#include "../../includes/config/ConfigParser.hpp"
 
 #define ERR_CONF_FNAME "CONFIG ERROR: config file name is wrong!"
 #define ERR_CONF_BRACE_OPN "CONFIG ERROR: awaiting  '{' after "

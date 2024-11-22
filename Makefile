@@ -16,9 +16,9 @@ OBJDIR      =   .obj/
 #                            Files                                           #
 #############################################################################
 
-MFLS        =   ServerConfig.cpp LocationConfig.cpp \
-				ConfigParser.cpp \
-				MasterServer.cpp ClientConnection.cpp Logger.cpp TcpServer.cpp \
+MFLS        =   config/ServerConfig.cpp config/LocationConfig.cpp config/ConfigParser.cpp \
+				server/MasterServer.cpp server/ClientConnection.cpp server/TcpServer.cpp \
+				logger/Logger.cpp \
 				main.cpp
 MSRC        =   $(addprefix $(MDIR), $(MFLS))
 MOBJS		=	$(addprefix $(OBJDIR), $(MFLS:.cpp=.o))
@@ -59,7 +59,7 @@ all:            $(NAME)
 -include $(MOBJS:.o=.d)
 
 $(OBJDIR)%.o:   $(MDIR)%.cpp
-				@mkdir -p $(OBJDIR)
+				@mkdir -p $(dir $@) #$(OBJDIR)
 				@$(CXX) $(CXXFLAGS)  -c $< -o $@
 
 $(NAME):        $(MOBJS) $(MKFL)
@@ -72,6 +72,7 @@ clean:
 
 fclean:         clean
 				@$(RM) $(NAME)
+				@$(RM) *.log
 
 re:             fclean all
 

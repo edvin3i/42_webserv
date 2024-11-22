@@ -9,8 +9,8 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include "Logger.hpp"
-#include "ServerConfig.hpp"
+#include "../logger/Logger.hpp"
+#include "../config/ServerConfig.hpp"
 
 
 class Logger;

@@ -4,10 +4,10 @@
 #include <string>
 #include <vector>
 #include <sys/poll.h>
-#include "ServerConfig.hpp"
+#include "../config/ServerConfig.hpp"
 #include "TcpServer.hpp"
 #include "ClientConnection.hpp"
-#include "Logger.hpp"
+#include "../logger/Logger.hpp"
 
 class ServerConfig;
 class TcpServer;

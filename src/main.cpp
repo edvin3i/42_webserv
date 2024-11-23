@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
 
 	/*
 	 *	First - create a logger.
-	 *	Details mode: ERROR, INFO, DEBUG
+	 *	Details level: ERROR, INFO, DEBUG
 	 *	Output mode: CONSOLE, LOGFILE, DUAL
 	 */
 

@@ -42,32 +42,24 @@ TcpServer::TcpServer(const TcpServer & other)
 }
 
 
-int TcpServer::_setupSocket() {
-	_socket = socket(AF_INET, SOCK_STREAM, 0);
-	int flags = fcntl(_socket, F_GETFL, 0);
-	fcntl(_socket, F_SETFL, flags | O_NONBLOCK);
-
-	_logger.writeToLog(INFO, "Server started");
-
-	if (_socket < 0 ) {
-		_handleError("Cannot create socket!");
-		return 1;
-	}
-
-	int bnd = bind(_socket, (sockaddr *)&_socketAddress, _socketAddressLen);
-	if (bnd < 0) {
-		_handleError("Cannot create socket to address!");
-		return 1;
-	}
-	return 0;
+int TcpServer::getSrvSocket() const {
+	return _socket;
 }
 
 
-void TcpServer::_closeServer() {
-	if (_socket >= 0) {
-		close(_socket);
-		_socket = -1;
+const ServerConfig &TcpServer::getConfig() const {
+	return _config;
+}
+
+
+void TcpServer::startServer() {
+	if (_setupSocket() != 0) {
+		std::ostringstream ss;
+		ss << "Failed to startServer server with PORT: " \
+			<< htons(_socketAddress.sin_port);
+		_handleError(ss.str());
 	}
+
 }
 
 
@@ -109,34 +101,6 @@ void TcpServer::startListen() {
 }
 
 
-void TcpServer::_handleError(const std::string & err_message) {
-	std::string err_msg = err_message;
-	_logger.writeToLog(ERROR, err_msg);
-	throw std::runtime_error(err_msg);
-}
-
-
-void TcpServer::startServer() {
-	if (_setupSocket() != 0) {
-		std::ostringstream ss;
-		ss << "Failed to startServer server with PORT: " \
-			<< htons(_socketAddress.sin_port);
-		_handleError(ss.str());
-	}
-
-}
-
-
-int TcpServer::getSrvSocket() const {
-	return _socket;
-}
-
-
-const ServerConfig &TcpServer::getConfig() const {
-	return _config;
-}
-
-
 bool TcpServer::_isValidIpAddress(const std::string & ip_address) {
 	struct sockaddr_in sa;
 	return inet_pton(AF_INET, ip_address.c_str(), &(sa.sin_addr));
@@ -148,6 +112,7 @@ void TcpServer::_resolveHostName(const std::string &hostname,
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 
+	// Use getaddrinfo to resolve address from hostname (man 2 getaddrinfo)
 	int status = getaddrinfo(hostname.c_str(), NULL, &hints, &res);
 	if (status != 0) {
 		_handleError("can not resolve the hostname.");
@@ -159,4 +124,39 @@ void TcpServer::_resolveHostName(const std::string &hostname,
 	ip_address = ipStr;
 
 	freeaddrinfo(res);
+}
+
+int TcpServer::_setupSocket() {
+	_socket = socket(AF_INET, SOCK_STREAM, 0);
+	int flags = fcntl(_socket, F_GETFL, 0);
+	fcntl(_socket, F_SETFL, flags | O_NONBLOCK);
+
+	_logger.writeToLog(INFO, "Server started");
+
+	if (_socket < 0 ) {
+		_handleError("Cannot create socket!");
+		return 1;
+	}
+	// Bind the socket to specific address
+	int bnd = bind(_socket, (sockaddr *)&_socketAddress, _socketAddressLen);
+	if (bnd < 0) {
+		_handleError("Cannot bind the socket to address!");
+		return 1;
+	}
+	return 0;
+}
+
+
+void TcpServer::_closeServer() {
+	if (_socket >= 0) {
+		close(_socket);
+		_socket = -1;
+	}
+}
+
+
+void TcpServer::_handleError(const std::string & err_message) {
+	std::string err_msg = err_message;
+	_logger.writeToLog(ERROR, err_msg);
+	throw std::runtime_error(err_msg);
 }

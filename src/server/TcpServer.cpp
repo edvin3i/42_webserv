@@ -62,8 +62,10 @@ int TcpServer::_startServer() {
 
 
 void TcpServer::_closeServer() {
-	close(_socket);
-	exit(0);
+	if (_socket >= 0) {
+		close(_socket);
+		_socket = -1;
+	}
 }
 
 
@@ -155,4 +157,3 @@ void TcpServer::_resolveHostName(const std::string &hostname,
 
 	freeaddrinfo(res);
 }
-

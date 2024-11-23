@@ -92,6 +92,7 @@ void ClientConnection::setState(ConnectionState state) {
 	_connectionState = state;
 }
 
+
 ConnectionState ClientConnection::getState() const {
 	return _connectionState;
 }

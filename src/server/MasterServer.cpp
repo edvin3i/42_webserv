@@ -97,7 +97,7 @@ void MasterServer::run() {
 							_fds[i].events = POLLOUT;
 							client->setState(WRITING);
 						}
-						if (revents & POLLERR) {
+						if (revents & (POLLERR | POLLHUP)) {
 							client->setState(CLOSING);
 						}
 						break;
@@ -105,7 +105,9 @@ void MasterServer::run() {
 						if (revents & POLLOUT) {
 							client->buildResponse();
 							client->writeData();
-							client->setState(CLOSING);
+							if (client->getState() != WRITING) {
+								client->setState(CLOSING);
+							}
 						}
 						if (revents & (POLLERR | POLLHUP)) {
 							client->setState(CLOSING);

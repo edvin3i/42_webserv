@@ -7,9 +7,11 @@ ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerCo
 										_clientSocketFD(socketFD),
 										_serverConfig(config),
 										_connectionState(READING),
-										_writeOffset(0)
+										_writeOffset(0),
+										_currentClientBodySize(0)
 									{
 	(void) _serverConfig; // just to mute compile error
+	(void) _currentClientBodySize;
 
 }
 
@@ -73,17 +75,15 @@ void ClientConnection::writeData() {
 	_writeOffset += bytesSent;
 
 	std::ostringstream ss;
-	ss << "Sent: " << bytesSent << " bytes to client." << "\n";
+	ss << "===== Sent: " << bytesSent << " bytes to client. =====" << std::endl;
 	_logger.writeToLog(DEBUG, ss.str());
-	ss.flush();
-
+	ss.str("");
+	ss.clear();
 
 	if (_writeOffset >= _writeBuffer.size()) {
-		ss << "All data sent to the client!\n";
+		ss << "===== All data sent to the client! =====" << std::endl;
 		_logger.writeToLog(DEBUG, ss.str());
-	}
-	else {
-		_logger.writeToLog(DEBUG, "Error sending response to client");
+		_connectionState = CLOSING;
 	}
 }
 

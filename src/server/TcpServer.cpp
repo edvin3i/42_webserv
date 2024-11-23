@@ -134,13 +134,13 @@ int TcpServer::_setupSocket() {
 	_logger.writeToLog(INFO, "Server started");
 
 	if (_socket < 0 ) {
-		_handleError("Cannot create socket!");
+		_handleError("Can not create socket!");
 		return 1;
 	}
 	// Bind the socket to specific address
 	int bnd = bind(_socket, (sockaddr *)&_socketAddress, _socketAddressLen);
 	if (bnd < 0) {
-		_handleError("Cannot bind the socket to address!");
+		_handleError("Can not bind the socket to address!");
 		return 1;
 	}
 	return 0;

@@ -41,13 +41,14 @@ private:
 	const ServerConfig &_serverConfig;
 	ConnectionState _connectionState;
 	std::string _responseMessage; // needs to replace to _responceBuffer
-	//	int _newServerSocket;
+	size_t _writeOffset;
+	size_t _currentClientBodySize;
 	//	const LocationConfig *_currentLocationConfig;
 
 
 	std::vector<char> _readBuffer;
 	std::vector<char> _writeBuffer;
-	size_t _writeOffset;
+
 
 };
 

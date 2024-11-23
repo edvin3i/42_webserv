@@ -6,7 +6,8 @@ ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerCo
 									:	_logger(logger),
 										_clientSocketFD(socketFD),
 										_serverConfig(config),
-										_connectionState(READING)
+										_connectionState(READING),
+										_writeOffset(0)
 									{
 	(void) _serverConfig; // just to mute compile error
 
@@ -18,15 +19,18 @@ ClientConnection::~ClientConnection() {
 
 
 void ClientConnection::buildResponse() {
-	std::string htmlFile =  "<!DOCTYPE html><html lang=\"en\"><body><h1> HOME </h1><p> Hello from my WEBSERV42  :) </p></body></html>";
+	std::string htmlFile =  "<!DOCTYPE html><html lang=\"en\"><body><h1> HOME </h1><p> Hello from my WebServ_42  :) </p></body></html>";
 	std::ostringstream ss;
 	ss << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " \
 		<< htmlFile.size() \
-		<< "\n\n" \
+		<< "\r\n\r\n" \
 		<< htmlFile;
-	_responseMessage = ss.str();
+	std::string response = ss.str();
+	_writeBuffer.assign(response.begin(), response.end());
+	_writeOffset = 0;
+
 	_logger.writeToLog(DEBUG, "Response ready!");
-	//ss.flush();
+	ss.flush();
 }
 
 
@@ -51,22 +55,36 @@ void ClientConnection::readData() {
 
 
 void ClientConnection::writeData() {
-	unsigned long bytesSent;
-	bytesSent = write(_clientSocketFD,
-					  _responseMessage.c_str(),
-					  _responseMessage.size());
+	if (_writeOffset >= _writeBuffer.size()) {
+		_connectionState = CLOSING;
+		return;
+	}
 
-	if (bytesSent == _responseMessage.size()) {
-		std::ostringstream ss;
-		ss << "--- Server response sent to client ---\n";
-		ss << "\t\t\t Number of bytes sent: " << bytesSent << "\n";
+	ssize_t bytesSent = send(_clientSocketFD,
+	                         &_writeBuffer[_writeOffset],
+	                         _writeBuffer.size() - _writeOffset, 0);
+
+	if (bytesSent < 0) {
+		_logger.writeToLog(ERROR, "can not send the data to socket");
+		_connectionState = CLOSING;
+		return;
+	}
+
+	_writeOffset += bytesSent;
+
+	std::ostringstream ss;
+	ss << "Sent: " << bytesSent << " bytes to client." << "\n";
+	_logger.writeToLog(DEBUG, ss.str());
+	ss.flush();
+
+
+	if (_writeOffset >= _writeBuffer.size()) {
+		ss << "All data sent to the client!\n";
 		_logger.writeToLog(DEBUG, ss.str());
 	}
 	else {
 		_logger.writeToLog(DEBUG, "Error sending response to client");
 	}
-
-	//_responseMessage.clear();
 }
 
 

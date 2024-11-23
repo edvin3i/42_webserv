@@ -6,6 +6,7 @@
 #include <map>
 #include <unistd.h>
 #include <iostream>
+#include <sys/socket.h>
 #include "../logger/Logger.hpp"
 #include "../config/ServerConfig.hpp"
 
@@ -45,7 +46,8 @@ private:
 
 
 	std::vector<char> _readBuffer;
-	std::vector<char> _responseBuffer;
+	std::vector<char> _writeBuffer;
+	size_t _writeOffset;
 
 };
 

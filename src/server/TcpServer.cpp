@@ -1,5 +1,7 @@
 #include "../../includes/server/TcpServer.hpp"
 
+#include <cmath>
+
 
 TcpServer::TcpServer(Logger & logger, const ServerConfig & config)
 				: _logger(logger),
@@ -82,7 +84,8 @@ int TcpServer::acceptConnection() {
  			<< inet_ntoa(_socketAddress.sin_addr) \
  			<< "; PORT: " \
  			<< ntohs(_socketAddress.sin_port);
-		_handleError(ss.str());
+		_logger.writeToLog(ERROR, ss.str());
+		return -1;
 	}
 
 	return new_socket;

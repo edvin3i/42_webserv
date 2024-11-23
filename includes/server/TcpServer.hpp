@@ -45,7 +45,7 @@ private:
 	bool _isValidIpAddress(const std::string & ip_address);
 	void _resolveHostName(const std::string & hostname, std::string & ip_address);
 
-	int _startServer();
+	int _setupSocket();
 	void _closeServer();
 
 	void _handleError(const std::string & err_message);

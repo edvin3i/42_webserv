@@ -42,7 +42,7 @@ TcpServer::TcpServer(const TcpServer & other)
 }
 
 
-int TcpServer::_startServer() {
+int TcpServer::_setupSocket() {
 	_socket = socket(AF_INET, SOCK_STREAM, 0);
 	int flags = fcntl(_socket, F_GETFL, 0);
 	fcntl(_socket, F_SETFL, flags | O_NONBLOCK);
@@ -117,11 +117,11 @@ void TcpServer::_handleError(const std::string & err_message) {
 
 
 void TcpServer::startServer() {
-	if (_startServer() != 0) {
+	if (_setupSocket() != 0) {
 		std::ostringstream ss;
 		ss << "Failed to startServer server with PORT: " \
 			<< htons(_socketAddress.sin_port);
-		_logger.writeToLog(ERROR, ss.str());
+		_handleError(ss.str());
 	}
 
 }

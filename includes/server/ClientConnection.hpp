@@ -29,9 +29,8 @@ public:
 	void setState(ConnectionState state);
 
 	void readData();
+	void writeData();
 	void buildResponse();
-	void sendResponse();
-	void closeConnection();
 
 
 

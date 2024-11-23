@@ -53,7 +53,7 @@ MasterServer::~MasterServer() {
 }
 
 void MasterServer::run() {
-	while(true) {
+	while(_fds.size()) {
 		int polling = poll(_fds.data(), _fds.size(), TIMEOUT);
 		if (polling < 0) {
 			_logger.writeToLog(ERROR, "poll() return -1!");
@@ -104,7 +104,7 @@ void MasterServer::run() {
 					case WRITING:
 						if (revents & POLLOUT) {
 							client->buildResponse();
-							client->sendResponse();
+							client->writeData();
 							client->setState(CLOSING);
 						}
 						if (revents & (POLLERR | POLLHUP)) {
@@ -112,7 +112,6 @@ void MasterServer::run() {
 						}
 						break;
 					case CLOSING:
-//						client->closeConnection();
 						close(_fds[i].fd);
 						delete client;
 						_clientsMap.erase(_fds[i].fd);

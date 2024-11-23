@@ -6,12 +6,14 @@ ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerCo
 										_serverConfig(config),
 										_connectionState(READING)
 									{
+	(void) _serverConfig; // just to mute compile error
 
 }
 
 ClientConnection::~ClientConnection() {
 
 }
+
 
 void ClientConnection::buildResponse() {
 	std::string htmlFile =  "<!DOCTYPE html><html lang=\"en\"><body><h1> HOME </h1><p> Hello from my WEBSERV42  :) </p></body></html>";
@@ -25,7 +27,25 @@ void ClientConnection::buildResponse() {
 	//ss.flush();
 }
 
-void ClientConnection::sendResponse() {
+
+void ClientConnection::readData() {
+	char buffer[BUFFER_SIZE] = {0};
+	int bytesReceived = read(_clientSocketFD, buffer, BUFFER_SIZE);
+
+	if (bytesReceived > 0) {
+		_readBuffer.insert(_readBuffer.end(), buffer, buffer + bytesReceived);
+
+		std::ostringstream ss;
+		ss << "Read request from client. Len = " << bytesReceived << "\n";
+		_logger.writeToLog(DEBUG, ss.str());
+	}
+	else {
+		_connectionState = CLOSING;
+	}
+}
+
+
+void ClientConnection::writeData() {
 	unsigned long bytesSent;
 	bytesSent = write(_clientSocketFD,
 					  _responseMessage.c_str(),
@@ -41,27 +61,6 @@ void ClientConnection::sendResponse() {
 	//_responseMessage.clear();
 }
 
-void ClientConnection::readData() {
-	char buffer[BUFFER_SIZE] = {0};
-	int bytesReceived = read(_clientSocketFD, buffer, BUFFER_SIZE);
-
-	// std::ostringstream ss;
-	// ss << buffer << "\n";
-	// std::cout << ss.str();
-
-	if (bytesReceived > 0) {
-		_readBuffer.insert(_readBuffer.end(), buffer, buffer + bytesReceived);
-		// maybe need to write to log counter of bytes here
-
-		std::ostringstream ss;
-		ss << "Read request from client. Len = " << bytesReceived << "\n";
-		//std::cout << ss.str();
-		_logger.writeToLog(DEBUG, ss.str());
-	}
-	else {
-		_connectionState = CLOSING;
-	}
-}
 
 void ClientConnection::setState(ConnectionState state) {
 	_connectionState = state;
@@ -69,8 +68,4 @@ void ClientConnection::setState(ConnectionState state) {
 
 ConnectionState ClientConnection::getState() const {
 	return _connectionState;
-}
-
-void ClientConnection::closeConnection() {
-// just empty yet
 }

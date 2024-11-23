@@ -1,5 +1,7 @@
 #include "../../includes/server/ClientConnection.hpp"
 
+#include <iterator>
+
 ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerConfig & config)
 									:	_logger(logger),
 										_clientSocketFD(socketFD),
@@ -35,6 +37,9 @@ void ClientConnection::readData() {
 	if (bytesReceived > 0) {
 		_readBuffer.insert(_readBuffer.end(), buffer, buffer + bytesReceived);
 
+		std::string str(_readBuffer.begin(), _readBuffer.end());
+		_logger.writeToLog(DEBUG, "Receive a request from client:\n" + str);
+
 		std::ostringstream ss;
 		ss << "Read request from client. Len = " << bytesReceived << "\n";
 		_logger.writeToLog(DEBUG, ss.str());
@@ -52,7 +57,10 @@ void ClientConnection::writeData() {
 					  _responseMessage.size());
 
 	if (bytesSent == _responseMessage.size()) {
-		_logger.writeToLog(DEBUG, "--- Server response sent to client ---\n\n");
+		std::ostringstream ss;
+		ss << "--- Server response sent to client ---\n";
+		ss << "\t\t\t Number of bytes sent: " << bytesSent << "\n";
+		_logger.writeToLog(DEBUG, ss.str());
 	}
 	else {
 		_logger.writeToLog(DEBUG, "Error sending response to client");

@@ -37,7 +37,7 @@ void ServerConfig::print_server_config() {
       ss << it->first << " = " << it->second << "; " << "\n";
 	}
 	ss << "====================================================\n";
-	std::cout << ss;
+	std::cout << ss.str();
 	ss.flush();
 
 }

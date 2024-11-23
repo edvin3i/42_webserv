@@ -2,6 +2,8 @@
 #define TCPSERVER_HPP
 
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <netdb.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <cstdlib>
@@ -34,17 +36,17 @@ private:
 	Logger &_logger;
 
 	const ServerConfig &_config;
-	std::string _serverIPAddress;
-	int	_serverPort;
-	int _serverSocket;
+	std::string _IPAddress;
+	int	_port;
+	int _socket;
+	struct sockaddr_in _socketAddress;
+	unsigned int _socketAddressLen;
 
-//		long _srv_incommingMessage;
-	struct sockaddr_in _serverSocketAddress;
-	unsigned int _serverSocketAddressLen;
+	bool _isValidIpAddress(const std::string & ip_address);
+	void _resolveHostName(const std::string & hostname, std::string & ip_address);
 
 	int _startServer();
 	void _closeServer();
-
 
 	void _handleError(const std::string & err_message);
 

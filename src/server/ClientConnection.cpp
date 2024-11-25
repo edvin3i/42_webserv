@@ -43,8 +43,8 @@ void ClientConnection::readData() {
 	if (bytesReceived > 0) {
 		_readBuffer.insert(_readBuffer.end(), buffer, buffer + bytesReceived);
 
-		std::string str(_readBuffer.begin(), _readBuffer.end());
-		_logger.writeToLog(DEBUG, "Receive a request from client:\n" + str);
+		// std::string str(_readBuffer.begin(), _readBuffer.end());
+		// _logger.writeToLog(DEBUG, "Receive a request from client:\n" + str);
 
 		std::ostringstream ss;
 		ss << "Read request from client. Len = " << bytesReceived << "\n";

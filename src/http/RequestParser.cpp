@@ -17,27 +17,37 @@ void RequestParser::parse(std::vector<char> & inputVector) {
 	std::string inStr(inputVector.begin(), inputVector.end());
 
 	// extract whole request
-	size_t startPos = 0;
+	//size_t startPos = 0;
 	size_t endPos = inStr.find("\r\n\r\n");
-	std::string fullRequest = inStr.substr(startPos, endPos);
+	std::string fullRequest = inStr.substr(0, endPos);
+
+	std::cout << "====== Full request BEFORE ======" << std::endl;
+	std::cout << fullRequest << std::endl;
+	std::cout << "========= END ==========\n" << std::endl;
 
 	// extract and parse first request line
 	endPos = fullRequest.find("\r\n");
 	std::string startLine = inStr.substr(0, endPos);
 	_parseStartLine(startLine);
-	//fullRequest.erase(0, endPos);
+	fullRequest.erase(0, startLine.size());
 
 	// extract and parse header
-	startPos = endPos;
+	//startPos = endPos;
 	endPos = fullRequest.find("\r\n");
-	std::string headerLine = fullRequest.substr(startPos, endPos);
+	std::string headerLine = fullRequest.substr(0, endPos);
 	_parseHeader(headerLine);
+	fullRequest.erase(0, headerLine.size());
 
 	// extract and parse request body
-	startPos = endPos;
+	//startPos = endPos;
 	endPos = fullRequest.find("\r\n\r\n");
-	std::string requestBody = fullRequest.substr(startPos, endPos);
+	std::string requestBody = fullRequest.substr(0, endPos);
 	_parseMessageBody(requestBody);
+	fullRequest.erase(0, std::string::npos);
+
+	std::cout << "====== Full request AFTER ======" << std::endl;
+	std::cout << fullRequest << std::endl;
+	std::cout << "========= END ==========\n" << std::endl;
 
 }
 

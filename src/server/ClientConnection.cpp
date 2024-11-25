@@ -53,6 +53,10 @@ void ClientConnection::readData() {
 	else {
 		_connectionState = CLOSING;
 	}
+	RequestParser httpParser;
+
+	httpParser.parse(_readBuffer);
+
 }
 
 

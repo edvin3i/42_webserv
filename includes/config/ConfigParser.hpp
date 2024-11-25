@@ -34,11 +34,11 @@ private:
 	size_t _line_number;
 
 	void _parseServerBlock(ServerConfig & server);
-	void _parseLocationBlock(LocationConfig &location);
+	void _parseLocationBlock(LocationConfig & location);
 	void _trim(std::string & rawString);
 	bool _startsWith(const std::string & str, const std::string & prefix);
-	std::vector<std::string> _tokenize(const std::string &rawString);
-	size_t _convertDataSize(const std::string &dataSize);
+	std::vector<std::string> _tokenize(const std::string & rawString);
+	size_t _convertDataSize(const std::string & dataSize);
 	bool _convertOnOff(const std::string & switchState);
 	void _handleError(const std::string & err_message);
 

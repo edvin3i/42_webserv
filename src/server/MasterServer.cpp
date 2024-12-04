@@ -1,5 +1,6 @@
 #include "../../includes/server/MasterServer.hpp"
 
+
 const int TIMEOUT = 32;
 
 MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & configs)
@@ -53,7 +54,7 @@ MasterServer::~MasterServer() {
 }
 
 void MasterServer::run() {
-	while(_fds.size()) {
+	while(!g_sig) {
 		int polling = poll(_fds.data(), _fds.size(), TIMEOUT);
 		if (polling < 0) {
 			_logger.writeToLog(ERROR, "poll() return -1!");

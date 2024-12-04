@@ -1,5 +1,5 @@
 #include <iostream>
-#include <csignal>
+#include "../includes/signals/signals.hpp"
 #include "../includes/server/TcpServer.hpp"
 #include "../includes/config/ServerConfig.hpp"
 #include "../includes/config/ConfigParser.hpp"
@@ -8,28 +8,6 @@
 
 #define ERR_NUM_ARGS "wrong number of arguments!"
 
-
-volatile sig_atomic_t g_sig = 0;
-
-
-void sigIntHandler(int sig) {
-	if (sig == SIGINT) {
-		g_sig = 1;
-	}
-}
-
-
-void setupSigHandler() {
-	struct  sigaction sa = {};
-	sa.sa_handler = sigIntHandler;
-	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = 0;
-
-	if (sigaction(SIGINT, &sa, NULL) == -1) {
-		std::cerr << "Error with sigaction setup!" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-}
 
 int main(int argc, char **argv) {
 

@@ -20,6 +20,7 @@ MFLS        =   config/ConfigParser.cpp config/ServerConfig.cpp config/LocationC
 				server/MasterServer.cpp server/ClientConnection.cpp server/TcpServer.cpp \
 				http/RequestParser.cpp http/Request.cpp http/Response.cpp \
 				logger/Logger.cpp \
+				signals/signals.cpp \
 				main.cpp
 MSRC        =   $(addprefix $(MDIR), $(MFLS))
 MOBJS		=	$(addprefix $(OBJDIR), $(MFLS:.cpp=.o))

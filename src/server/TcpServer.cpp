@@ -117,7 +117,7 @@ void TcpServer::_resolveHostName(const std::string &hostname,
 	if (status != 0) {
 		_handleError("can not resolve the hostname.");
 	}
-	
+
 	struct sockaddr_in *ipv4 = (struct sockaddr_in *)res->ai_addr;
 	char ipStr[INET_ADDRSTRLEN];
 	inet_ntop(AF_INET, &(ipv4->sin_addr), ipStr, INET_ADDRSTRLEN);

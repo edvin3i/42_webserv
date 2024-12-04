@@ -1,5 +1,6 @@
 #include "../../includes/server/MasterServer.hpp"
 
+
 const int TIMEOUT = 32;
 
 MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & configs)
@@ -7,7 +8,7 @@ MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & co
 						  _configs(configs) {
 
 	std::ostringstream oss;
-	oss << "MasterServer constructor called!\n";
+	oss << "MasterServer constructor called!\t";
 	oss << "Size of configs: " << _configs.size() << "\n";
 	_logger.writeToLog(DEBUG, oss.str());
 
@@ -43,6 +44,10 @@ MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & co
 		// Set the server to listen mode
 		_servers.back()->startListen();
 	}
+
+	std::ostringstream os;
+	os << "Size of _fds = " << _fds.size();
+	_logger.writeToLog(DEBUG, os.str());
 }
 
 MasterServer::~MasterServer() {
@@ -53,9 +58,10 @@ MasterServer::~MasterServer() {
 }
 
 void MasterServer::run() {
-	while(_fds.size()) {
+	while(!g_sig) {
 		int polling = poll(_fds.data(), _fds.size(), TIMEOUT);
 		if (polling < 0) {
+			if (errno == EINTR) {continue;} // added checking of errno for "interrupted by signal"
 			_logger.writeToLog(ERROR, "poll() return -1!");
 			break;
 		}
@@ -122,6 +128,22 @@ void MasterServer::run() {
 						break;
 				}
 			}
+		}
+	}
+	stop();
+}
+
+void MasterServer::stop() {
+	for (size_t i = 0; i < _fds.size(); ++i) {
+		if (close(_fds[i].fd) == 0) {
+			std::ostringstream oss;
+			oss << "Closed connection: i = " << i << ", FD = " << _fds[i].fd;
+			_logger.writeToLog(DEBUG, oss.str());
+		}
+		else {
+			std::ostringstream oss;
+			oss << "Closing connection problem!" << " i = " << i << ", FD = " << _fds[i].fd;
+			_logger.writeToLog(DEBUG, oss.str());
 		}
 	}
 }

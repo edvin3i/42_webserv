@@ -1,4 +1,5 @@
 #include <iostream>
+#include "../includes/signals/signals.hpp"
 #include "../includes/server/TcpServer.hpp"
 #include "../includes/config/ServerConfig.hpp"
 #include "../includes/config/ConfigParser.hpp"
@@ -10,16 +11,22 @@
 
 int main(int argc, char **argv) {
 
+	/*
+	* Zero step: init signal handler
+	*/
+
+	setupSigHandler();
 
 	/*
 	 *	First - create a logger.
 	 *	Details level: ERROR, INFO, DEBUG
 	 *	Output mode: CONSOLE, LOGFILE, DUAL
 	 */
-
 	Logger logger(DEBUG, CONSOLE, "webserv.log");
-//	logger.printCurrentDateTime();
 
+	/*
+	 * Second: Check args
+	 */
 	if (argc != 2) {
 		logger.writeToLog(ERROR, ERR_NUM_ARGS);
 		std::cout << ERR_NUM_ARGS << std::endl;
@@ -28,7 +35,7 @@ int main(int argc, char **argv) {
 	}
 
 	/*
-	 * Start the configuration file pareser
+	 * Third: Start the configuration file pareser
 	 */
 	std::string config_filename = argv[1];
 	ConfigParser conf_parser(logger, config_filename);
@@ -37,7 +44,7 @@ int main(int argc, char **argv) {
 	logger.writeToLog(INFO, "Program Start Server!");
 
 	/*
-	 * Start Master Server with main loop
+	 * Fourth: Start Master Server with main loop
 	 */
 	std::vector<ServerConfig> configs = conf_parser.getConfig();
 	MasterServer masterServer(logger, configs);

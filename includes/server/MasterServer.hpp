@@ -20,6 +20,7 @@ public:
 	MasterServer(Logger & logger, const std::vector<ServerConfig> & configs);
 	~MasterServer();
 	void run();
+	void stop();
 
 private:
 	Logger &_logger;

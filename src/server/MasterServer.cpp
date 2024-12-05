@@ -133,6 +133,7 @@ void MasterServer::run() {
 	stop();
 }
 
+
 void MasterServer::stop() {
 	for (size_t i = 0; i < _fds.size(); ++i) {
 		if (close(_fds[i].fd) == 0) {

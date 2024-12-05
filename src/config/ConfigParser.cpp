@@ -390,30 +390,9 @@ bool ConfigParser::_startsWith(const std::string & str, const std::string & pref
 
 void ConfigParser::printConfig() {
 	for (size_t i = 0; i < _servers.size(); ++i) {
-		std::cout << "Server number " << i << ":" << std::endl;
+		std::cout << "\nSERVER NUMBER " << i << ":" << std::endl;
 		_servers[i].print_server_config();
-		if (!_servers[i].locations.empty()){
-			for (size_t j = 0; j <_servers[i].locations.size(); ++j){
-				std::ostringstream ss;
-				ss << "===================== LOCATION " << j << " =======================\n";
-				ss << "Path: " << _servers[i].locations[j].path.c_str() << "\n";
-				ss << "Methods: ";
-				for (size_t k = 0; k < _servers[i].locations[j].methods.size(); ++k) {
-					ss << " " << _servers[i].locations[j].methods[k];
-				}
-				ss << "\n";
-				ss << "Root Directory: " << _servers[i].locations[j].root << "\n";
-				ss << "Index Filename: " << _servers[i].locations[j].index << '\n';
-				ss << "Autoindex: " << _servers[i].locations[j].autoindex << "\n";
-				ss << "CGI extension: " << _servers[i].locations[j].cgi_extension << "\n";
-				ss << "CGI path: " << _servers[i].locations[j].cgi_path << "\n";
-				ss << "Upload dir: " << _servers[i].locations[j].upload_dir << "\n";
-				ss << "Return URL: " << _servers[i].locations[j].return_url << std::endl;
-				std::cout << ss.str();
-				ss.flush();
-				}
-			}
-		}
+	}
 }
 
 

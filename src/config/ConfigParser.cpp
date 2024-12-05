@@ -125,6 +125,7 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 			}
 
 			_parseLocationBlock(location);
+			_logger.writeToLog(DEBUG, "PARSE SERVER BLOCK CALLED");
 			server.locations.push_back(location);
 		}
 		else {
@@ -257,9 +258,11 @@ void ConfigParser::_parseLocationBlock(LocationConfig &location) {
 		else if (directive == "cgi_extension") {
 			if (tokens.size() != 2) {
 				std::ostringstream ss;
-				ss << ERR_CONF_WRNG_SYNTAX << directive << " on the line number " << _line_number;
+				ss << ERR_CONF_WRNG_SYNTAX << directive
+				   << " on the line number " << _line_number;
 				_handleError(ss.str());
-			location.cgi_extension = tokens[1];
+				location.cgi_extension = tokens[1];
+			}
 		}
 		else if (directive == "cgi_path") {
 			if (tokens.size() != 2) {
@@ -292,6 +295,12 @@ void ConfigParser::_parseLocationBlock(LocationConfig &location) {
 				_handleError(ss.str());
 			}
 			for (size_t i = 1; i < tokens.size(); ++i){
+				if (std::find(location.methods.begin(), location.methods.end(), tokens[i]) != location.methods.end()) {
+					std::ostringstream ss;
+					ss << ERR_CONF_WRNG_SYNTAX << directive << " on the line number " << _line_number << "\n";
+					ss << "Method " << tokens[i] << " duplicated!";
+					_handleError(ss.str());
+				}
 				location.methods.push_back(tokens[i]);
 			}
 
@@ -300,8 +309,6 @@ void ConfigParser::_parseLocationBlock(LocationConfig &location) {
 				std::ostringstream ss;
 				ss << ERR_CONF_UNKN_DIRECTIVE << directive << " in 'location' on the line number " << _line_number;
 				_handleError(ss.str());
-		}
-
 		}
 	}
 	_handleError(ERR_CONF_BRACE_CLS + std::string("in the 'location' block but file is ended =("));

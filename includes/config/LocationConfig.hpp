@@ -1,6 +1,7 @@
 #ifndef LOCATIONCONFIG_HPP
 #define LOCATIONCONFIG_HPP
 
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <sstream>

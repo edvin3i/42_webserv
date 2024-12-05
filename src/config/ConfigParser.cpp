@@ -182,6 +182,23 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 				}
 				server.client_max_body_size = _convertDataSize(tokens[1]);
 			}
+			else if (directive == "error_page") {
+				if (tokens.size() != 3) {
+					std::ostringstream ss;
+					ss << ERR_CONF_WRNG_SYNTAX << directive << " on the line number " << _line_number;
+					_handleError(ss.str());
+				}
+				int err_num = atoi(tokens[1].c_str());
+
+				if (err_num < 400 || err_num > 599) {
+					std::ostringstream ss;
+					ss << ERR_CONF_WRNG_SYNTAX << directive << " on the line number " << _line_number;
+					ss << ". Use the correct error number!";
+					_handleError(ss.str());
+				}
+
+				server.error_pages[err_num] = tokens[2].c_str();
+			}
 			else {
 				std::ostringstream ss;
 				ss << ERR_CONF_UNKN_DIRECTIVE << directive << " on the line number " << _line_number;

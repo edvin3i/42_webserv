@@ -41,6 +41,8 @@ int main(int argc, char **argv) {
 	ConfigParser conf_parser(logger, config_filename);
 	conf_parser.parse();
 
+	conf_parser.printConfig();
+
 	logger.writeToLog(INFO, "Program Start Server!");
 
 	/*

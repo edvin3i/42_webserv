@@ -261,8 +261,8 @@ void ConfigParser::_parseLocationBlock(LocationConfig &location) {
 				ss << ERR_CONF_WRNG_SYNTAX << directive
 				   << " on the line number " << _line_number;
 				_handleError(ss.str());
-				location.cgi_extension = tokens[1];
 			}
+			location.cgi_extension = tokens[1];
 		}
 		else if (directive == "cgi_path") {
 			if (tokens.size() != 2) {

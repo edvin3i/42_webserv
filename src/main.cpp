@@ -14,7 +14,6 @@ int main(int argc, char **argv) {
 	/*
 	* Zero step: init signal handler
 	*/
-
 	setupSigHandler();
 
 	/*

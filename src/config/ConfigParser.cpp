@@ -386,6 +386,7 @@ bool ConfigParser::_convertOnOff(const std::string & switchState) {
 	}
 	std::string err_msg = ERR_CONF_WRNG_SWSTATE + switchState;
 	_handleError(err_msg);
+	return false;
 }
 
 

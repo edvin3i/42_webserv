@@ -38,7 +38,7 @@ void ClientConnection::buildResponse() {
 
 void ClientConnection::readData() {
 	char buffer[BUFFER_SIZE] = {0};
-	int bytesReceived = read(_clientSocketFD, buffer, BUFFER_SIZE);
+	size_t bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0);
 
 	if (bytesReceived > 0) {
 		_readBuffer.insert(_readBuffer.end(), buffer, buffer + bytesReceived);

@@ -57,7 +57,6 @@ void ConfigParser::parse() {
 		if (_current_line.empty())
 			continue;
 
-
 		if (_startsWith(_current_line, TOKEN_SERVER)) {
 			size_t brace_pos = _current_line.find('{');
 
@@ -95,7 +94,6 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 			continue;
 		if (_current_line == "}")
 			return;
-
 		if (_startsWith(_current_line, TOKEN_LOCATION)) {
 			size_t brace_pos = _current_line.find('{');
 
@@ -212,6 +210,7 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 	_handleError(ss.str() );
 }
 
+
 void ConfigParser::_parseLocationBlock(LocationConfig &location) {
 	while(std::getline(_config_file, _current_line)) {
 		++_line_number;
@@ -315,10 +314,10 @@ void ConfigParser::_parseLocationBlock(LocationConfig &location) {
 }
 
 
-
 /*
  * Utilites
  */
+
 
 void ConfigParser::_trim(std::string & rawString) {
 	size_t start = rawString.find_first_not_of(" \t\r\n");
@@ -333,6 +332,7 @@ void ConfigParser::_trim(std::string & rawString) {
 
 }
 
+
 std::vector<std::string> ConfigParser::_tokenize(const std::string &rawString) {
 	std::vector<std::string > tokenizedString;
 	std::istringstream iss(rawString);
@@ -341,9 +341,9 @@ std::vector<std::string> ConfigParser::_tokenize(const std::string &rawString) {
 	while (iss >> token) {
 		tokenizedString.push_back(token);
 	}
-
 	return tokenizedString;
 }
+
 
 size_t ConfigParser::_convertDataSize(const std::string & dataSize) {
 	size_t i = 0;
@@ -368,17 +368,15 @@ size_t ConfigParser::_convertDataSize(const std::string & dataSize) {
 				break;
 			default:
 				std::string err_msg = ERR_CONF_WRNG_DSIZE + dataSize;
-				_logger.writeToLog(ERROR, err_msg);
-				throw std::runtime_error(err_msg);
+				_handleError(err_msg);
 		}
 	}
-
 	return num;
 }
 
+
 bool ConfigParser::_convertOnOff(const std::string & switchState) {
 	if (switchState.size() == 2 || switchState.size() == 3) {
-
 		if (switchState == "on" || switchState == "ON" || switchState == "On") {
 			return true;
 		}
@@ -387,13 +385,14 @@ bool ConfigParser::_convertOnOff(const std::string & switchState) {
 		}
 	}
 	std::string err_msg = ERR_CONF_WRNG_SWSTATE + switchState;
-	_logger.writeToLog(ERROR, err_msg);
-	throw std::runtime_error(err_msg);
+	_handleError(err_msg);
 }
+
 
 bool ConfigParser::_startsWith(const std::string & str, const std::string & prefix) {
 	return str.substr(0, prefix.size()) == prefix;
 }
+
 
 void ConfigParser::printConfig() {
 	for (size_t i = 0; i < _servers.size(); ++i) {
@@ -403,14 +402,13 @@ void ConfigParser::printConfig() {
 }
 
 
-
 std::vector<ServerConfig> ConfigParser::getConfig() {
 	return _servers;
 }
+
 
 void ConfigParser::_handleError(const std::string & err_message) {
 	std::string err_msg = err_message;
 	_logger.writeToLog(ERROR, err_msg);
 	throw std::runtime_error(err_msg);
 }
-

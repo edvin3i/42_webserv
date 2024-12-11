@@ -1,4 +1,5 @@
 #include "../../includes/server/ClientConnection.hpp"
+#include "../../includes/http/Request.hpp"
 
 #include <iterator>
 
@@ -53,9 +54,12 @@ void ClientConnection::readData() {
 	else {
 		_connectionState = CLOSING;
 	}
-	RequestParser httpParser;
+	// RequestParser httpParser;
 
-	httpParser.parse(_readBuffer);
+	// httpParser.parse(_readBuffer);
+	std::clog << "buffer: " << _readBuffer;
+	Request request(_readBuffer);
+	request.print();
 
 }
 

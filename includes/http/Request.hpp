@@ -1,39 +1,27 @@
 #ifndef REQUEST_HPP
 #define REQUEST_HPP
 
+#include "Message.hpp"
+#include "RequestLine.hpp"
 #include <string>
 #include <vector>
+#include <cstdio>
 
-enum Method
-{
-	METHOD_GET,
-	METHOD_POST,
-	METHOD_DELETE,
-	NB_METHOD
-};
-
-
-
-class Request
+class Request : public Message<RequestLine>
 {
 public:
 	Request(const std::string&);
 	~Request();
-	Request(const Request& other);
-	Request& operator=(const Request& other);
+	Request(const Request&);
+	Request& operator=(const Request&);
+
+	void print() const;
 private:
 	Request();
-	void parse_request(const std::string&);
-private:
-	std::string _request_line;
-	Method _method;
-	std::string _request_target;
-	std::string _version;
-	std::vector<std::string, std::string> _headers;
-	std::string _body;
-	size_t _body_size;
+	void _parse(const std::string&);
+	void _parse_headers(const std::string&);
+	void _parse_body(const std::string&);
+	std::vector<std::string> _split_headers_line(const std::string&);
 };
-
-
 
 #endif

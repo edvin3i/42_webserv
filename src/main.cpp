@@ -4,6 +4,8 @@
 #include "../includes/config/ConfigParser.hpp"
 #include "../includes/logger/Logger.hpp"
 #include "../includes/server/MasterServer.hpp"
+#include "../includes/http/Request.hpp"
+
 
 #define ERR_NUM_ARGS "wrong number of arguments!"
 

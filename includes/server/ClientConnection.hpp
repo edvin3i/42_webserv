@@ -47,7 +47,8 @@ private:
 	//	const LocationConfig *_currentLocationConfig;
 
 
-	std::vector<char> _readBuffer;
+	// std::vector<char> _readBuffer;
+	std::string _readBuffer;
 	std::vector<char> _writeBuffer;
 
 

@@ -7,7 +7,7 @@
 
 extern volatile sig_atomic_t g_sig;
 
-void sigIntHandler(int sig);
+void sigHandler(int sig);
 void setupSigHandler();
 
 

@@ -6,6 +6,7 @@
 #include "../includes/logger/Logger.hpp"
 #include "../includes/server/MasterServer.hpp"
 
+
 #define ERR_NUM_ARGS "wrong number of arguments!"
 
 
@@ -38,10 +39,16 @@ int main(int argc, char **argv) {
 	 */
 	std::string config_filename = argv[1];
 	ConfigParser conf_parser(logger, config_filename);
-	conf_parser.parse();
 
-	conf_parser.printConfig();
+	try {
+		conf_parser.parse();
+	}
+	catch (std::exception &e) {
+		std::cerr << BG_BRIGHT_RED << BRIGHT_WHITE << e.what() << RESET << std::endl;
+		exit(EXIT_FAILURE);
+	}
 
+	//conf_parser.printConfig();
 	logger.writeToLog(INFO, "Program Start Server!");
 
 	/*
@@ -49,7 +56,15 @@ int main(int argc, char **argv) {
 	 */
 	std::vector<ServerConfig> configs = conf_parser.getConfig();
 	MasterServer masterServer(logger, configs);
-	masterServer.run();
+
+	try {
+		masterServer.run();
+	}
+	catch (std::exception &e) {
+		std::cerr << BG_BRIGHT_RED << BRIGHT_WHITE << e.what() << RESET << std::endl;
+		exit(EXIT_FAILURE);
+	}
+
 
 	return (0);
 }

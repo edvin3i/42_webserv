@@ -106,3 +106,10 @@ void ClientConnection::setState(ConnectionState state) {
 ConnectionState ClientConnection::getState() const {
 	return _connectionState;
 }
+
+
+bool ClientConnection::isReadyToWrite() {
+	return !_writeBuffer.empty() \
+			&& _writeOffset < _writeBuffer.size() \
+			&& _connectionState == WRITING;
+}

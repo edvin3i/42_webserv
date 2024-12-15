@@ -55,6 +55,11 @@ MasterServer::~MasterServer() {
 		delete _servers[i];
 	}
 	_servers.clear();
+
+	for (std::map<int, ClientConnection* >::iterator it = _clientsMap.begin(); it != _clientsMap.end(); ++it) {
+		delete it->second;
+	}
+	_clientsMap.clear();
 }
 
 void MasterServer::run() {
@@ -78,7 +83,7 @@ void MasterServer::run() {
 
 						pollfd client_fd;
 						client_fd.fd = new_socket;
-						client_fd.events = POLLIN;
+						client_fd.events = POLLIN | POLLOUT; // add POLLOUT check
 						client_fd.revents = 0;
 
 						_fds.push_back(client_fd);
@@ -105,18 +110,26 @@ void MasterServer::run() {
 						}
 						if (revents & (POLLERR | POLLHUP)) {
 							client->setState(CLOSING);
+							continue;
 						}
 						break;
 					case WRITING:
 						if (revents & POLLOUT) {
 							client->buildResponse();
-							client->writeData();
+
+							// add checking
+							if (client->isReadyToWrite()) {
+								client->writeData();
+							}
+
 							if (client->getState() != WRITING) {
 								client->setState(CLOSING);
 							}
+							_fds[i].events = POLLIN; // set POLLIN
 						}
 						if (revents & (POLLERR | POLLHUP)) {
 							client->setState(CLOSING);
+							continue;
 						}
 						break;
 					case CLOSING:

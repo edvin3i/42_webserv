@@ -128,6 +128,11 @@ void TcpServer::_resolveHostName(const std::string &hostname,
 
 int TcpServer::_setupSocket() {
 	_socket = socket(AF_INET, SOCK_STREAM, 0);
+
+	// set socket to SO_REUSEADDR for more fast restart without TIME_WAIT
+	int state = 1;
+	setsockopt(_socket, SOL_SOCKET, SO_REUSEADDR, &state, sizeof(state));
+
 	int flags = fcntl(_socket, F_GETFL, 0);
 	fcntl(_socket, F_SETFL, flags | O_NONBLOCK);
 
@@ -140,7 +145,8 @@ int TcpServer::_setupSocket() {
 	// Bind the socket to specific address
 	int bnd = bind(_socket, (sockaddr *)&_socketAddress, _socketAddressLen);
 	if (bnd < 0) {
-		_handleError("Can not bind the socket to address!");
+		//_handleError("Can not bind the socket to address!");
+		std::cout << "Can not bind the socket to address! ERRNO: " << errno << std::endl;
 		return 1;
 	}
 	return 0;

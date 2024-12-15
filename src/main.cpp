@@ -7,7 +7,9 @@
 #include "../includes/server/MasterServer.hpp"
 
 
-#define ERR_NUM_ARGS "wrong number of arguments!"
+#define INF_DEFAULT_CONF "config path not specified, using default configuration!"
+#define INF_USE_CONF "using the config file: "
+#define ERR_WRNG_NUM_ARGS "wrong number of args!"
 
 
 int main(int argc, char **argv) {
@@ -25,22 +27,33 @@ int main(int argc, char **argv) {
 	Logger logger(DEBUG, CONSOLE, "webserv.log");
 
 	/*
-	 * Second: Check args
+	 * Second: Check args and set config path
 	 */
-	if (argc != 2) {
-		logger.writeToLog(ERROR, ERR_NUM_ARGS);
-		std::cout << ERR_NUM_ARGS << std::endl;
-		std::cout << "USAGE: ./webserv <config.cfg>" << std::endl;
+	std::string config_filename;
+
+	if (argc == 1) {
+		logger.writeToLog(INFO, INF_DEFAULT_CONF);
+		std::cout << INF_DEFAULT_CONF << std::endl;
+		config_filename = "config/default.cfg";
+	}
+	else if (argc == 2) {
+		config_filename = argv[1];
+		logger.writeToLog(INFO, INF_USE_CONF + config_filename);
+	}
+	else {
+		logger.writeToLog(ERROR, ERR_WRNG_NUM_ARGS);
+		std::cerr << ERR_WRNG_NUM_ARGS << std::endl;
+		std::cout << "USAGE: ./webserv <config.cfg>" << std::endl;;
 		return 1;
 	}
 
 	/*
 	 * Third: Start the configuration file pareser
 	 */
-	std::string config_filename = argv[1];
-	ConfigParser conf_parser(logger, config_filename);
+	ConfigParser conf_parser(logger);
 
 	try {
+		conf_parser.init(config_filename);
 		conf_parser.parse();
 	}
 	catch (std::exception &e) {

@@ -18,10 +18,8 @@
 #define PORT_MAX 65535
 
 
-ConfigParser::ConfigParser(Logger &logger, std::string &conf_filename) : _logger(logger), _config_path(conf_filename) {
-	if (_config_path.empty()) {
-		_handleError(ERR_CONF_FNAME);
-	}
+ConfigParser::ConfigParser(Logger &logger) : _logger(logger) {
+
 }
 
 
@@ -79,6 +77,13 @@ void ConfigParser::parse() {
 		}
 	}
 	_config_file.close();
+}
+
+void ConfigParser::init(std::string & config_path) {
+	if (config_path.empty()) {
+		_handleError(ERR_CONF_FNAME);
+	}
+	_config_path = config_path;
 }
 
 void ConfigParser::_parseServerBlock(ServerConfig & server) {

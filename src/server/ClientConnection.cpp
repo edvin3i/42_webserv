@@ -35,7 +35,9 @@ void ClientConnection::buildResponse() {
     ss << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: "
        << buffer.str().size() << "\r\n\r\n" << buffer.str();
 
-    _writeBuffer.assign(ss.str().begin(), ss.str().end());
+	std::string responce = ss.str(); // set string instead temporary ss.str object
+	_writeBuffer.clear();
+    _writeBuffer.assign(responce.begin(), responce.end());
     _writeOffset = 0;
 
     _logger.writeToLog(DEBUG, "Response ready!");

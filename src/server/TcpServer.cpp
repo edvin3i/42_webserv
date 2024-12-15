@@ -145,8 +145,7 @@ int TcpServer::_setupSocket() {
 	// Bind the socket to specific address
 	int bnd = bind(_socket, (sockaddr *)&_socketAddress, _socketAddressLen);
 	if (bnd < 0) {
-		//_handleError("Can not bind the socket to address!");
-		std::cout << "Can not bind the socket to address! ERRNO: " << errno << std::endl;
+		_handleError("Can not bind the socket to address!");
 		return 1;
 	}
 	return 0;

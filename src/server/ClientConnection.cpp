@@ -22,7 +22,7 @@ ClientConnection::~ClientConnection() {
 
 void ClientConnection::buildResponse() {
     std::string indexPath = _serverConfig.root + _serverConfig.index;
-    std::ifstream htmlFile(indexPath);
+    std::ifstream htmlFile(indexPath.c_str());
 
     if (!htmlFile) {
         throw(0); // call 404 page

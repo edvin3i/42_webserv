@@ -21,18 +21,24 @@ ClientConnection::~ClientConnection() {
 
 
 void ClientConnection::buildResponse() {
-	std::string htmlFile =  "<!DOCTYPE html><html lang=\"en\"><body><h1> HOME </h1><p> Hello from my WebServ_42  :) </p></body></html>";
-	std::ostringstream ss;
-	ss << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " \
-		<< htmlFile.size() \
-		<< "\r\n\r\n" \
-		<< htmlFile;
-	std::string response = ss.str();
-	_writeBuffer.assign(response.begin(), response.end());
-	_writeOffset = 0;
+    std::string indexPath = _serverConfig.root + _serverConfig.index;
+    std::ifstream htmlFile(indexPath.c_str());
 
-	_logger.writeToLog(DEBUG, "Response ready!");
-	ss.flush();
+    if (!htmlFile) {
+        throw(0); // call 404 page
+    }
+
+    std::stringstream buffer;
+    buffer << htmlFile.rdbuf();
+
+    std::ostringstream ss;
+    ss << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: "
+       << buffer.str().size() << "\r\n\r\n" << buffer.str();
+
+    _writeBuffer.assign(ss.str().begin(), ss.str().end());
+    _writeOffset = 0;
+
+    _logger.writeToLog(DEBUG, "Response ready!");
 }
 
 

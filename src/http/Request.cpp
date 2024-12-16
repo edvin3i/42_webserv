@@ -22,37 +22,47 @@ Request& Request::operator=(const Request& other)
 	return (*this);
 }
 
-std::vector<std::string> split(std::string str, std::string delimiter)
+void Request::_split_request(std::string str, std::string& request_line, std::vector<std::string>& header_lines, std::string& body)
 {
-	size_t pos_start = 0, pos_end, delim_len = delimiter.length();
-	std::string token;
-	std::vector<std::string> res;
+	const std::string delimiter = "\r\n";
+	size_t pos_start = 0, pos_end, delim_len = 2;
+	std::string header_line;
 
-	while ((pos_end = str.find(delimiter, pos_start)) != std::string::npos)
+	pos_end = str.find(delimiter, pos_start);
+	request_line = str.substr(pos_start, pos_end - pos_start);
+	pos_start = pos_end + delim_len;
+	while (1)
 	{
-		token = str.substr(pos_start, pos_end - pos_start);
+		pos_end = str.find(delimiter, pos_start);
+		if (pos_end == std::string::npos)
+			throw (0);
+		// if (pos_end <= (str.length() - delim_len * 2) && str.compare(pos_end + 2, 2, delimiter) == 0)
+		// {
+		// 	body = str.substr(pos_end + 4);
+		// 	break ;
+		// }
+		header_line = str.substr(pos_start, pos_end - pos_start);
+		if (header_line.empty())
+		{
+			body = str.substr(pos_end + 2);
+			break ;
+		}
+		header_lines.push_back(header_line);
 		pos_start = pos_end + delim_len;
-		res.push_back(token);
 	}
-	res.push_back(str.substr(pos_start));
-	return (res);
 }
 
 void Request::_parse(const std::string &str)
 {
-	std::vector<std::string> request_lines = split(str, "\r\n");
+	std::string request_line, body;
+	std::vector<std::string> header_lines;
 
-	if (request_lines.size() < 2)
-		throw (0);
-	start_line = RequestLine(request_lines[0]);
+	_split_request(str, request_line, header_lines, body);
+	start_line = RequestLine(request_line);
 
-	size_t i = 1;
-	while (i < request_lines.size() && !request_lines[i].empty())
-	{
-		_parse_header(request_lines[i]);
-		i += 1;
-	}
-	_parse_body(request_lines, i + 1);
+	for (size_t i = 0; i < header_lines.size(); ++i)
+		_parse_header(header_lines[i]);
+	_parse_body(body);
 }
 
 void Request::_parse_header(const std::string &str)
@@ -72,28 +82,43 @@ void Request::_parse_header(const std::string &str)
 	headers.insert(std::pair<std::string, std::string>(field_name, field_value));
 }
 
-std::vector<std::string> Request::_split_headers_line(const std::string& str)
+void Request::_decode_chunked(const std::string& str)
 {
-	std::vector<std::string> headers_line;
-	size_t old_pos = 0;
-	size_t pos = 0;
-	std::string line;
-	while ((pos = str.find("\r\n", pos)) != std::string::npos)
+	size_t length = 0, chunk_size;
+	char *chunk_data;
+	std::istringstream sstream(str);
+
+	sstream >> std::hex >> chunk_size;
+	sstream.ignore(1, '\r');
+	sstream.ignore(1, '\n');
+	while (chunk_size > 0)
 	{
-		line = str.substr(old_pos, pos - old_pos);
-		headers_line.push_back(line);
-		pos = pos + 2;
-		old_pos = pos;
+		chunk_data = new char[chunk_size + 1];
+		sstream.read(chunk_data, chunk_size);
+		chunk_data[chunk_size] = '\0';
+		sstream.ignore(1, '\r');
+		sstream.ignore(1, '\n');
+		content.append(chunk_data);
+		delete[] chunk_data;
+		length += chunk_size;
+		sstream >> std::hex >> chunk_size;
+		sstream.ignore(1, '\r');
+		sstream.ignore(1, '\n');
 	}
-	return (headers_line);
+	std::stringstream ss_content_length;
+	ss_content_length << length;
+	headers.insert(std::pair<std::string, std::string>("Content-Length", ss_content_length.str()));
+	content_length = length;
+	headers["Transfer-Encoding"] = "";
 }
 
-void Request::_parse_body(std::vector<std::string>& request_lines, size_t pos)
+void Request::_parse_body(const std::string& str)
 {
 	Headers::iterator transfer_encoding_it = headers.find("Transfer-Encoding");
 	Headers::iterator content_length_it = headers.find("Content-Length");
 
-
+	if (str.empty())
+		return ;
 	if (transfer_encoding_it != headers.end() && content_length_it != headers.end())
 	{
 		throw (0);
@@ -101,29 +126,15 @@ void Request::_parse_body(std::vector<std::string>& request_lines, size_t pos)
 	else if (transfer_encoding_it != headers.end())
 	{
 		if (transfer_encoding_it->second == "chunked")
-		{
-			size_t length = 0, chunk_size;
-			sscanf(request_lines[pos].c_str(), "%lx", &chunk_size);
-			pos += 1;
-			while (chunk_size > 0)
-			{
-				content.append(request_lines[pos]);
-				length += chunk_size;
-				pos += 1;
-				sscanf(request_lines[pos].c_str(), "%lx", &chunk_size);
-				pos += 1;
-			}
-			content_length = length;
-		}
+			_decode_chunked(str);
 		else
-		{
 			throw (0); // Status not implemented
-		}
 	}
 	else if(content_length_it != headers.end())
 	{
-		sscanf(headers["Content-Length"].c_str(), "%zu", &content_length); // Maybe scanf breaks the rules
-		content = request_lines[pos].substr(0, content_length);
+		std::stringstream sstream(headers["Content-Length"]);
+		sstream << content_length;
+		content = str.substr(0, content_length);
 	}
 }
 

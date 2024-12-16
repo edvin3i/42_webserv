@@ -93,34 +93,37 @@ void Request::_parse_body(std::vector<std::string>& request_lines, size_t pos)
 	Headers::iterator transfer_encoding_it = headers.find("Transfer-Encoding");
 	Headers::iterator content_length_it = headers.find("Content-Length");
 
-	if (transfer_encoding_it == headers.end() && content_length_it == headers.end())
+
+	if (transfer_encoding_it != headers.end() && content_length_it != headers.end())
 	{
-		throw (0); //close connection after responding to avoid the potential attacks
-		//status length required
+		throw (0);
 	}
-	else if (transfer_encoding_it != headers.end() && transfer_encoding_it->second == "chunked")
+	else if (transfer_encoding_it != headers.end())
 	{
-		size_t length = 0, chunk_size;
-		sscanf(request_lines[pos].c_str(), "%lx", &chunk_size);
-		pos += 1;
-		while (chunk_size > 0)
+		if (transfer_encoding_it->second == "chunked")
 		{
-			content.append(request_lines[pos]);
-			length += chunk_size;
-			pos += 1;
+			size_t length = 0, chunk_size;
 			sscanf(request_lines[pos].c_str(), "%lx", &chunk_size);
 			pos += 1;
+			while (chunk_size > 0)
+			{
+				content.append(request_lines[pos]);
+				length += chunk_size;
+				pos += 1;
+				sscanf(request_lines[pos].c_str(), "%lx", &chunk_size);
+				pos += 1;
+			}
+			content_length = length;
 		}
-		content_length = length;
+		else
+		{
+			throw (0); // Status not implemented
+		}
 	}
 	else if(content_length_it != headers.end())
 	{
 		sscanf(headers["Content-Length"].c_str(), "%zu", &content_length); // Maybe scanf breaks the rules
 		content = request_lines[pos].substr(0, content_length);
-	}
-	else
-	{
-		throw (0); // Status not implemented
 	}
 }
 

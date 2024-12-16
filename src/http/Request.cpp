@@ -22,61 +22,54 @@ Request& Request::operator=(const Request& other)
 	return (*this);
 }
 
-void Request::_parse(const std::string &str)
+std::vector<std::string> split(std::string str, std::string delimiter)
 {
-	std::string request_line_str, headers_str, body_str;
-	size_t i = 0;
-	size_t crlf_pos;
+	size_t pos_start = 0, pos_end, delim_len = delimiter.length();
+	std::string token;
+	std::vector<std::string> res;
 
-	crlf_pos = str.find("\r\n", i);
-	if (crlf_pos == std::string::npos)
-		throw (0);
-	request_line_str = str.substr(i, crlf_pos);
-	start_line = RequestLine(request_line_str);
-	i = crlf_pos + 2;
-	crlf_pos = str.find("\r\n\r\n", i);
-	if (crlf_pos == std::string::npos)
-		throw (0);
-	headers_str = str.substr(i, crlf_pos - i + 2);
-	_parse_headers(headers_str);
-	i = crlf_pos + 4;
-	_parse_body(str.substr(i));
+	while ((pos_end = str.find(delimiter, pos_start)) != std::string::npos)
+	{
+		token = str.substr(pos_start, pos_end - pos_start);
+		pos_start = pos_end + delim_len;
+		res.push_back(token);
+	}
+	res.push_back(str.substr(pos_start));
+	return (res);
 }
 
-void Request::_parse_headers(const std::string &str)
+void Request::_parse(const std::string &str)
 {
-	std::vector<std::string> header_field_lines = _split_headers_line(str);
+	std::vector<std::string> request_lines = split(str, "\r\n");
 
-	for (size_t i = 0; i < header_field_lines.size(); ++i)
+	if (request_lines.size() < 2)
+		throw (0);
+	start_line = RequestLine(request_lines[0]);
+
+	size_t i = 1;
+	while (i < request_lines.size() && !request_lines[i].empty())
 	{
-		std::string line = header_field_lines[i];
-		std::string field_name, field_value;
-		size_t j = 0;
-		while (j < line.length() && line[j] != ':')
-		{
-			field_name += line[j];
-			if (line[j] == ' ')
-				throw (0); //400 Bad Request
-			j += 1;
-		}
-		if (j == line.length())
-			throw (0);
-		j += 1;
-		while (j < line.length() && line[j] == ' ')
-			j += 1;
-		if (j == line.length())
-			throw (0);
-		while (j < line.length() && line[j] != ' ')
-		{
-			field_value += line[j];
-			j += 1;
-		}
-		while (j < line.length() && line[j] == ' ')
-			j += 1;
-		if (j != line.length())
-			throw (0);
-		headers.insert(std::pair<std::string, std::string>(field_name, field_value));
+		_parse_header(request_lines[i]);
+		i += 1;
 	}
+	_parse_body(request_lines[i + 1]);
+}
+
+void Request::_parse_header(const std::string &str)
+{
+	std::string field_name, field_value;
+	size_t colon_pos, field_value_pos_start, field_value_pos_end;
+
+	colon_pos = str.find(':');
+	field_name = str.substr(0, colon_pos);
+	if (field_name.empty() || field_name.find(' ') != std::string::npos)
+		throw (0);
+	field_value_pos_start = str.find_first_not_of(' ', colon_pos + 1);
+	field_value_pos_end = str.find_last_not_of(' ', colon_pos + 1);
+	field_value = str.substr(field_value_pos_start, field_value_pos_end - field_value_pos_start);
+	if (field_value.empty() || field_value.find(' ') != std::string::npos)
+		throw (0);
+	headers.insert(std::pair<std::string, std::string>(field_name, field_value));
 }
 
 std::vector<std::string> Request::_split_headers_line(const std::string& str)

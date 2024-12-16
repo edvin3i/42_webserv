@@ -10,8 +10,8 @@ template<class StartLine> struct Message
 {
 	StartLine start_line;
 	Headers headers;
-	std::string body;
-	size_t body_size;
+	std::string content;
+	size_t content_length;
 };
 
 #endif

@@ -52,7 +52,7 @@ void Request::_parse(const std::string &str)
 		_parse_header(request_lines[i]);
 		i += 1;
 	}
-	_parse_body(request_lines[i + 1]);
+	_parse_body(request_lines, i + 1);
 }
 
 void Request::_parse_header(const std::string &str)
@@ -88,23 +88,39 @@ std::vector<std::string> Request::_split_headers_line(const std::string& str)
 	return (headers_line);
 }
 
-void Request::_parse_body(const std::string& str)
+void Request::_parse_body(std::vector<std::string>& request_lines, size_t pos)
 {
-	bool is_transfer_encoding = headers.find("Transfer-Encoding") != headers.end();
-	bool is_content_length = headers.find("Content-Length") != headers.end();
+	Headers::iterator transfer_encoding_it = headers.find("Transfer-Encoding");
+	Headers::iterator content_length_it = headers.find("Content-Length");
 
-	if (is_transfer_encoding && is_content_length)
+	if (transfer_encoding_it == headers.end() && content_length_it == headers.end())
 	{
 		throw (0); //close connection after responding to avoid the potential attacks
+		//status length required
 	}
-	else if (is_transfer_encoding)
+	else if (transfer_encoding_it != headers.end() && transfer_encoding_it->second == "chunked")
 	{
-		throw (0); // Not implemented
+		size_t length = 0, chunk_size;
+		sscanf(request_lines[pos].c_str(), "%lx", &chunk_size);
+		pos += 1;
+		while (chunk_size > 0)
+		{
+			content.append(request_lines[pos]);
+			length += chunk_size;
+			pos += 1;
+			sscanf(request_lines[pos].c_str(), "%lx", &chunk_size);
+			pos += 1;
+		}
+		content_length = length;
 	}
-	else if(is_content_length)
+	else if(content_length_it != headers.end())
 	{
-		sscanf(headers["Content-Length"].c_str(), "%zu", &body_size); // Maybe scanf breaks the rules
-		body = str.substr(0, body_size);
+		sscanf(headers["Content-Length"].c_str(), "%zu", &content_length); // Maybe scanf breaks the rules
+		content = request_lines[pos].substr(0, content_length);
+	}
+	else
+	{
+		throw (0); // Status not implemented
 	}
 }
 
@@ -120,8 +136,8 @@ void Request::print() const
 	std::clog << "\n\n";
 
 	std::clog << "BODY: \n";
-	if (body.empty())
+	if (content_length == 0)
 		std::clog << "empty body\n";
 	else
-		std::clog << body << '\n';
+		std::clog << content << '\n';
 }

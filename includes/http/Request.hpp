@@ -20,7 +20,7 @@ private:
 	Request();
 	void _parse(const std::string&);
 	void _parse_header(const std::string&);
-	void _parse_body(const std::string&);
+	void _parse_body(std::vector<std::string>&, size_t);
 	std::vector<std::string> _split_headers_line(const std::string&);
 };
 

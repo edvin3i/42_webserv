@@ -47,3 +47,9 @@ int main(int argc, char **argv) {
 
 	return (0);
 }
+
+// int main(void)
+// {
+// 	Request r("POST / HTTP/1.1\r\nHost: localhost\r\nUser-Agent: curl/1.1.0\r\nAccept: */*\r\nContent-Type: text/plain\r\nTransfer-Encoding: chunked\r\n\r\n7\r\nMozilla\r\n11\r\nDeveloper Network\r\n0\r\n\r\n");
+// 	r.print();
+// }

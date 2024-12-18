@@ -56,11 +56,11 @@ void Request::_parse(const std::string &str)
 
 	_split_request(str, request_line, header_lines, body);
 	start_line = RequestLine(request_line);
-	_parse_header_lines(header_lines);
+	_parse_headers(header_lines);
 	_parse_body(body);
 }
 
-void Request::_parse_header_lines(std::vector<std::string>& header_lines)
+void Request::_parse_headers(std::vector<std::string>& header_lines)
 {
 	for (size_t i = 0; i < header_lines.size(); ++i)
 		_parse_header(header_lines[i]);

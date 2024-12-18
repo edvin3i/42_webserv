@@ -131,6 +131,7 @@ void Request::_parse_body(const std::string& str)
 	if (transfer_encoding_it != headers.end() && content_length_it != headers.end())
 	{
 		throw (400);
+		//close connection after responding
 	}
 	else if (transfer_encoding_it != headers.end())
 	{

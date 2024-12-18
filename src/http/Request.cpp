@@ -32,12 +32,12 @@ void Request::_split_request(std::string str, std::string& request_line, std::ve
 	request_line = str.substr(pos_start, pos_end - pos_start);
 	pos_start = pos_end + delim_len;
 	if (str[pos_start] == ' ')
-		throw (0); // reject message as invalid
+		throw (400); // reject message as invalid
 	while (1)
 	{
 		pos_end = str.find(delimiter, pos_start);
 		if (pos_end == std::string::npos)
-			throw (0);
+			throw (400);
 		header_line = str.substr(pos_start, pos_end - pos_start);
 		if (header_line.empty())
 		{
@@ -57,6 +57,7 @@ void Request::_parse(const std::string &str)
 	_split_request(str, request_line, header_lines, body);
 	start_line = RequestLine(request_line);
 	_parse_headers(header_lines);
+	_check_headers();
 	_parse_body(body);
 }
 
@@ -74,13 +75,20 @@ void Request::_parse_header(const std::string &str)
 	colon_pos = str.find(':');
 	field_name = str.substr(0, colon_pos);
 	if (field_name.empty() || field_name.find(' ') != std::string::npos)
-		throw (0);
+		throw (400);
 	field_value_pos_start = str.find_first_not_of(' ', colon_pos + 1);
 	field_value_pos_end = str.find_last_not_of(' ', colon_pos + 1);
 	field_value = str.substr(field_value_pos_start, field_value_pos_end - field_value_pos_start);
 	if (field_value.empty() || field_value.find(' ') != std::string::npos)
-		throw (0);
+		throw (400);
 	headers.insert(std::pair<std::string, std::string>(field_name, field_value));
+}
+
+void Request::_check_headers() const
+{
+	//respond with 400 when request message contains more than one Host header field line or a Host header field with an invalid field value
+	if (headers.find("Host") == headers.end())
+		throw (400);
 }
 
 void Request::_decode_chunked(const std::string& str)
@@ -122,14 +130,14 @@ void Request::_parse_body(const std::string& str)
 		return ;
 	if (transfer_encoding_it != headers.end() && content_length_it != headers.end())
 	{
-		throw (0);
+		throw (400);
 	}
 	else if (transfer_encoding_it != headers.end())
 	{
 		if (transfer_encoding_it->second == "chunked")
 			_decode_chunked(str);
 		else
-			throw (0); // Status not implemented
+			throw (400); // Status not implemented
 	}
 	else if(content_length_it != headers.end())
 	{

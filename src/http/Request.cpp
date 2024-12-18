@@ -31,16 +31,13 @@ void Request::_split_request(std::string str, std::string& request_line, std::ve
 	pos_end = str.find(delimiter, pos_start);
 	request_line = str.substr(pos_start, pos_end - pos_start);
 	pos_start = pos_end + delim_len;
+	if (str[pos_start] == ' ')
+		throw (0); // reject message as invalid
 	while (1)
 	{
 		pos_end = str.find(delimiter, pos_start);
 		if (pos_end == std::string::npos)
 			throw (0);
-		// if (pos_end <= (str.length() - delim_len * 2) && str.compare(pos_end + 2, 2, delimiter) == 0)
-		// {
-		// 	body = str.substr(pos_end + 4);
-		// 	break ;
-		// }
 		header_line = str.substr(pos_start, pos_end - pos_start);
 		if (header_line.empty())
 		{
@@ -59,10 +56,14 @@ void Request::_parse(const std::string &str)
 
 	_split_request(str, request_line, header_lines, body);
 	start_line = RequestLine(request_line);
+	_parse_header_lines(header_lines);
+	_parse_body(body);
+}
 
+void Request::_parse_header_lines(std::vector<std::string>& header_lines)
+{
 	for (size_t i = 0; i < header_lines.size(); ++i)
 		_parse_header(header_lines[i]);
-	_parse_body(body);
 }
 
 void Request::_parse_header(const std::string &str)

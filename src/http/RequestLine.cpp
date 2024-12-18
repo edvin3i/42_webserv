@@ -2,17 +2,31 @@
 
 const size_t RequestLine::_max_request_line_length = 8192;
 
-const size_t RequestLine::_nb_allowed_methods = 3;
+const char *RequestLine::_allowed_methods[] = {"GET", "POST", "DELETE"};
 
-const std::string RequestLine::_allowed_methods[_nb_allowed_methods] = {"GET", "POST", "DELETE"};
+const size_t RequestLine::_nb_allowed_methods = sizeof(_allowed_methods) / sizeof(_allowed_methods[0]);
+
+size_t RequestLine::_max_method_length = 0;
+
+void RequestLine::_init()
+{
+	for (size_t i = 0; i < _nb_allowed_methods; ++i)
+	{
+		size_t len = strlen(_allowed_methods[i]);
+		if (len > _max_method_length)
+			_max_method_length = len;
+	}
+}
 
 RequestLine::RequestLine()
 : _method(), _request_target(), _http_version()
-{}
+{
+	_init();
+}
 
 RequestLine::RequestLine(const std::string& line)
 {
-
+	_init();
 	if (line.length() > _max_request_line_length)
 		throw (0);
 	_parse_request_line(line);
@@ -42,10 +56,13 @@ void RequestLine::_parse_request_line(const std::string& line)
 
 void RequestLine::_check_request_line() const
 {
-	const std::string *first_method = _allowed_methods;
-	const std::string *last_method = _allowed_methods + _nb_allowed_methods;
-
-	if (std::find(first_method, last_method, _method) == last_method)
+	if (_method.length() > _max_method_length)
+		throw (501);
+	bool is_method_exist = false;
+	for (size_t i = 0; i < _nb_allowed_methods; ++i)
+		if (strcmp(_method.c_str(), _allowed_methods[i]) == 0)
+			is_method_exist = true;
+	if (is_method_exist == false)
 		throw (0);
 	//check request target
 	if (_http_version != "HTTP/1.1")

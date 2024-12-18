@@ -4,6 +4,8 @@
 #include <string>
 #include <iostream>
 #include <algorithm>
+#include <vector>
+#include <cstring>
 
 class RequestLine
 {
@@ -14,9 +16,9 @@ public:
 	RequestLine(const RequestLine&);
 	RequestLine& operator=(const RequestLine&);
 
-	//For test
 	void print() const;
 private:
+	void _init();
 	void _parse_request_line(const std::string&);
 	void _check_request_line() const;
 private:
@@ -24,8 +26,9 @@ private:
 	std::string _request_target;
 	std::string _http_version;
 	static const size_t _max_request_line_length;
+	static size_t _max_method_length;
+	static const char *_allowed_methods[];
 	static const size_t _nb_allowed_methods;
-	static const std::string _allowed_methods[];
 };
 
 #endif

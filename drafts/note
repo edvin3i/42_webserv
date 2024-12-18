@@ -1,0 +1,80 @@
+color picker: 
+
+POST /setBackgroundColor HTTP/1.1
+Host: gbreana.42.fr
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0 Safari/537.36
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 15
+Connection: keep-alive
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8
+Referer: http://gbreana.42.fr/create_card.html
+Origin: http://gbreana.42.fr
+
+color=%23FF5733
+
+
+upload photo: 
+POST /upload HTTP/1.1
+Host: gbreana.42.fr
+Content-Type: multipart/form-data; boundary=---------------------------9051914041544843365972754266
+Content-Length: [calculated_length]
+
+-----------------------------9051914041544843365972754266
+Content-Disposition: form-data; name="photo"; filename="example.jpg"
+Content-Type: image/jpeg
+
+[Binary content of the uploaded image file]
+
+-----------------------------9051914041544843365972754266--
+
+summit message: 
+POST /submit HTTP/1.1
+Host: gbreana.42.fr
+Content-Type: application/x-www-form-urlencoded
+Content-Length: [calculated_length]
+
+Hi, Happy new year!
+
+
+delete photo:
+DELETE /delete/image123.jpg HTTP/1.1
+Host: <server-hostname>
+
+
+get: 
+GET /index.html HTTP/1.1
+Host: localhost
+
+
+
+https://codepen.io/pen/
+
+
+upload file can save here : upload_dir /var/www/uploads
+
+
+int createSocket(int port) {
+    int server_socket = socket(AF_INET, SOCK_STREAM, 0);
+    sockaddr_in addr;
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = INADDR_ANY;  // Bind to all interfaces
+    addr.sin_port = htons(port);
+
+    bind(server_socket, (struct sockaddr *)&addr, sizeof(addr));
+    listen(server_socket, SOMAXCONN);
+
+    return server_socket;
+}
+
+
+int port = 8080;
+int server_socket = createSocket(port);
+
+if (server_socket < 0) {
+    perror("Failed to create server socket");
+    exit(EXIT_FAILURE);
+}
+
+std::cout << "Server listening on port " << port << std::endl;
+
+// Use poll() or accept() to handle incoming connections...

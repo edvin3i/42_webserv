@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy New Year</title>
+    <style>
+        body {
+            background-color: white;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 50px;
+        }
+
+        .header h1 {
+            font-size: 4em;
+            color: rgb(217, 182, 74);
+            margin: 0;
+            font-family: 'Pacifico', cursive;
+        }
+
+        .decor {
+            width: 100%;
+            max-width: 300px;
+            margin: 20px 0;
+        }
+
+        .button-container {
+            margin-top: 20px;
+        }
+
+        button {
+            background-color: black;
+            color: rgb(217, 182, 74);
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            font-family: 'Arial', sans-serif;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Happy New Year</h1>
+        <img src="goldenheart.png" alt="Golden Heart" class="decor">
+    </div>
+
+    <div class="button-container">
+        <button onclick="window.location.href = 'create_your_card';">Create Your Card</button>
+    </div>
+
+</body>
+</html>
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Card</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h1 {
+            font-size: 4em;
+            color: rgb(207, 191, 141);
+            margin: 0;
+            font-family: 'Pacifico', cursive;
+        }
+
+        .subtitle {
+            font-size: 1.5em;
+            color: rgb(207, 191, 141);
+            margin-top: 10px;
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+        }
+
+        .step {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .step-title {
+            font-size: 1.5em;
+            color: #444;
+            margin-bottom: 10px;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 20px;
+            margin: 10px 0 30px 0;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            border: 2px solid transparent;
+            border-radius: 5px;
+            background-color: white;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .button-red {
+            color: rgb(41, 2, 2);
+            border-color: rgb(41, 2, 2);
+        }
+
+        .button-red:hover {
+            background-color: rgb(41, 2, 2);
+            color: white;
+        }
+
+        .button-green {
+            color: rgb(2, 40, 2);
+            border-color: rgb(2, 40, 2);
+        }
+
+        .button-green:hover {
+            background-color: rgb(2, 40, 2);
+            color: white;
+        }
+
+        .button-blue {
+            color: rgb(2, 2, 53);
+            border-color: rgb(2, 2, 53);
+        }
+
+        .button-blue:hover {
+            background-color: rgb(2, 2, 53);
+            color: white;
+        }
+
+        textarea {
+            width: 300px;
+            height: 150px;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+            resize: none;
+        }
+
+        .upload-container {
+            display: flex;
+            flex-direction: column;
+            text-align: center; 
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="file"], button[type="submit"], input[type="submit"] {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            background-color: rgb(207, 191, 141);
+            color: white;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        input[type="file"] {
+            background-color: transparent;
+            border: none;
+            color: #444;
+        }
+
+        input[type="file"]:hover {
+            text-decoration: underline;
+        }
+
+        button[type="submit"]:hover, input[type="submit"]:hover {
+            background-color: rgb(89, 75, 32);
+        }
+    </style>
+</head>
+<body>
+    <h1>HAPPY NEW YEAR</h1>
+    <p class="subtitle">- Try The Fonctions -</p>
+
+    <div class="step">
+        <div class="step-title">Choose Your Favorite Color</div>
+		<form action="/setBackgroundColor" method="POST">
+			<label for="colorPicker">Pick a color:</label>
+			<input type="color" id="colorPicker" name="color">
+			<br><br>
+			<button type="submit">Set Background</button>
+		</form>		
+
+    </div>
+
+    <div class="step">
+        <div class="step-title">Upload Your Photo</div>
+        <form action="/upload" method="POST" enctype="multipart/form-data" class="upload-container">
+            <input type="file" name="photo" accept="image/*">
+            <button type="submit">Upload Photo</button>
+        </form>
+    </div>
+
+		<div class="step">
+			<div class="step-title">Delete Your Photo</div>
+			<label for="fileToDelete">Enter the file name to delete:</label>
+			<input type="text" id="fileToDelete" name="fileToDelete" required>
+			<button onclick="deleteFile(event, 'delete')">Delete Photo</button>
+		</div>
+		<script>
+			function deleteFile(event, actionType) {
+				event.preventDefault();
+				const fileName = document.getElementById('fileToDelete').value;
+				if (!fileName) {
+					alert('Please enter a file name to delete.');
+					return;
+				}
+				fetch(`/delete/${fileName}`, { method: 'DELETE' })
+					.then(response => {
+						if (response.ok) {
+							alert('File deleted successfully.');
+						} else {
+							alert('File not found.');
+						}
+					})
+					.catch(error => {
+						console.error('Error:', error);
+						alert('An error occurred.');
+					});
+			}
+		</script>
+	
+</body>
+</html>

@@ -1,5 +1,5 @@
 -3. Request Line -> A server that receives a request-target onger than any URI it wishes to parse MUST respond with a 414
--3 Reconstructing the Target URI (maybe after the parsing)
+-3.3 Reconstructing the Target URI (maybe after the parsing)
 -5.1 Field Line Parsing -> Parse content of every field line (not necessary)
 -5.2 Handle obsolete line folding
 -6.1 Transfer Encoding -> A server that receives a request message with a transfer coding it does not understand should respond with 501
@@ -8,5 +8,5 @@
 -6.3 -> 6. If the sender closes the connection the server must consider the message to be incomplete and close the connection
 -8. -> Check if the zero-sized chunk has been received or if the message body received is equal to the content-length
 
-recode parsing of the request line
+handle bad stringstream input
 maybe http/1.0 request should be supported

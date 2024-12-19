@@ -3,8 +3,9 @@
 
 #include <string>
 #include <map>
+#include <vector>
 
-typedef std::map<std::string, std::string> Headers;
+typedef std::map<std::string, std::vector<std::string> > Headers;
 
 template<class StartLine> struct Message
 {

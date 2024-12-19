@@ -67,9 +67,56 @@ void Request::_parse_headers(std::vector<std::string>& header_lines)
 		_parse_header(header_lines[i]);
 }
 
+void Request::_parse_field_value(const std::string &str, std::vector<std::string>& field_value)
+{
+	std::string element;
+	size_t i = 0;
+	size_t nb_non_empty_element = 0;
+
+	while (i < str.length())
+	{
+		switch (str[i])
+		{
+			case ' ':
+				if (element.empty())
+				{
+					while (str[i] == ' ')
+						i += 1;
+				}
+				else
+				{
+					size_t nb_space = 0;
+					while (str[i] == ' ')
+					{
+						nb_space += 1;
+						i += 1;
+					}
+					if (str[i] != ',')
+						element.append(nb_space, ' ');
+				}
+				break ;
+			case ',':
+				field_value.push_back(element);
+				element.clear();
+				i += 1;
+				break ;
+			default:
+				if (element.empty())
+					nb_non_empty_element += 1;
+				element.push_back(str[i]);
+				i += 1;
+				break ;
+		}
+	}
+	field_value.push_back(element);
+	if (nb_non_empty_element == 0)
+		throw (400);
+}
+
 void Request::_parse_header(const std::string &str)
 {
-	std::string field_name, field_value;
+	std::string field_name, field_value_str_trim;
+	std::vector<std::string> field_value;
 	size_t colon_pos, field_value_pos_start, field_value_pos_end;
 
 	colon_pos = str.find(':');
@@ -77,11 +124,10 @@ void Request::_parse_header(const std::string &str)
 	if (field_name.empty() || field_name.find(' ') != std::string::npos)
 		throw (400);
 	field_value_pos_start = str.find_first_not_of(' ', colon_pos + 1);
-	field_value_pos_end = str.find_last_not_of(' ', colon_pos + 1);
-	field_value = str.substr(field_value_pos_start, field_value_pos_end - field_value_pos_start);
-	if (field_value.empty() || field_value.find(' ') != std::string::npos)
-		throw (400);
-	headers.insert(std::pair<std::string, std::string>(field_name, field_value));
+	field_value_pos_end = str.find_last_not_of(' ', str.length());
+	field_value_str_trim = str.substr(field_value_pos_start, field_value_pos_end - field_value_pos_start + 1);
+	_parse_field_value(field_value_str_trim, field_value);
+	headers.insert(std::pair<std::string, std::vector<std::string> >(field_name, field_value));
 }
 
 void Request::_check_headers() const
@@ -116,9 +162,15 @@ void Request::_decode_chunked(const std::string& str)
 	}
 	std::stringstream ss_content_length;
 	ss_content_length << length;
-	headers.insert(std::pair<std::string, std::string>("Content-Length", ss_content_length.str()));
+	headers.insert(std::pair<std::string, std::vector<std::string> >("Content-Length", std::vector<std::string>(1, ss_content_length.str())));
 	content_length = length;
-	headers["Transfer-Encoding"] = "";
+	headers["Transfer-Encoding"] = std::vector<std::string>(1, "");
+}
+
+static void _read_size_t(const std::string& str, size_t& n)
+{
+	std::stringstream sstream(str);
+	sstream << n;
 }
 
 void Request::_parse_body(const std::string& str)
@@ -135,17 +187,36 @@ void Request::_parse_body(const std::string& str)
 	}
 	else if (transfer_encoding_it != headers.end())
 	{
-		if (transfer_encoding_it->second == "chunked")
+		if (transfer_encoding_it->second.size() == 1 && transfer_encoding_it->second[0] == "chunked")
 			_decode_chunked(str);
 		else
 			throw (400); // Status not implemented
 	}
 	else if(content_length_it != headers.end())
 	{
-		std::stringstream sstream(headers["Content-Length"]);
-		sstream << content_length;
-		content = str.substr(0, content_length);
+		size_t content_length;
+		size_t nb_value;
+
+		switch (nb_value = headers["Content-Length"].size())
+		{
+			case '0':
+				throw (411);
+			case '1':
+				_read_size_t(headers["Content-Length"][0], content_length);
+				break ;
+			default:
+				size_t tmp;
+				_read_size_t(headers["Content-Length"][0], content_length);
+				for (size_t i = 1; i < nb_value; ++i)
+				{
+					_read_size_t(headers["Content-Length"][i], tmp);
+					if (tmp != content_length)
+						throw (411);
+				}
+				break ;
+		}
 	}
+	content = str.substr(0, content_length);
 }
 
 void Request::print() const
@@ -156,7 +227,11 @@ void Request::print() const
 
 	std::clog << "HEADERS: \n";
 	for (Headers::const_iterator it = headers.begin(); it != headers.end(); ++it)
-		std::cout << "header-name: " << it->first << ", header-value: " << it->second << '\n';
+	{
+		std::cout << "header-name: " << it->first << ", header-value: ";
+		for (size_t i = 0; i < it->second.size(); ++i)
+			std::cout << it->second[i] << ((i != it->second.size() - 1) ? "," : "\n");
+	}
 	std::clog << "\n\n";
 
 	std::clog << "BODY: \n";

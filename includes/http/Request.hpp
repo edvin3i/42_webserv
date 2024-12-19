@@ -22,6 +22,7 @@ private:
 	Request();
 	void _parse(const std::string&);
 	void _parse_header(const std::string&);
+	void _parse_field_value(const std::string &str, std::vector<std::string>& field_value);
 	void _parse_headers(std::vector<std::string>& header_lines);
 	void _check_headers() const;
 	void _parse_body(const std::string&);

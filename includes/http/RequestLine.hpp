@@ -20,6 +20,8 @@ public:
 private:
 	void _init();
 	void _parse_request_line(const std::string&);
+	void _parse_method(const std::string&);
+	void _parse_version(const std::string&);
 	void _check_request_line() const;
 private:
 	std::string _method;

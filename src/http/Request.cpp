@@ -170,7 +170,7 @@ void Request::_decode_chunked(const std::string& str)
 static void _read_size_t(const std::string& str, size_t& n)
 {
 	std::stringstream sstream(str);
-	sstream << n;
+	sstream >> n;
 }
 
 void Request::_parse_body(const std::string& str)
@@ -194,7 +194,6 @@ void Request::_parse_body(const std::string& str)
 	}
 	else if(content_length_it != headers.end())
 	{
-		size_t content_length;
 		size_t nb_value;
 
 		switch (nb_value = headers["Content-Length"].size())
@@ -215,8 +214,8 @@ void Request::_parse_body(const std::string& str)
 				}
 				break ;
 		}
+		content = str.substr(0, content_length);
 	}
-	content = str.substr(0, content_length);
 }
 
 void Request::print() const

@@ -58,78 +58,11 @@ MasterServer::~MasterServer() {
 }
 
 void MasterServer::run() {
-	while(!g_sig) {
-		int polling = poll(_fds.data(), _fds.size(), TIMEOUT);
-		if (polling < 0) {
-			if (errno == EINTR) {continue;} // added checking of errno for "interrupted by signal"
-			_logger.writeToLog(ERROR, "poll() return -1!");
-			break;
-		}
+	while (!g_sig) {
 
-		for (size_t i = 0; i < _fds.size(); ++i) {
-			if (_serversMap.find(_fds[i].fd) != _serversMap.end()) {
-				TcpServer *server = _serversMap[_fds[i].fd];
-				short revents = _fds[i].revents;
-
-				if (revents & POLLIN) {
-					int new_socket = server->acceptConnection();
-					if (new_socket >= 0) {
-						fcntl(new_socket, F_SETFL, O_NONBLOCK);
-
-						pollfd client_fd;
-						client_fd.fd = new_socket;
-						client_fd.events = POLLIN;
-						client_fd.revents = 0;
-
-						_fds.push_back(client_fd);
-						_clientsMap[new_socket] = new ClientConnection(
-																_logger,
-																client_fd.fd,
-																_serversMap[_fds[i].fd]->getConfig()
-																);
-
-
-					}
-				}
-			}
-			else if (_clientsMap.find(_fds[i].fd) != _clientsMap.end()) {
-				ClientConnection *client = _clientsMap[_fds[i].fd];
-				short revents = _fds[i].revents;
-
-				switch (client->getState()) {
-					case READING:
-						if (revents & POLLIN) {
-							client->readData();
-							_fds[i].events = POLLOUT;
-							client->setState(WRITING);
-						}
-						if (revents & (POLLERR | POLLHUP)) {
-							client->setState(CLOSING);
-						}
-						break;
-					case WRITING:
-						if (revents & POLLOUT) {
-							client->buildResponse();
-							client->writeData();
-							if (client->getState() != WRITING) {
-								client->setState(CLOSING);
-							}
-						}
-						if (revents & (POLLERR | POLLHUP)) {
-							client->setState(CLOSING);
-						}
-						break;
-					case CLOSING:
-						close(_fds[i].fd);
-						delete client;
-						_clientsMap.erase(_fds[i].fd);
-						_fds.erase(_fds.begin() + i);
-						--i;
-						break;
-				}
-			}
-		}
 	}
+
+
 	stop();
 }
 

@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <sys/poll.h>
+#include <sys/epoll.h>
 #include "../signals/signals.hpp"
 #include "../config/ServerConfig.hpp"
 #include "TcpServer.hpp"

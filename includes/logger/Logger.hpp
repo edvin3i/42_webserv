@@ -45,8 +45,8 @@ enum LogDetail {
 
 class Logger {
 public:
-	Logger(LogDetail detail, LogMode mode, const std::string & logfile_name);
-	Logger();
+	static Logger &get_logger(LogDetail detail, LogMode mode, const std::string & logfile_name);
+	static Logger *get_ptr();
 	~Logger();
 	std::string getDate() const;
 	std::string getTime() const;
@@ -56,11 +56,16 @@ public:
 	void closeLogFile();
 
 private:
+	Logger(LogDetail detail, LogMode mode, const std::string & logfile_name);
+	Logger();
+	Logger(const Logger &other);
+	Logger &operator=(const Logger & other);
 	LogDetail _detail;
 	LogMode _mode;
 	std::string _logFileName;
 	std::ofstream _logFile;
 	std::string _msgPrefix;
+	static Logger *_logger_ptr;
 
 	void _writeToFile(const std::string & message);
 	void _writeToConsole(const std::string & message);

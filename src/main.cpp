@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
 	 *	Details level: ERROR, INFO, DEBUG
 	 *	Output mode: CONSOLE, LOGFILE, DUAL
 	 */
-	Logger logger(DEBUG, CONSOLE, "webserv.log");
+	Logger &logger = Logger::get_logger(DEBUG, CONSOLE, "webserv.log");
 
 	/*
 	 * Second: Check args
@@ -45,6 +45,7 @@ int main(int argc, char **argv) {
 	}
 	catch (std::exception &e) {
 		std::cerr << BG_BRIGHT_RED << BRIGHT_WHITE << e.what() << RESET << std::endl;
+		delete &logger;
 		exit(EXIT_FAILURE);
 	}
 
@@ -62,9 +63,10 @@ int main(int argc, char **argv) {
 	}
 	catch (std::exception &e) {
 		std::cerr << BG_BRIGHT_RED << BRIGHT_WHITE << e.what() << RESET << std::endl;
+		delete &logger;
 		exit(EXIT_FAILURE);
 	}
 
-
+	delete &logger;
 	return (0);
 }

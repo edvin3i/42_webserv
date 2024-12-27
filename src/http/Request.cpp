@@ -77,6 +77,8 @@ void Request::_parse_field_value(const std::string &str, std::vector<std::string
 	{
 		switch (str[i])
 		{
+			case '\r': case '\n': case '\0':
+				throw (400);
 			case ' ':
 				if (element.empty())
 				{

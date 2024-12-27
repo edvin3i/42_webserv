@@ -190,7 +190,7 @@ void Request::_parse_body(const std::string& str)
 		if (transfer_encoding_it->second.size() == 1 && transfer_encoding_it->second[0] == "chunked")
 			_decode_chunked(str);
 		else
-			throw (400); // Status not implemented
+			throw (501);
 	}
 	else if(content_length_it != headers.end())
 	{

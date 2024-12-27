@@ -119,6 +119,8 @@ void Request::_parse_header(const std::string &str)
 	std::vector<std::string> field_value;
 	size_t colon_pos, field_value_pos_start, field_value_pos_end;
 
+	if (str.length() > max_header_length)
+		throw (400);
 	colon_pos = str.find(':');
 	field_name = str.substr(0, colon_pos);
 	if (field_name.empty() || field_name.find(' ') != std::string::npos)

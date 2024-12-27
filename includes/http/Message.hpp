@@ -7,6 +7,8 @@
 
 typedef std::map<std::string, std::vector<std::string> > Headers;
 
+const size_t max_header_length = 1024;
+
 template<class StartLine> struct Message
 {
 	StartLine start_line;

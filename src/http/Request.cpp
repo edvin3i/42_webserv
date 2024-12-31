@@ -67,7 +67,7 @@ void Request::_parse_headers(std::vector<std::string>& header_lines)
 		_parse_header(header_lines[i]);
 }
 
-void Request::_parse_field_value(const std::string &str, std::vector<std::string>& field_value)
+void Request::_parse_field_value(const std::string &str, const std::string& field_name)
 {
 	std::string element;
 	size_t i = 0;
@@ -98,7 +98,7 @@ void Request::_parse_field_value(const std::string &str, std::vector<std::string
 				}
 				break ;
 			case ',':
-				field_value.push_back(element);
+				headers.insert(std::pair<std::string, std::string>(field_name, element));
 				element.clear();
 				i += 1;
 				break ;
@@ -110,7 +110,7 @@ void Request::_parse_field_value(const std::string &str, std::vector<std::string
 				break ;
 		}
 	}
-	field_value.push_back(element);
+	headers.insert(std::pair<std::string, std::string>(field_name, element));
 	if (nb_non_empty_element == 0)
 		throw (400);
 }
@@ -118,7 +118,6 @@ void Request::_parse_field_value(const std::string &str, std::vector<std::string
 void Request::_parse_header(const std::string &str)
 {
 	std::string field_name, field_value_str_trim;
-	std::vector<std::string> field_value;
 	size_t colon_pos, field_value_pos_start, field_value_pos_end;
 
 	if (str.length() > max_header_length)
@@ -130,8 +129,7 @@ void Request::_parse_header(const std::string &str)
 	field_value_pos_start = str.find_first_not_of(' ', colon_pos + 1);
 	field_value_pos_end = str.find_last_not_of(' ', str.length());
 	field_value_str_trim = str.substr(field_value_pos_start, field_value_pos_end - field_value_pos_start + 1);
-	_parse_field_value(field_value_str_trim, field_value);
-	headers.insert(std::pair<std::string, std::vector<std::string> >(field_name, field_value));
+	_parse_field_value(field_value_str_trim, field_name);
 }
 
 void Request::_check_headers() const
@@ -166,9 +164,18 @@ void Request::_decode_chunked(const std::string& str)
 	}
 	std::stringstream ss_content_length;
 	ss_content_length << length;
-	headers.insert(std::pair<std::string, std::vector<std::string> >("Content-Length", std::vector<std::string>(1, ss_content_length.str())));
+	headers.insert(std::pair<std::string, std::string>("Content-Length", ss_content_length.str()));
+	// headers.insert(std::pair<std::string, std::vector<std::string> >("Content-Length", std::vector<std::string>(1, ss_content_length.str())));
 	content_length = length;
-	headers["Transfer-Encoding"] = std::vector<std::string>(1, "");
+	std::pair<Headers::iterator, Headers::iterator> transfer_encoding_key = headers.equal_range("Transfer-Encoding");
+	for (Headers::iterator it = transfer_encoding_key.first; it != transfer_encoding_key.second; ++it)
+	{
+		if (it->second == "chunked")
+		{
+			it->second = "";
+			break ;
+		}
+	}
 }
 
 static void _read_size_t(const std::string& str, size_t& n)
@@ -179,42 +186,46 @@ static void _read_size_t(const std::string& str, size_t& n)
 
 void Request::_parse_body(const std::string& str)
 {
-	Headers::iterator transfer_encoding_it = headers.find("Transfer-Encoding");
-	Headers::iterator content_length_it = headers.find("Content-Length");
+	std::pair<Headers::iterator, Headers::iterator> transfer_encoding_it = headers.equal_range("Transfer-Encoding");
+	std::pair<Headers::iterator, Headers::iterator> content_length_it = headers.equal_range("Content-Length");
+	size_t nb_encoding = headers.count("Transfer-Encoding");
+	size_t nb_content_length = headers.count("Content-Length");
 
 	if (str.empty())
 		return ;
-	if (transfer_encoding_it != headers.end() && content_length_it != headers.end())
+	if (nb_encoding > 0 && nb_content_length > 0)
 	{
 		throw (400);
 		//close connection after responding
 	}
-	else if (transfer_encoding_it != headers.end())
+	else if (nb_encoding > 0)
 	{
-		if (transfer_encoding_it->second.size() == 1 && transfer_encoding_it->second[0] == "chunked")
+		if (nb_encoding == 1 && transfer_encoding_it.first->second == "chunked")
 			_decode_chunked(str);
 		else
 			throw (501);
 	}
-	else if(content_length_it != headers.end())
+	else if(nb_content_length > 0)
 	{
-		size_t nb_value;
-
-		switch (nb_value = headers["Content-Length"].size())
+		switch (headers.count("Content-Length"))
 		{
 			case '0':
 				throw (411);
 			case '1':
-				_read_size_t(headers["Content-Length"][0], content_length);
+				_read_size_t(headers.find("Content-Length")->second, content_length);
 				break ;
 			default:
 				size_t tmp;
-				_read_size_t(headers["Content-Length"][0], content_length);
-				for (size_t i = 1; i < nb_value; ++i)
+				Headers::iterator it = content_length_it.first;
+
+				_read_size_t(it->second, content_length);
+				it++;
+				while (it != content_length_it.second)
 				{
-					_read_size_t(headers["Content-Length"][i], tmp);
+					_read_size_t(it->second, tmp);
 					if (tmp != content_length)
 						throw (411);
+					it++;
 				}
 				break ;
 		}

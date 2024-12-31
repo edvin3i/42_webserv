@@ -5,7 +5,7 @@
 #include <map>
 #include <vector>
 
-typedef std::map<std::string, std::vector<std::string> > Headers;
+typedef std::multimap<std::string, std::string> Headers;
 
 const size_t max_header_length = 1024;
 

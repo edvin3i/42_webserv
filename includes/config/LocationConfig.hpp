@@ -1,8 +1,11 @@
 #ifndef LOCATIONCONFIG_HPP
 #define LOCATIONCONFIG_HPP
 
+#include <algorithm>
 #include <string>
 #include <vector>
+#include <sstream>
+#include <iostream>
 
 /*
  * Store the "location {}" section parameters
@@ -13,6 +16,8 @@ class LocationConfig {
 public:
 	LocationConfig();
 	~LocationConfig();
+
+	void printLocConfig() const;
 
 	std::string path;
 	std::vector<std::string> methods;

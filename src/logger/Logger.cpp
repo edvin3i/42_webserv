@@ -1,11 +1,11 @@
 #include "../../includes/logger/Logger.hpp"
 
+Logger *Logger::_logger_ptr = NULL;
 
 Logger::Logger(LogDetail detail, LogMode mode, const std::string & logfile_name)
 				:	_detail(detail), \
 					_mode(mode), \
-					_logFileName(logfile_name), \
-					_logFile() {
+					_logFileName(logfile_name) {
 
 	if (_mode != CONSOLE) {
 		_logFile.open(_logFileName.c_str(), std::ofstream::app);
@@ -28,6 +28,19 @@ Logger::Logger()
 	}
 }
 
+
+Logger &Logger::get_logger(LogDetail detail, LogMode mode,
+                           const std::string &logfile_name) {
+	if (_logger_ptr == NULL) {
+		_logger_ptr = new Logger(detail, mode, logfile_name);
+	}
+	else {
+		std::cerr << "Logger instance is created earlier!" << std::endl;
+		std::cerr << "Previous reference will be returned." << std::endl;
+	}
+
+	return *_logger_ptr;
+}
 
 Logger::~Logger() {
 	_logFile.close();
@@ -166,6 +179,10 @@ void Logger::_setMessagePrefix(LogDetail mode) {
 
 void Logger::closeLogFile() {
 	_logFile.close();
+}
+
+Logger * Logger::get_ptr() {
+	return _logger_ptr;
 }
 
 //Logger::Logger(const Logger & other): _logFile(other.getLogFile()) {

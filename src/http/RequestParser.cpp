@@ -21,9 +21,9 @@ void RequestParser::parse(std::vector<char> & inputVector) {
 	size_t endPos = inStr.find("\r\n\r\n");
 	std::string fullRequest = inStr.substr(0, endPos);
 
-	std::cout << "====== Full request BEFORE ======" << std::endl;
-	std::cout << fullRequest << std::endl;
-	std::cout << "========= END ==========\n" << std::endl;
+	// std::cout << "====== Full request BEFORE ======" << std::endl;
+	// std::cout << fullRequest << std::endl;
+	// std::cout << "========= END ==========\n" << std::endl;
 
 	// extract and parse first request line
 	endPos = fullRequest.find("\r\n");
@@ -70,3 +70,19 @@ void RequestParser::_parseMessageBody(std::string &string) {
 	std::cout << "========= END ==========\n" << std::endl;
 }
 
+/*
+ * Utilites
+ */
+
+void RequestParser::_trim(std::string & rawString) {
+	size_t start = rawString.find_first_not_of(" \t\r\n");
+	size_t end = rawString.find_last_not_of(" \t\r\n");
+
+	if (start == std::string::npos) {
+		rawString = "";
+	}
+	else {
+		rawString = rawString.substr(start, end - start + 1);
+	}
+
+}

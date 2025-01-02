@@ -17,8 +17,10 @@ class LocationConfig;
 class ConfigParser {
 
 public:
-	ConfigParser(Logger & logger, std::string & conf_filename);
+	ConfigParser(Logger & logger);
 	~ConfigParser();
+
+	void init(std::string & config_path);
 	void parse();
 	std::vector<ServerConfig> getConfig();
 	void printConfig();

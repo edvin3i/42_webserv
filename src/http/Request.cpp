@@ -239,12 +239,18 @@ void Request::print() const
 	start_line.print();
 	std::clog << "\n\n";
 
+	// std::clog << "HEADERS: \n";
+	// for (Headers::const_iterator it = headers.begin(); it != headers.end(); ++it)
+	// {
+	// 	std::cout << "header-name: " << it->first << ", header-value: ";
+	// 	for (size_t i = 0; i < it->second.size(); ++i)
+	// 		std::cout << it->second[i] << ((i != it->second.size() - 1) ? "," : "\n");
+	// }
+	// std::clog << "\n\n";
+
 	std::clog << "HEADERS: \n";
-	for (Headers::const_iterator it = headers.begin(); it != headers.end(); ++it)
-	{
-		std::cout << "header-name: " << it->first << ", header-value: ";
-		for (size_t i = 0; i < it->second.size(); ++i)
-			std::cout << it->second[i] << ((i != it->second.size() - 1) ? "," : "\n");
+	for (Headers::const_iterator it = headers.begin(); it != headers.end(); ++it) {
+		std::cout << it->first << ": " << it->second << "\n";
 	}
 	std::clog << "\n\n";
 

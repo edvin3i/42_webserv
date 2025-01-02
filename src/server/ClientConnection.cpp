@@ -25,16 +25,29 @@ void ClientConnection::buildResponse() {
     std::string indexPath = _serverConfig.root + _serverConfig.index;
     std::ifstream htmlFile(indexPath.c_str());
 
+	std::stringstream buffer;
+	std::ostringstream ss;
+
+
     if (!htmlFile) {
-        throw(0); // call 404 page
+        // throw(404); // call 404 page
+    	// buffer << htmlFile.rdbuf();
+    	ss << "HTTP/1.1 404 Not Found\nContent-Type: text/html\nContent-Length: \r\n\r\n";
+
+    	ss << "<html>";
+		ss << "<head><title>404 Not Found</title></head>";
+		ss << "<body>";
+    	ss << "<center><h1>404 Not Found</h1></center>";
+		ss << "<hr><center>WebServ42/0.00.01</center>";
+		ss << "</body>";
+		ss << "</html>";
+		ss << "\r\n\r\n";
     }
-
-    std::stringstream buffer;
-    buffer << htmlFile.rdbuf();
-
-    std::ostringstream ss;
-    ss << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: "
-       << buffer.str().size() << "\r\n\r\n" << buffer.str();
+	else {
+		buffer << htmlFile.rdbuf();
+		ss << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: "
+			<< buffer.str().size() << "\r\n\r\n" << buffer.str();
+	}
 
 	std::string responce = ss.str(); // set string instead temporary ss.str object
 	_writeBuffer.clear();
@@ -55,9 +68,9 @@ void ClientConnection::readData() {
 		// std::string str(_readBuffer.begin(), _readBuffer.end());
 		// _logger.writeToLog(DEBUG, "Receive a request from client:\n" + str);
 
-		std::ostringstream ss;
-		ss << "Read request from client. Len = " << bytesReceived << "\n";
-		_logger.writeToLog(DEBUG, ss.str());
+		// std::ostringstream ss;
+		// ss << "Read request from client. Len = " << bytesReceived << "\n";
+		// _logger.writeToLog(DEBUG, ss.str());
 	}
 	else {
 		_connectionState = CLOSING;
@@ -65,7 +78,7 @@ void ClientConnection::readData() {
 	// RequestParser httpParser;
 
 	// httpParser.parse(_readBuffer);
-	std::clog << "buffer: " << _readBuffer;
+	std::clog << "buffer:\n" << _readBuffer;
 	Request request(_readBuffer);
 	request.print();
 

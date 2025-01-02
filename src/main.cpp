@@ -14,7 +14,7 @@
 #define ERR_WRNG_NUM_ARGS "wrong number of args!"
 
 
-// int main(int argc, char **argv) {
+int main(int argc, char **argv) {
 
 	/*
 	* Zero step: init signal handler

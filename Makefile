@@ -18,7 +18,7 @@ OBJDIR      =   .obj/
 
 MFLS        =   config/ConfigParser.cpp config/ServerConfig.cpp config/LocationConfig.cpp \
 				server/MasterServer.cpp server/ClientConnection.cpp server/TcpServer.cpp \
-				http/RequestParser.cpp http/Request.cpp http/Response.cpp \
+				http/RequestParser.cpp http/Request.cpp http/Response.cpp http/RequestLine.cpp \
 				logger/Logger.cpp \
 				signals/signals.cpp \
 				main.cpp

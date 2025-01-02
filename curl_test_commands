@@ -1,0 +1,3 @@
++ Empty headers, Empty body
+curl -H 'Host:' -H 'User-Agent:' -H 'Accept:' -v http://localhost:8230
+

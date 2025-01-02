@@ -1,9 +1,11 @@
 #ifndef RESPONSE_HPP
 #define RESPONSE_HPP
 
+#include "Message.hpp"
+#include "StatusLine.hpp"
 
-
-class Response {
+class Response : public Message<StatusLine>
+{
 
 };
 

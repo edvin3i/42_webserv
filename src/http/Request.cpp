@@ -106,15 +106,17 @@ void Request::_parse_field_value(const std::string &str, const std::string& fiel
 						element.append(nb_whitespace, ' ');
 				}
 				break ;
-			case ',':
-				headers.insert(std::pair<std::string, std::string>(field_name, element));
-				element.clear();
-				i += 1;
-				break ;
-			default:
+			case '!': case '#': case '$': case '%': case '&': case '\'': case '*':
+			case '+': case '-': case '.': case '^': case '_': case '`': case '|': case '~':
+			case '0' ... '9': case 'a' ... 'z': case 'A' ... 'Z':
 				if (element.empty())
 					nb_non_empty_element += 1;
 				element.push_back(str[i]);
+				i += 1;
+				break ;
+			default:
+				headers.insert(std::pair<std::string, std::string>(field_name, element));
+				element.clear();
 				i += 1;
 				break ;
 		}

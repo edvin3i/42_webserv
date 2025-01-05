@@ -63,8 +63,12 @@ void Request::_parse(const std::string &str)
 
 void Request::_parse_headers(std::vector<std::string>& header_lines)
 {
+	std::string header_line_trim;
 	for (size_t i = 0; i < header_lines.size(); ++i)
-		_parse_header(header_lines[i]);
+	{
+		header_line_trim = str_trim(header_lines[i]);
+		_parse_header(header_line_trim);
+	}
 }
 
 void Request::_parse_field_value(const std::string &str, const std::string& field_name)
@@ -115,10 +119,19 @@ void Request::_parse_field_value(const std::string &str, const std::string& fiel
 		throw (400);
 }
 
+std::string Request::str_trim(const std::string &str)
+{
+	size_t str_start, str_end;
+
+	str_start = str.find_first_not_of(whitespace);
+	str_end = str.find_last_not_of(whitespace);
+	return (str.substr(str_start, str_end - str_start + 1));
+}
+
 void Request::_parse_header(const std::string &str)
 {
-	std::string field_name, field_value_str_trim;
-	size_t colon_pos, field_value_pos_start, field_value_pos_end;
+	std::string field_name, field_value, field_value_trim;
+	size_t colon_pos;
 
 	if (str.length() > max_header_length)
 		throw (400);
@@ -126,10 +139,9 @@ void Request::_parse_header(const std::string &str)
 	field_name = str.substr(0, colon_pos);
 	if (field_name.empty() || field_name.find(' ') != std::string::npos)
 		throw (400);
-	field_value_pos_start = str.find_first_not_of(' ', colon_pos + 1);
-	field_value_pos_end = str.find_last_not_of(' ', str.length());
-	field_value_str_trim = str.substr(field_value_pos_start, field_value_pos_end - field_value_pos_start + 1);
-	_parse_field_value(field_value_str_trim, field_name);
+	field_value = str.substr(colon_pos + 1);
+	field_value_trim = str_trim(field_value);
+	_parse_field_value(field_value_trim, field_name);
 }
 
 void Request::_check_headers() const

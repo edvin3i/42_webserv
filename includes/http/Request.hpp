@@ -20,6 +20,7 @@ public:
 	void print() const;
 private:
 	Request();
+	std::string str_trim(const std::string &str);
 	void _parse(const std::string&);
 	void _parse_header(const std::string&);
 	void _parse_field_value(const std::string &str, const std::string& field_name);

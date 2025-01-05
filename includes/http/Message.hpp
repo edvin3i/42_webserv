@@ -8,6 +8,7 @@
 typedef std::multimap<std::string, std::string> Headers;
 
 const size_t max_header_length = 1024;
+const std::string whitespace = " \t";
 
 template<class StartLine> struct Message
 {

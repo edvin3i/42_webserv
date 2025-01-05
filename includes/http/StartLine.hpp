@@ -4,6 +4,6 @@
 class StartLine
 {
 	
-}
+};
 
 #endif

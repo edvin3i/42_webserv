@@ -76,6 +76,37 @@ bool Request::_is_whitespace(char c) const
 	return (whitespace.find(c) != std::string::npos);
 }
 
+static bool is_delimiter(char c)
+{
+	const std::string delimiters = "(),/:;<=>?@[\\]{}";
+
+	return (delimiters.find(c) != std::string::npos);
+}
+
+void Request::_handle_quoted_str(const std::string& str, size_t& i, std::string& element) const
+{
+	if (!element.empty())
+		throw (400);
+	i += 1;
+	while (1)
+	{
+		if (i == str.length())
+			throw (400);
+		if (str[i] == '\"')
+		{
+			if (str.length() == (i + 1) || is_delimiter(str[i + 1]) ||_is_whitespace(str[i + 1]))
+			{
+				i += 1;
+				return ;
+			}
+			else
+				throw (400);
+		}
+		element.push_back(str[i]);
+		i += 1;
+	}
+}
+
 void Request::_parse_field_value(const std::string &str, const std::string& field_name)
 {
 	std::string element;
@@ -102,19 +133,22 @@ void Request::_parse_field_value(const std::string &str, const std::string& fiel
 						nb_whitespace += 1;
 						i += 1;
 					}
-					if (str[i] != ',')
+					if (!is_delimiter(str[i]))
 						element.append(nb_whitespace, ' ');
 				}
 				break ;
 			case '!': case '#': case '$': case '%': case '&': case '\'': case '*':
 			case '+': case '-': case '.': case '^': case '_': case '`': case '|': case '~':
 			case '0' ... '9': case 'a' ... 'z': case 'A' ... 'Z':
-				if (element.empty())
-					nb_non_empty_element += 1;
 				element.push_back(str[i]);
 				i += 1;
 				break ;
+			case '\"':
+				_handle_quoted_str(str, i, element);
+				break ;
 			default:
+				if (!element.empty())
+					nb_non_empty_element += 1;
 				headers.insert(std::pair<std::string, std::string>(field_name, element));
 				element.clear();
 				i += 1;

@@ -244,7 +244,8 @@ void Request::print() const
 	{
 		std::cout << "header-name: " << it->first << ", header-value: ";
 		for (size_t i = 0; i < it->second.size(); ++i)
-			std::cout << it->second[i] << ((i != it->second.size() - 1) ? "," : "\n");
+			std::cout << it->second[i];
+		std::cout << '\n';
 	}
 	std::clog << "\n\n";
 

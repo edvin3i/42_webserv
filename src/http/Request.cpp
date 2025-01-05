@@ -31,7 +31,7 @@ void Request::_split_request(std::string str, std::string& request_line, std::ve
 	pos_end = str.find(delimiter, pos_start);
 	request_line = str.substr(pos_start, pos_end - pos_start);
 	pos_start = pos_end + delim_len;
-	if (str[pos_start] == ' ')
+	if (_is_whitespace(str[pos_start]))
 		throw (400); // reject message as invalid
 	while (1)
 	{
@@ -66,9 +66,14 @@ void Request::_parse_headers(std::vector<std::string>& header_lines)
 	std::string header_line_trim;
 	for (size_t i = 0; i < header_lines.size(); ++i)
 	{
-		header_line_trim = str_trim(header_lines[i]);
+		header_line_trim = _str_trim(header_lines[i]);
 		_parse_header(header_line_trim);
 	}
+}
+
+bool Request::_is_whitespace(char c) const
+{
+	return (whitespace.find(c) != std::string::npos);
 }
 
 void Request::_parse_field_value(const std::string &str, const std::string& field_name)
@@ -83,22 +88,22 @@ void Request::_parse_field_value(const std::string &str, const std::string& fiel
 		{
 			case '\r': case '\n': case '\0':
 				throw (400);
-			case ' ':
+			case ' ': case '\t':
 				if (element.empty())
 				{
-					while (str[i] == ' ')
+					while (_is_whitespace(str[i]))
 						i += 1;
 				}
 				else
 				{
-					size_t nb_space = 0;
-					while (str[i] == ' ')
+					size_t nb_whitespace = 0;
+					while (_is_whitespace(str[i]))
 					{
-						nb_space += 1;
+						nb_whitespace += 1;
 						i += 1;
 					}
 					if (str[i] != ',')
-						element.append(nb_space, ' ');
+						element.append(nb_whitespace, ' ');
 				}
 				break ;
 			case ',':
@@ -119,7 +124,7 @@ void Request::_parse_field_value(const std::string &str, const std::string& fiel
 		throw (400);
 }
 
-std::string Request::str_trim(const std::string &str)
+std::string Request::_str_trim(const std::string &str) const
 {
 	size_t str_start, str_end;
 
@@ -137,10 +142,10 @@ void Request::_parse_header(const std::string &str)
 		throw (400);
 	colon_pos = str.find(':');
 	field_name = str.substr(0, colon_pos);
-	if (field_name.empty() || field_name.find(' ') != std::string::npos)
+	if (field_name.empty() || _is_whitespace(field_name[field_name.length() - 1]))
 		throw (400);
 	field_value = str.substr(colon_pos + 1);
-	field_value_trim = str_trim(field_value);
+	field_value_trim = _str_trim(field_value);
 	_parse_field_value(field_value_trim, field_name);
 }
 

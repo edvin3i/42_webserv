@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "ErrorPages.hpp"
 #include "../Message.hpp"
 #include "../StatusLine.hpp"
 #include "../Request.hpp"

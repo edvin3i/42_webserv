@@ -3,6 +3,8 @@
 
 #include <string>
 #include "Response.hpp"
+#include "CGIResponse.hpp"
+#include "StaticResponse.hpp"
 #include "../Request.hpp"
 #include "../../logger/Logger.hpp"
 #include "../../config/ServerConfig.hpp"

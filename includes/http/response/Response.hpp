@@ -3,10 +3,10 @@
 
 #include <string>
 
-#include "Message.hpp"
-#include "StatusLine.hpp"
-#include "Request.hpp"
-#include "../logger/Logger.hpp"
+#include "../Message.hpp"
+#include "../StatusLine.hpp"
+#include "../Request.hpp"
+#include "../../logger/Logger.hpp"
 #include "../includes/config/ServerConfig.hpp"
 
 class Response : public Message<StatusLine>

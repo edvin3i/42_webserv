@@ -20,6 +20,7 @@ MFLS        =   config/ConfigParser.cpp config/ServerConfig.cpp config/LocationC
 				server/MasterServer.cpp server/ClientConnection.cpp server/TcpServer.cpp \
 				http/Request.cpp http/RequestLine.cpp \
 				http/response/Response.cpp http/response/ResponseBuilder.cpp \
+				http/response/CGIResponse.cpp http/response/StaticResponse.cpp \
 				logger/Logger.cpp \
 				signals/signals.cpp \
 				main.cpp

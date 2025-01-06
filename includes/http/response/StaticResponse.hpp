@@ -8,7 +8,13 @@
 */
 
 class StaticResponse : public Response {
+public:
+	StaticResponse(Logger & logger, ServerConfig & serverConfig, Request & request);
+	std::string build();
 
+private:
+	void _buildHeaders();
+	void _buildContent();
 };
 
 

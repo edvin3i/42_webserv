@@ -8,7 +8,13 @@
 */
 
 class CGIResponse : public Response {
+public:
+	CGIResponse(Logger & logger, const ServerConfig & serverConfig, const Request & request);
+	std::string build();
 
+private:
+	void _buildHeaders();
+	void _executeCGI();
 };
 
 

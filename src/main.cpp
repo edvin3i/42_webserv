@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
 		exit(EXIT_FAILURE);
 	}
 
-	//conf_parser.printConfig();
+	// conf_parser.printConfig();
 	logger.writeToLog(INFO, "Program Start Server!");
 
 	/*

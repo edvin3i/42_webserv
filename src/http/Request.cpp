@@ -1,7 +1,7 @@
 #include "../../includes/http/Request.hpp"
 
 
-Request::Request(const std::string& str)
+Request::Request(const std::string & str)
 : Message<RequestLine>()
 {
 	_parse(str);
@@ -9,11 +9,11 @@ Request::Request(const std::string& str)
 
 Request::~Request() {}
 
-Request::Request(const Request& other)
+Request::Request(const Request & other)
 : Message<RequestLine>(other)
 {}
 
-Request& Request::operator=(const Request& other)
+Request& Request::operator=(const Request & other)
 {
 	if (this != &other)
 	{
@@ -22,7 +22,7 @@ Request& Request::operator=(const Request& other)
 	return (*this);
 }
 
-void Request::_split_request(std::string str, std::string& request_line, std::vector<std::string>& header_lines, std::string& body)
+void Request::_split_request(std::string str, std::string & request_line, std::vector<std::string> & header_lines, std::string & body)
 {
 	const std::string delimiter = "\r\n";
 	size_t pos_start = 0, pos_end, delim_len = 2;
@@ -49,7 +49,7 @@ void Request::_split_request(std::string str, std::string& request_line, std::ve
 	}
 }
 
-void Request::_parse(const std::string &str)
+void Request::_parse(const std::string & str)
 {
 	std::string request_line, body;
 	std::vector<std::string> header_lines;
@@ -61,13 +61,13 @@ void Request::_parse(const std::string &str)
 	_parse_body(body);
 }
 
-void Request::_parse_headers(std::vector<std::string>& header_lines)
+void Request::_parse_headers(std::vector<std::string> & header_lines)
 {
 	for (size_t i = 0; i < header_lines.size(); ++i)
 		_parse_header(header_lines[i]);
 }
 
-void Request::_parse_field_value(const std::string &str, const std::string& field_name)
+void Request::_parse_field_value(const std::string & str, const std::string & field_name)
 {
 	std::string element;
 	size_t i = 0;
@@ -115,7 +115,7 @@ void Request::_parse_field_value(const std::string &str, const std::string& fiel
 		throw (400);
 }
 
-void Request::_parse_header(const std::string &str)
+void Request::_parse_header(const std::string & str)
 {
 	std::string field_name, field_value_str_trim;
 	size_t colon_pos, field_value_pos_start, field_value_pos_end;
@@ -139,7 +139,7 @@ void Request::_check_headers() const
 		throw (400);
 }
 
-void Request::_decode_chunked(const std::string& str)
+void Request::_decode_chunked(const std::string & str)
 {
 	size_t length = 0, chunk_size;
 	char *chunk_data;
@@ -178,13 +178,13 @@ void Request::_decode_chunked(const std::string& str)
 	}
 }
 
-static void _read_size_t(const std::string& str, size_t& n)
+static void _read_size_t(const std::string & str, size_t & n)
 {
 	std::stringstream sstream(str);
 	sstream >> n;
 }
 
-void Request::_parse_body(const std::string& str)
+void Request::_parse_body(const std::string & str)
 {
 	std::pair<Headers::iterator, Headers::iterator> transfer_encoding_it = headers.equal_range("Transfer-Encoding");
 	std::pair<Headers::iterator, Headers::iterator> content_length_it = headers.equal_range("Content-Length");

@@ -11,7 +11,7 @@ class RequestLine
 {
 public:
 	RequestLine();
-	RequestLine(const std::string&);
+	RequestLine(const std::string & str);
 	~RequestLine();
 	RequestLine(const RequestLine&);
 	RequestLine& operator=(const RequestLine&);
@@ -23,7 +23,7 @@ private:
 	void _parse_method(const std::string&);
 	void _parse_version(const std::string&);
 	void _check_request_line() const;
-private:
+
 	std::string _method;
 	std::string _request_target;
 	std::string _http_version;

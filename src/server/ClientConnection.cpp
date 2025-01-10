@@ -22,24 +22,32 @@ ClientConnection::~ClientConnection() {
 
 
 void ClientConnection::buildResponse() {
-	std::string htmlFile =  "<!DOCTYPE html><html lang=\"en\"><body><h1> HOME </h1><p> Hello from my WebServ_42  :) </p></body></html>";
-	std::ostringstream ss;
-	ss << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " \
-		<< htmlFile.size() \
-		<< "\r\n\r\n" \
-		<< htmlFile;
-	std::string response = ss.str();
-	_writeBuffer.assign(response.begin(), response.end());
-	_writeOffset = 0;
+    std::string indexPath = _serverConfig.root + _serverConfig.index;
+    std::ifstream htmlFile(indexPath.c_str());
 
-	_logger.writeToLog(DEBUG, "Response ready!");
-	ss.flush();
+    if (!htmlFile) {
+        throw(0); // call 404 page
+    }
+
+    std::stringstream buffer;
+    buffer << htmlFile.rdbuf();
+
+    std::ostringstream ss;
+    ss << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: "
+       << buffer.str().size() << "\r\n\r\n" << buffer.str();
+
+	std::string responce = ss.str(); // set string instead temporary ss.str object
+	_writeBuffer.clear();
+    _writeBuffer.assign(responce.begin(), responce.end());
+    _writeOffset = 0;
+
+    _logger.writeToLog(DEBUG, "Response ready!");
 }
 
 
 void ClientConnection::readData() {
 	char buffer[BUFFER_SIZE] = {0};
-	int bytesReceived = read(_clientSocketFD, buffer, BUFFER_SIZE);
+	size_t bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0);
 
 	if (bytesReceived > 0) {
 		_readBuffer.insert(_readBuffer.end(), buffer, buffer + bytesReceived);
@@ -103,4 +111,11 @@ void ClientConnection::setState(ConnectionState state) {
 
 ConnectionState ClientConnection::getState() const {
 	return _connectionState;
+}
+
+
+bool ClientConnection::isReadyToWrite() {
+	return !_writeBuffer.empty() \
+			&& _writeOffset < _writeBuffer.size() \
+			&& _connectionState == WRITING;
 }

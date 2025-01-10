@@ -28,6 +28,7 @@ class RequestParser {
 	void _parseMessageBody(std::string & string);
 
 	std::string _getSubStrCharsVec(std::vector<char> & vec, char end);
+	void _trim(std::string & rawString);
 };
 
 

@@ -30,6 +30,8 @@ public:
 	ConnectionState getState() const;
 	void setState(ConnectionState state);
 
+	bool isReadyToWrite();
+
 	void readData();
 	void writeData();
 	void buildResponse();

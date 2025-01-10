@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <sys/poll.h>
+#include "../signals/signals.hpp"
 #include "../config/ServerConfig.hpp"
 #include "TcpServer.hpp"
 #include "ClientConnection.hpp"
@@ -19,6 +20,7 @@ public:
 	MasterServer(Logger & logger, const std::vector<ServerConfig> & configs);
 	~MasterServer();
 	void run();
+	void stop();
 
 private:
 	Logger &_logger;

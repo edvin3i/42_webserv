@@ -15,16 +15,16 @@ void ServerConfig::_init() {
 	root = "www";
 	index = "index.html";
 	client_max_body_size = 512 * 1024;
-	error_pages[400] = "html/error_pages/400.html";
-	error_pages[403] = "html/error_pages/403.html";
-	error_pages[404] = "html/error_pages/404.html";
-	error_pages[500] = "html/error_pages/500.html";
-	error_pages[501] = "html/error_pages/501.html";
+	error_pages[400] = "www/error_pages/400.html";
+	error_pages[403] = "www/error_pages/403.html";
+	error_pages[404] = "www/error_pages/404.html";
+	error_pages[500] = "www/error_pages/500.html";
+	error_pages[501] = "www/error_pages/501.html";
 
 
 }
 
-void ServerConfig::print_server_config() {
+void ServerConfig::print_server_config() const{
 	std::ostringstream ss;
 	ss << "===================== SERVER =======================\n";
 	ss << "Hostname: " << host << "\n";
@@ -36,8 +36,22 @@ void ServerConfig::print_server_config() {
 	for (std::map<int, std::string>::const_iterator it = error_pages.begin(); it != error_pages.end(); ++it) {
       ss << it->first << " = " << it->second << "; " << "\n";
 	}
-	ss << "====================================================\n";
 	std::cout << ss.str();
-	ss.flush();
+	ss.str("");
+
+	// Print locations configs. Yes, I know that it seems like a spaghetti :-/
+	if (!locations.empty()) {
+		ss << "Locations: " << "\n";
+		std::cout << ss.str();
+		ss.str("");
+
+		for (std::vector<LocationConfig>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
+			it->printLocConfig();
+		}
+	}
+
+	ss << "\n===================== END OF SERVER =======================\n";
+	std::cout << ss.str();
+	ss.str("");
 
 }

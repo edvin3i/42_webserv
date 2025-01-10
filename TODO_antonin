@@ -8,7 +8,10 @@
 -6.3 -> 6. If the sender closes the connection the server must consider the message to be incomplete and close the connection
 -8. -> Check if the zero-sized chunk has been received or if the message body received is equal to the content-length
 
-Accept tab when necessary
+RFC 9110, 5.6.5 Comments
+RFC 9110, 5.6.6 Parameters
+
+RFC 9110, 5.6.4 quoted-pair ?
 
 handle bad stringstream input
 maybe http/1.0 request should be supported

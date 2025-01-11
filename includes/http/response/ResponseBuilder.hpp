@@ -2,6 +2,7 @@
 #define RESPONSEBUILDER_HPP
 
 #include <string>
+#include "ErrorPages.hpp"
 #include "Response.hpp"
 #include "CGIResponse.hpp"
 #include "StaticResponse.hpp"

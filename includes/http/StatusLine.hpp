@@ -6,12 +6,13 @@
 class StatusLine
 {
 public:
-	StatusLine(std::string http_ver, int status_code, std::string reason_phrase);
+	StatusLine();
+	StatusLine(int status_code, const std::string& reason_phrase);
 	~StatusLine();
 	StatusLine(const StatusLine & other);
 	StatusLine& operator=(const StatusLine & other);
 private:
-	std::string _http_version;
+	static const std::string _http_version;
 	int _status_code;
 	std::string _reason_phrase;
 };

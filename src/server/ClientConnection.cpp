@@ -30,7 +30,7 @@ void ClientConnection::buildResponse() {
 
 
     if (!htmlFile) {
-        // throw(404); // call 404 page
+        // throw(STATUS_NOT_FOUND); // call 404 page
     	// buffer << htmlFile.rdbuf();
     	ss << "HTTP/1.1 404 Not Found\nContent-Type: text/html\nContent-Length: \r\n\r\n";
     	ss << "<html>";

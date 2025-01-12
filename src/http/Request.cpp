@@ -32,12 +32,12 @@ void Request::_split_request(std::string str, std::string & request_line, std::v
 	request_line = str.substr(pos_start, pos_end - pos_start);
 	pos_start = pos_end + delim_len;
 	if (str[pos_start] == ' ')
-		throw (400); // reject message as invalid
+		throw (STATUS_BAD_REQUEST); // reject message as invalid
 	while (1)
 	{
 		pos_end = str.find(delimiter, pos_start);
 		if (pos_end == std::string::npos)
-			throw (400);
+			throw (STATUS_BAD_REQUEST);
 		header_line = str.substr(pos_start, pos_end - pos_start);
 		if (header_line.empty())
 		{
@@ -78,7 +78,7 @@ void Request::_parse_field_value(const std::string & str, const std::string & fi
 		switch (str[i])
 		{
 			case '\r': case '\n': case '\0':
-				throw (400);
+				throw (STATUS_BAD_REQUEST);
 			case ' ':
 				if (element.empty())
 				{
@@ -112,7 +112,7 @@ void Request::_parse_field_value(const std::string & str, const std::string & fi
 	}
 	headers.insert(std::pair<std::string, std::string>(field_name, element));
 	if (nb_non_empty_element == 0)
-		throw (400);
+		throw (STATUS_BAD_REQUEST);
 }
 
 void Request::_parse_header(const std::string & str)
@@ -121,11 +121,11 @@ void Request::_parse_header(const std::string & str)
 	size_t colon_pos, field_value_pos_start, field_value_pos_end;
 
 	if (str.length() > max_header_length)
-		throw (400);
+		throw (STATUS_BAD_REQUEST);
 	colon_pos = str.find(':');
 	field_name = str.substr(0, colon_pos);
 	if (field_name.empty() || field_name.find(' ') != std::string::npos)
-		throw (400);
+		throw (STATUS_BAD_REQUEST);
 	field_value_pos_start = str.find_first_not_of(' ', colon_pos + 1);
 	field_value_pos_end = str.find_last_not_of(' ', str.length());
 	field_value_str_trim = str.substr(field_value_pos_start, field_value_pos_end - field_value_pos_start + 1);
@@ -136,7 +136,7 @@ void Request::_check_headers() const
 {
 	//respond with 400 when request message contains more than one Host header field line or a Host header field with an invalid field value
 	if (headers.find("Host") == headers.end())
-		throw (400);
+		throw (STATUS_BAD_REQUEST);
 }
 
 void Request::_decode_chunked(const std::string & str)
@@ -195,7 +195,7 @@ void Request::_parse_body(const std::string & str)
 		return ;
 	if (nb_encoding > 0 && nb_content_length > 0)
 	{
-		throw (400);
+		throw (STATUS_BAD_REQUEST);
 		//close connection after responding
 	}
 	else if (nb_encoding > 0)
@@ -203,14 +203,14 @@ void Request::_parse_body(const std::string & str)
 		if (nb_encoding == 1 && transfer_encoding_it.first->second == "chunked")
 			_decode_chunked(str);
 		else
-			throw (501);
+			throw (STATUS_NOT_IMPLEMENTED);
 	}
 	else if(nb_content_length > 0)
 	{
 		switch (headers.count("Content-Length"))
 		{
 			case '0':
-				throw (411);
+				throw (STATUS_LENGTH_REQUIRED);
 			case '1':
 				_read_size_t(headers.find("Content-Length")->second, content_length);
 				break ;
@@ -224,7 +224,7 @@ void Request::_parse_body(const std::string & str)
 				{
 					_read_size_t(it->second, tmp);
 					if (tmp != content_length)
-						throw (411);
+						throw (STATUS_LENGTH_REQUIRED);
 					it++;
 				}
 				break ;

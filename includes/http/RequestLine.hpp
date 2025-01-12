@@ -1,6 +1,7 @@
 #ifndef REQUEST_LINE_HPP
 #define REQUEST_LINE_HPP
 
+#include "StatusCode.hpp"
 #include <string>
 #include <iostream>
 #include <algorithm>

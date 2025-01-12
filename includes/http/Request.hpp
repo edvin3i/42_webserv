@@ -3,6 +3,7 @@
 
 #include "Message.hpp"
 #include "RequestLine.hpp"
+#include "StatusCode.hpp"
 #include <string>
 #include <vector>
 #include <cstdio>

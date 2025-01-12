@@ -17,7 +17,11 @@ void Response::_init_status_code_message()
 }
 
 Response::Response(const Request& request)
-
 {
 
+}
+
+const std::string& Response::str() const
+{
+	return (_str_content);
 }

@@ -21,29 +21,28 @@ class Response : public Message<StatusLine>
 {
 public:
 	Response(Logger & logger, const ServerConfig & srv_conf, const Request & request);
+	Response(const Request&);
 	virtual ~Response();
 
 	virtual std::string build() = 0;
+	const std::string& str() const;
 
 protected:
 	Logger &_logger;
 	const Request &_request;
 	const ServerConfig &_conf;
 
-    std::map<std::string, std::string> _headers;
-    std::string _body;
 
 	Response();
-	Response(const Request&);
 	Response(const Response & other);
 	Response &operator=(const Response & other);
-
 	void _buildStatusLine(int code);
 	void _addHeader(std::string key, std::string val);
 //	void _buildContent();
 private:
 	static void _init_status_code_message();
 	static std::map<int, std::string> _status_code_message;
+	std::string _str_content;
 };
 
 

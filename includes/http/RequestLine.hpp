@@ -26,7 +26,7 @@ private:
 	void _check_request_line() const;
 
 	std::string _method;
-	std::string _request_target;
+	std::string _uri;
 	std::string _http_version;
 	static const size_t _max_request_line_length;
 	static size_t _max_method_length;

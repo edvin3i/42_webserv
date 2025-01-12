@@ -19,7 +19,7 @@ void RequestLine::_init()
 }
 
 RequestLine::RequestLine()
-: _method(), _request_target(), _http_version()
+: _method(), _uri(), _http_version()
 {
 	_init();
 }
@@ -65,7 +65,7 @@ void RequestLine::_parse_request_line(const std::string& line)
 	space_pos = line.find(' ', i);
 	if (space_pos == std::string::npos)
 		throw (STATUS_BAD_REQUEST);
-	_request_target = line.substr(i, space_pos - i);
+	_uri = line.substr(i, space_pos - i);
 	i = space_pos + 1;
 	space_pos = line.find(' ', i);
 	if (space_pos != std::string::npos)
@@ -76,7 +76,7 @@ void RequestLine::_parse_request_line(const std::string& line)
 RequestLine::~RequestLine() {}
 
 RequestLine::RequestLine(const RequestLine& other)
-: _method(other._method), _request_target(other._request_target), _http_version(other._http_version)
+: _method(other._method), _uri(other._uri), _http_version(other._http_version)
 {}
 
 RequestLine& RequestLine::operator=(const RequestLine& other)
@@ -84,7 +84,7 @@ RequestLine& RequestLine::operator=(const RequestLine& other)
 	if (this != &other)
 	{
 		_method = other._method;
-		_request_target = other._request_target;
+		_uri = other._uri;
 		_http_version = other._http_version;
 	}
 	return (*this);
@@ -92,5 +92,5 @@ RequestLine& RequestLine::operator=(const RequestLine& other)
 
 void RequestLine::print() const
 {
-	std::clog << "method: " << _method << ", request-target: " << _request_target << ", HTTP-version: " << _http_version;
+	std::clog << "method: " << _method << ", request-target: " << _uri << ", HTTP-version: " << _http_version;
 }

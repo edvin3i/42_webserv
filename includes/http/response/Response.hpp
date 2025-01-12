@@ -34,12 +34,16 @@ protected:
     std::string _body;
 
 	Response();
+	Response(const Request&);
 	Response(const Response & other);
 	Response &operator=(const Response & other);
 
 	void _buildStatusLine(int code);
 	void _addHeader(std::string key, std::string val);
 //	void _buildContent();
+private:
+	static void _init_status_code_message();
+	static std::map<int, std::string> _status_code_message;
 };
 
 

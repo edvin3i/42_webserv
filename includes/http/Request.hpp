@@ -19,6 +19,8 @@ public:
 	Request &operator=(const Request & other);
 
 	void print() const;
+	std::pair<Headers::iterator, Headers::iterator> getFieldValue(const std::string&);
+
 private:
 	Request();
 	void _parse(const std::string & str);

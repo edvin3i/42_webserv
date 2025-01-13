@@ -94,3 +94,13 @@ void RequestLine::print() const
 {
 	std::clog << "method: " << _method << ", request-target: " << _uri << ", HTTP-version: " << _http_version;
 }
+
+const std::string& RequestLine::getMethod() const
+{
+	return (_method);
+}
+
+const std::string& RequestLine::getUri() const
+{
+	return (_uri);
+}

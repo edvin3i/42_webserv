@@ -98,7 +98,7 @@ void Request::_parse_field_value(const std::string & str, const std::string & fi
 				}
 				break ;
 			case ',':
-				headers.insert(std::pair<std::string, std::string>(field_name, element));
+				headers.insert(Field(field_name, element));
 				element.clear();
 				i += 1;
 				break ;
@@ -110,7 +110,7 @@ void Request::_parse_field_value(const std::string & str, const std::string & fi
 				break ;
 		}
 	}
-	headers.insert(std::pair<std::string, std::string>(field_name, element));
+	headers.insert(Field(field_name, element));
 	if (nb_non_empty_element == 0)
 		throw (STATUS_BAD_REQUEST);
 }
@@ -164,7 +164,7 @@ void Request::_decode_chunked(const std::string & str)
 	}
 	std::stringstream ss_content_length;
 	ss_content_length << length;
-	headers.insert(std::pair<std::string, std::string>("Content-Length", ss_content_length.str()));
+	headers.insert(Field("Content-Length", ss_content_length.str()));
 	// headers.insert(std::pair<std::string, std::vector<std::string> >("Content-Length", std::vector<std::string>(1, ss_content_length.str())));
 	content_length = length;
 	std::pair<Headers::iterator, Headers::iterator> transfer_encoding_key = headers.equal_range("Transfer-Encoding");
@@ -260,3 +260,6 @@ void Request::print() const
 	else
 		std::clog << content << '\n';
 }
+
+
+

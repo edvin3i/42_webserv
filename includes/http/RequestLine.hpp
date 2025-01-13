@@ -18,12 +18,13 @@ public:
 	RequestLine& operator=(const RequestLine&);
 
 	void print() const;
+	const std::string& getMethod() const;
+	const std::string& getUri() const;
 private:
 	void _init();
 	void _parse_request_line(const std::string&);
 	void _parse_method(const std::string&);
 	void _parse_version(const std::string&);
-	void _check_request_line() const;
 
 	std::string _method;
 	std::string _uri;

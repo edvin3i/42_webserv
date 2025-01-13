@@ -2,6 +2,8 @@
 #define RESPONSE_HPP
 
 #include <string>
+#include <sys/stat.h>
+#include <dirent.h>
 
 #include "ErrorPages.hpp"
 #include "../Message.hpp"
@@ -17,20 +19,28 @@
 */
 
 
+enum e_resource_type
+{
+	RT_FILE,
+	RT_DIR
+};
+
 class Response : public Message<StatusLine>
 {
 public:
-	Response(Logger & logger, const ServerConfig & srv_conf, const Request & request);
-	Response(const Request&);
-	virtual ~Response();
+	// Response(Logger & logger, const ServerConfig & srv_conf, const Request & request);
+	Response(const Request&, const LocationConfig *);
+	~Response();
 
-	virtual std::string build() = 0;
+	// virtual std::string build() = 0;
 	const std::string& str() const;
 
-protected:
-	Logger &_logger;
+// protected:
+private:
+	// Logger &_logger;
 	const Request &_request;
-	const ServerConfig &_conf;
+	// const ServerConfig &_conf;
+	const LocationConfig *_location;
 
 
 	Response();
@@ -40,9 +50,27 @@ protected:
 	void _addHeader(std::string key, std::string val);
 //	void _buildContent();
 private:
-	static void _init_status_code_message();
-	static std::map<int, std::string> _status_code_message;
 	std::string _str_content;
+	std::string _resource;
+	enum e_resource_type _resource_type;
+	void _check_location();
+	void _check_resource();
+	void _check_method();
+	void _handle_get();
+	void _handle_post();
+	void _handle_delete();
+	void _handle_file(const std::string& filename);
+	void _handle_dir();
+	void _check_dir();
+	bool _is_dir_has_index_file();
+	void _check_auto_index();
+	void _handle_auto_index();
+	void _upload_file();
+	std::string get_filename();
+	void _handle_error(enum e_status_code);
+	std::string toString() const;
+
+	static const std::string _html_auto_index;
 };
 
 

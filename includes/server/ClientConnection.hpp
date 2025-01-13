@@ -15,6 +15,7 @@ const int BUFFER_SIZE = 8192;
 
 
 class Logger;
+class Request;
 
 enum ConnectionState {
 	READING,
@@ -36,6 +37,8 @@ public:
 	void writeData();
 	void buildResponse();
 
+	void setLocationConfig();
+
 
 
 private:
@@ -46,7 +49,8 @@ private:
 	std::string _responseMessage; // needs to replace to _responceBuffer
 	size_t _writeOffset;
 	size_t _currentClientBodySize;
-	//	const LocationConfig *_currentLocationConfig;
+	LocationConfig *_currentLocationConfig;
+	Request *_request;
 
 
 	// std::vector<char> _readBuffer;

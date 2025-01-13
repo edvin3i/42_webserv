@@ -9,7 +9,9 @@ ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerCo
 										_serverConfig(config),
 										_connectionState(READING),
 										_writeOffset(0),
-										_currentClientBodySize(0)
+										_currentClientBodySize(0),
+										_currentLocationConfig(NULL),
+										_request(NULL)
 									{
 	(void) _serverConfig; // just to mute compile error
 	(void) _currentClientBodySize;
@@ -81,6 +83,7 @@ void ClientConnection::readData() {
 	Request request(_readBuffer);
 	request.print();
 
+
 }
 
 
@@ -130,4 +133,33 @@ bool ClientConnection::isReadyToWrite() {
 	return !_writeBuffer.empty() \
 			&& _writeOffset < _writeBuffer.size() \
 			&& _connectionState == WRITING;
+}
+
+
+void ClientConnection::setLocationConfig()
+{
+	const std::vector<LocationConfig>& locations = _serverConfig.locations;
+	size_t length = 0;
+	std::string path;
+	size_t location_index = 0;
+	bool location_found = false;
+	const std::string& _uri = _request->start_line.getUri();
+
+	for (size_t i = 0; i < locations.size(); ++i)
+	{
+		path = locations[i].path;
+		if (path.length() > _uri.length())
+			continue;
+		size_t tmp_length = 0;
+		for (size_t j = 0; j < _uri.length() && path[j] == _uri[j]; ++j)
+			tmp_length++;
+		if (tmp_length > length)
+		{
+			location_found = true;
+			length = tmp_length;
+			location_index = i;
+		}
+	}
+	if (location_found)
+		_currentLocationConfig = new LocationConfig[location_index];
 }

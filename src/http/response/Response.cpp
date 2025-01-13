@@ -2,8 +2,8 @@
 
 const std::string Response::_html_auto_index = "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Directory Index</title><style>body{font-family:'Arial',sans-serif;background-color:#f8f8f8;margin:0;padding:20px;}h1{color:#333;}ul{list-style-type:none;padding:0;}li{margin:10px 0;}a{color:#007bff;text-decoration:none;}a:hover{text-decoration:underline;}</style></head><body><h1>Index of The Directory</h1><ul>";
 
-Response::Response(const Request& request, const LocationConfig* location)
-: _request(request), _location(location)
+Response::Response(const Request& request, const ServerConfig& conf)
+: _request(request), _conf(conf)
 {
 	try
 	{
@@ -23,19 +23,19 @@ Response::~Response()
 
 void Response::_check_location()
 {
-	if (!_location)
-		throw (STATUS_NOT_FOUND);
+	// if (!_location)
+	// 	throw (STATUS_NOT_FOUND);
 	// else if (redirection)
 	// {
 	// 	redirection ?
 	// }
-	else
-	{
-		const std::vector<std::string>& allow_methods = _location->methods;
-		const std::string& request_method = _request.start_line.getMethod();
-		if (std::find(allow_methods.begin(), allow_methods.end(), request_method) == allow_methods.end())
-			throw (STATUS_NOT_ALLOWED);
-	}
+	// else
+	// {
+	// 	const std::vector<std::string>& allow_methods = _location->methods;
+	// 	const std::string& request_method = _request.start_line.getMethod();
+	// 	if (std::find(allow_methods.begin(), allow_methods.end(), request_method) == allow_methods.end())
+	// 		throw (STATUS_NOT_ALLOWED);
+	// }
 }
 
 void Response::_check_resource()
@@ -43,7 +43,7 @@ void Response::_check_resource()
 	struct stat file_stat;
 	std::string resource_path;
 
-	_resource = _location->root + _request.start_line.getUri();
+	_resource = _conf.root + _request.start_line.getUri();
 	if (stat(_resource.c_str(), &file_stat) < 0)
 		throw (STATUS_NOT_FOUND);
 	else if (S_ISDIR(file_stat.st_mode))
@@ -131,7 +131,7 @@ void Response::_handle_dir()
 		headers.insert(Field("Content-Length", "0"));
 	}
 	if (_is_dir_has_index_file())
-		_handle_file(_resource + _location->index);
+		_handle_file(_resource + _conf.index);
 	else
 		_check_auto_index();
 }
@@ -146,9 +146,8 @@ bool Response::_is_dir_has_index_file()
 		return (false);
 	while ((file = readdir(dir)))
 	{
-		if (strcmp(file->d_name, _location->index.c_str()) == 0)
+		if (strcmp(file->d_name, _conf.index.c_str()) == 0)
 		{
-			closedir(dir);
 			index_found = true;
 			break ;
 		}
@@ -159,9 +158,9 @@ bool Response::_is_dir_has_index_file()
 
 void Response::_check_auto_index()
 {
-	if (_location->autoindex)
-		_handle_auto_index();
-	else
+	// if (_conf.autoindex)
+	// 	_handle_auto_index();
+	// else
 		throw (STATUS_FORBIDDEN);
 }
 
@@ -192,7 +191,7 @@ void Response::_handle_auto_index()
 
 void Response::_handle_post()
 {
-	if (_location->upload_dir.empty())
+	// if (_conf.upload_dir.empty())
 		throw (STATUS_FORBIDDEN);
 	_upload_file();
 	start_line = StatusLine(STATUS_CREATED);
@@ -237,11 +236,12 @@ std::string Response::get_filename()
 
 void Response::_upload_file()
 {
+	throw (STATUS_NOT_IMPLEMENTED);
 	if (_request.content_length == 0)
 		throw (STATUS_INTERNAL_ERR);
 
 	const std::string filename = get_filename();
-	const std::string filepath = _location->upload_dir + "/" + filename;
+	// const std::string filepath = _location->upload_dir + "/" + filename;
 	std::ofstream file(filename.c_str());
 
 	if (!file.is_open())

@@ -32,7 +32,7 @@ class Response : public Message<StatusLine>
 {
 public:
 	// Response(Logger & logger, const ServerConfig & srv_conf, const Request & request);
-	Response(const Request&, const LocationConfig *);
+	Response(const Request&, const ServerConfig&);
 	~Response();
 
 	// virtual std::string build() = 0;
@@ -42,16 +42,16 @@ public:
 private:
 	// Logger &_logger;
 	const Request &_request;
-	// const ServerConfig &_conf;
-	const LocationConfig *_location;
+	const ServerConfig &_conf;
 
-
+public:
 	Response();
 	Response(const Response & other);
 	Response &operator=(const Response & other);
 	void _buildStatusLine(int code);
 	void _addHeader(std::string key, std::string val);
-//	void _buildContent();
+	std::string toHtml() const;
+
 private:
 	std::string _str_content;
 	std::string _resource;
@@ -73,7 +73,6 @@ private:
 	void _upload_file();
 	std::string get_filename();
 	void _handle_error(enum e_status_code);
-	std::string toHtml() const;
 
 	static const std::string _html_auto_index;
 };

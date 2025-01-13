@@ -38,7 +38,7 @@ CXX				=   c++
 CXXFLAGS		=   -std=c++98
 CXXFLAGS		+=	#-Wall -Werror -Wextra
 CXXFLAGS		+=	-MMD -MP
-CXXFLAGS		+=	-g
+CXXFLAGS		+=	-g3
 CXXFLAGS		+=  -I$(INCDIR)
 CXXFLAGS		+=	-fPIE
 

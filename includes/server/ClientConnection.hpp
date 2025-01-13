@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include "../logger/Logger.hpp"
 #include "../config/ServerConfig.hpp"
+#include "../http/response/Response.hpp"
 
 
 const int BUFFER_SIZE = 8192;
@@ -51,6 +52,7 @@ private:
 	size_t _currentClientBodySize;
 	LocationConfig *_currentLocationConfig;
 	Request *_request;
+	Response *_response;
 
 
 	// std::vector<char> _readBuffer;

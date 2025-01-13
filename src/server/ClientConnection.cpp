@@ -24,35 +24,37 @@ ClientConnection::~ClientConnection() {
 
 
 void ClientConnection::buildResponse() {
-    std::string indexPath = _serverConfig.root + _serverConfig.index;
-    std::ifstream htmlFile(indexPath.c_str());
+    // std::string indexPath = _serverConfig.root + _serverConfig.index;
+    // std::ifstream htmlFile(indexPath.c_str());
 
-	std::stringstream buffer;
-	std::ostringstream ss;
+	// std::stringstream buffer;
+	// std::ostringstream ss;
 
 
-    if (!htmlFile) {
-        // throw(STATUS_NOT_FOUND); // call 404 page
-    	// buffer << htmlFile.rdbuf();
-    	ss << "HTTP/1.1 404 Not Found\nContent-Type: text/html\nContent-Length: \r\n\r\n";
-    	ss << "<html>";
-		ss << "<head><title>404 Not Found</title></head>";
-		ss << "<body>";
-    	ss << "<center><h1>404 Not Found</h1></center>";
-		ss << "<hr><center>WebServ42/0.00.01</center>";
-		ss << "</body>";
-		ss << "</html>";
-		ss << "\r\n\r\n";
-    }
-	else {
-		buffer << htmlFile.rdbuf();
-		ss << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: "
-			<< buffer.str().size() << "\r\n\r\n" << buffer.str();
-	}
+    // if (!htmlFile) {
+    //     // throw(STATUS_NOT_FOUND); // call 404 page
+    // 	// buffer << htmlFile.rdbuf();
+    // 	ss << "HTTP/1.1 404 Not Found\nContent-Type: text/html\nContent-Length: \r\n\r\n";
+    // 	ss << "<html>";
+	// 	ss << "<head><title>404 Not Found</title></head>";
+	// 	ss << "<body>";
+    // 	ss << "<center><h1>404 Not Found</h1></center>";
+	// 	ss << "<hr><center>WebServ42/0.00.01</center>";
+	// 	ss << "</body>";
+	// 	ss << "</html>";
+	// 	ss << "\r\n\r\n";
+    // }
+	// else {
+	// 	buffer << htmlFile.rdbuf();
+	// 	ss << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: "
+	// 		<< buffer.str().size() << "\r\n\r\n" << buffer.str();
+	// }
 
-	std::string responce = ss.str(); // set string instead temporary ss.str object
+	// std::string responce = ss.str(); // set string instead temporary ss.str object
+	_response = new Response(*_request, _serverConfig);
+	std::string response_html = _response->toHtml();
 	_writeBuffer.clear();
-    _writeBuffer.assign(responce.begin(), responce.end());
+    _writeBuffer.assign(response_html.begin(), response_html.end());
     _writeOffset = 0;
 
     _logger.writeToLog(DEBUG, "Response ready!");
@@ -80,10 +82,8 @@ void ClientConnection::readData() {
 
 	// httpParser.parse(_readBuffer);
 	std::clog << "buffer:\n" << _readBuffer;
-	Request request(_readBuffer);
-	request.print();
-
-
+	_request = new Request(_readBuffer);
+	_request->print();
 }
 
 

@@ -123,25 +123,17 @@ void Response::_handle_file(const std::string& filename)
 
 void Response::_handle_dir()
 {
-	_check_dir();
+	const std::string& uri = _request.start_line.getUri();
+	if (uri[uri.length() - 1] != '/')
+	{
+		start_line = StatusLine(STATUS_MOVED);
+		headers.insert(Field("Location", _resource + "/"));
+		headers.insert(Field("Content-Length", "0"));
+	}
 	if (_is_dir_has_index_file())
 		_handle_file(_resource + _location->index);
 	else
 		_check_auto_index();
-}
-
-void Response::_check_dir()
-{
-	const std::string& uri = _request.start_line.getUri();
-	const std::string& method = _request.start_line.getMethod();
-
-	if (uri[uri.size() - 1] != '/')
-	{
-		if (method == "DELETE")
-			throw (STATUS_CONFLICT);
-		else
-			throw (STATUS_MOVED);
-	}
 }
 
 bool Response::_is_dir_has_index_file()
@@ -204,6 +196,7 @@ void Response::_handle_post()
 		throw (STATUS_FORBIDDEN);
 	_upload_file();
 	start_line = StatusLine(STATUS_CREATED);
+	headers.insert(Field("Content-Length", "0"));
 }
 
 std::string Response::get_filename()
@@ -259,14 +252,52 @@ void Response::_upload_file()
 
 void Response::_handle_delete()
 {
-	throw (STATUS_NOT_IMPLEMENTED);
+	switch (_resource_type)
+	{
+		case RT_FILE:
+			_delete_file();
+			break ;
+		case RT_DIR:
+		{
+			const std::string& uri = _request.start_line.getUri();
+
+			if (uri[uri.length() - 1] != '/')
+				start_line = StatusLine(STATUS_CONFLICT);
+			break ;
+		}
+		default:
+			throw (STATUS_NOT_IMPLEMENTED);
+	}
+}
+
+void Response::_delete_dir()
+{
+	if (access(_resource.c_str(), W_OK) != 0)
+		throw (STATUS_FORBIDDEN);
+	const std::string command = "rm -rf " + _resource;
+	if (std::system(command.c_str()) == 0)
+	{
+		start_line = StatusLine(STATUS_NO_CONTENT);
+		headers.insert(Field("Content-Length", "0"));
+	}
+	else
+		throw (STATUS_INTERNAL_ERR);
+}
+
+void Response::_delete_file()
+{
+	if (std::remove(_resource.c_str()) != 0)
+		throw (STATUS_INTERNAL_ERR);
+	start_line = StatusLine(STATUS_NO_CONTENT);
+	headers.insert(Field("Content-Length", "0"));
+
 }
 
 void Response::_handle_error(enum e_status_code status_code)
 {
 	throw (std::runtime_error("NO ERROR PAGES"));
 
-	const std::string errFilePath = "www/error_404.html";
+	const std::string errFilePath = "?";
 	std::ifstream file(errFilePath.c_str(), std::ios::binary);
 	std::stringstream file_content;
 	const std::string status_code_message;
@@ -282,7 +313,7 @@ void Response::_handle_error(enum e_status_code status_code)
 	}
 	content_length = file_content.str().length();
 	headers.insert(Field("Content-Length", size_t_to_str(content_length)));
-	headers.insert(Field("Content-Type", "text/html"));
+	headers.insert(Field("Content-Type", MimeType::get_mime_type("html")));
 	content = file_content.str();
 	file.close();
 }

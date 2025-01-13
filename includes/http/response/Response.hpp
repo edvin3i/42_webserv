@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <algorithm>
+#include <unistd.h>
 
 #include "ErrorPages.hpp"
 #include "../Message.hpp"
@@ -61,6 +62,8 @@ private:
 	void _handle_get();
 	void _handle_post();
 	void _handle_delete();
+	void _delete_file();
+	void _delete_dir();
 	void _handle_file(const std::string& filename);
 	void _handle_dir();
 	void _check_dir();

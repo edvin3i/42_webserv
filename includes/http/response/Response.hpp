@@ -70,7 +70,7 @@ private:
 	void _upload_file();
 	std::string get_filename();
 	void _handle_error(enum e_status_code);
-	std::string toString() const;
+	std::string toHtml() const;
 
 	static const std::string _html_auto_index;
 };

@@ -54,7 +54,7 @@ StatusLine& StatusLine::operator=(const StatusLine& other)
 	return (*this);
 }
 
-std::string StatusLine::toString() const
+std::string StatusLine::toHtml() const
 {
 	std::stringstream ss;
 

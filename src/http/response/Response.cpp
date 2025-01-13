@@ -287,11 +287,11 @@ void Response::_handle_error(enum e_status_code status_code)
 	file.close();
 }
 
-std::string Response::toString() const
+std::string Response::toHtml() const
 {
 	std::stringstream ss;
 
-	ss << start_line.toString() << "\r\n";
+	ss << start_line.toHtml() << "\r\n";
 	for (Headers::const_iterator it = headers.begin(); it != headers.end(); ++it)
 		ss << it->first << ": " << it->second << "\r\n";
 	ss << "\r\n";

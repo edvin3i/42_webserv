@@ -4,11 +4,13 @@
 #include <string>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <algorithm>
 
 #include "ErrorPages.hpp"
 #include "../Message.hpp"
 #include "../StatusLine.hpp"
 #include "../Request.hpp"
+#include "../MimeType.hpp"
 #include "../../logger/Logger.hpp"
 #include "../../../includes/config/ServerConfig.hpp"
 

@@ -87,18 +87,36 @@ static std::string size_t_to_str(size_t n)
 	return (ss.str());
 }
 
+static char my_tolower(char c)
+{
+	return (static_cast<char>(tolower(c)));
+}
+
+static const std::string& _filename_to_mime_type(const std::string& filename)
+{
+	const size_t dot_pos = filename.find_last_of(".");
+	if (dot_pos == std::string::npos || dot_pos == filename.length() - 1)
+		return (MimeType::default_mime_type);
+
+	const std::string extension = filename.substr(dot_pos + 1);
+	std::string lower_extension;
+	std::transform(extension.begin(), extension.end(), lower_extension.begin(), my_tolower);
+	return (MimeType::get_mime_type(lower_extension));
+}
+
 void Response::_handle_file(const std::string& filename)
 {
 	std::ifstream file(filename.c_str(), std::ios::binary);
 	std::stringstream file_content;
 	std::string file_length_str;
+	std::string file_extension;
 
 	if (!file)
 		throw (STATUS_INTERNAL_ERR);
 	file_content << file.rdbuf();
 	start_line = StatusLine(STATUS_OK);
 	headers.insert(Field("Content-Length:", size_t_to_str(file_content.str().length())));
-	headers.insert(Field("Content-Type:", "mime_type(not implemented)"));
+	headers.insert(Field("Content-Type:", _filename_to_mime_type(filename)));
 	content = file_content.str();
 	content_length = file_content.str().length();
 }
@@ -176,7 +194,7 @@ void Response::_handle_auto_index()
 
 	start_line = StatusLine(STATUS_OK);
 	headers.insert(Field("Content-Length", size_t_to_str(content.length())));
-	headers.insert(Field("Content-Type", "text/html"));
+	headers.insert(Field("Content-Type", MimeType::get_mime_type("html")));
 	content_length = content.length();
 }
 

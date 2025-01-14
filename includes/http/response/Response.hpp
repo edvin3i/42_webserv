@@ -55,7 +55,7 @@ public:
 
 private:
 	std::string _str_content;
-	std::string _resource;
+	std::string _resource_path;
 	enum e_resource_type _resource_type;
 	void _check_location();
 	void _check_resource();

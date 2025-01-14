@@ -43,8 +43,8 @@ void Response::_check_resource()
 	struct stat file_stat;
 	std::string resource_path;
 
-	_resource = _conf.root + _request.start_line.getUri();
-	if (stat(_resource.c_str(), &file_stat) < 0)
+	_resource_path = _conf.root + _request.start_line.getUri();
+	if (stat(_resource_path.c_str(), &file_stat) < 0)
 		throw (STATUS_NOT_FOUND);
 	else if (S_ISDIR(file_stat.st_mode))
 		_resource_type = RT_DIR;
@@ -69,7 +69,7 @@ void Response::_handle_get()
 	switch (_resource_type)
 	{
 		case RT_FILE:
-			_handle_file(_resource);
+			_handle_file(_resource_path);
 			break ;
 		case RT_DIR:
 			_handle_dir();
@@ -127,18 +127,18 @@ void Response::_handle_dir()
 	if (uri[uri.length() - 1] != '/')
 	{
 		start_line = StatusLine(STATUS_MOVED);
-		headers.insert(Field("Location", FieldValue(_resource + "/")));
+		headers.insert(Field("Location", FieldValue(_resource_path + "/")));
 		headers.insert(Field("Content-Length", FieldValue("0")));
 	}
 	if (_is_dir_has_index_file())
-		_handle_file(_resource + _conf.index);
+		_handle_file(_resource_path + _conf.index);
 	else
 		_check_auto_index();
 }
 
 bool Response::_is_dir_has_index_file()
 {
-	DIR *dir = opendir(_resource.c_str());
+	DIR *dir = opendir(_resource_path.c_str());
 	struct dirent *file;
 	bool index_found = false;
 
@@ -166,7 +166,7 @@ void Response::_check_auto_index()
 
 void Response::_handle_auto_index()
 {
-	DIR *dir = opendir(_resource.c_str());
+	DIR *dir = opendir(_resource_path.c_str());
 	struct dirent* file;
 
 	if (!dir)
@@ -272,9 +272,9 @@ void Response::_handle_delete()
 
 void Response::_delete_dir()
 {
-	if (access(_resource.c_str(), W_OK) != 0)
+	if (access(_resource_path.c_str(), W_OK) != 0)
 		throw (STATUS_FORBIDDEN);
-	const std::string command = "rm -rf " + _resource;
+	const std::string command = "rm -rf " + _resource_path;
 	if (std::system(command.c_str()) == 0)
 	{
 		start_line = StatusLine(STATUS_NO_CONTENT);
@@ -286,7 +286,7 @@ void Response::_delete_dir()
 
 void Response::_delete_file()
 {
-	if (std::remove(_resource.c_str()) != 0)
+	if (std::remove(_resource_path.c_str()) != 0)
 		throw (STATUS_INTERNAL_ERR);
 	start_line = StatusLine(STATUS_NO_CONTENT);
 	headers.insert(Field("Content-Length", FieldValue("0")));

@@ -38,14 +38,15 @@ public:
 	void writeData();
 	void buildResponse();
 
-	void setLocationConfig();
+	// void setLocationConfig();
+	void select_server_config(const std::vector<ServerConfig>&);
 
 
 
 private:
 	Logger &_logger;
 	int _clientSocketFD;
-	const ServerConfig &_serverConfig;
+	const ServerConfig *_currentServerConfig;
 	ConnectionState _connectionState;
 	std::string _responseMessage; // needs to replace to _responceBuffer
 	size_t _writeOffset;

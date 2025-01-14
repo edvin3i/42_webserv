@@ -135,7 +135,7 @@ void Request::_parse_header(const std::string & str)
 void Request::_check_headers() const
 {
 	//respond with 400 when request message contains more than one Host header field line or a Host header field with an invalid field value
-	if (headers.find("Host") == headers.end())
+	if (headers.count("Host") != 1)
 		throw (STATUS_BAD_REQUEST);
 }
 

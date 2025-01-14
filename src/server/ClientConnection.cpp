@@ -6,14 +6,14 @@
 ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerConfig & config)
 									:	_logger(logger),
 										_clientSocketFD(socketFD),
-										_serverConfig(config),
+										_currentServerConfig(NULL),
 										_connectionState(READING),
 										_writeOffset(0),
 										_currentClientBodySize(0),
 										_currentLocationConfig(NULL),
 										_request(NULL)
 									{
-	(void) _serverConfig; // just to mute compile error
+	(void) _currentServerConfig; // just to mute compile error
 	(void) _currentClientBodySize;
 
 }
@@ -51,7 +51,7 @@ void ClientConnection::buildResponse() {
 	// }
 
 	// std::string responce = ss.str(); // set string instead temporary ss.str object
-	_response = new Response(*_request, _serverConfig);
+	_response = new Response(*_request, *_currentServerConfig);
 	std::string response_html = _response->toHtml();
 	_writeBuffer.clear();
     _writeBuffer.assign(response_html.begin(), response_html.end());
@@ -136,30 +136,53 @@ bool ClientConnection::isReadyToWrite() {
 }
 
 
-void ClientConnection::setLocationConfig()
+//https://nginx.org/en/docs/http/request_processing.html
+void ClientConnection::select_server_config(const std::vector<ServerConfig>& confs)
 {
-	const std::vector<LocationConfig>& locations = _serverConfig.locations;
-	size_t length = 0;
-	std::string path;
-	size_t location_index = 0;
-	bool location_found = false;
-	const std::string& _uri = _request->start_line.getUri();
+	if (!_request)
+		throw (std::runtime_error("_request NULL"));
 
-	for (size_t i = 0; i < locations.size(); ++i)
+	const Headers::const_iterator host_it = _request->headers.find("Host");
+	const std::string& host_request = host_it->second;
+	bool host_found = false;
+
+	for (std::vector<ServerConfig>::const_iterator it = confs.begin(); it != confs.end(); ++it)
 	{
-		path = locations[i].path;
-		if (path.length() > _uri.length())
-			continue;
-		size_t tmp_length = 0;
-		for (size_t j = 0; j < _uri.length() && path[j] == _uri[j]; ++j)
-			tmp_length++;
-		if (tmp_length > length)
+		if (it->host == host_request)
 		{
-			location_found = true;
-			length = tmp_length;
-			location_index = i;
+			host_found = true;
+			_currentServerConfig = &(*it);
+			break ;
 		}
 	}
-	if (location_found)
-		_currentLocationConfig = new LocationConfig[location_index];
+	if (!host_found)
+		_currentServerConfig = &(*confs.begin());
 }
+
+// void ClientConnection::setLocationConfig()
+// {
+// 	const std::vector<LocationConfig>& locations = _serverConfig.locations;
+// 	size_t length = 0;
+// 	std::string path;
+// 	size_t location_index = 0;
+// 	bool location_found = false;
+// 	const std::string& _uri = _request->start_line.getUri();
+
+// 	for (size_t i = 0; i < locations.size(); ++i)
+// 	{
+// 		path = locations[i].path;
+// 		if (path.length() > _uri.length())
+// 			continue;
+// 		size_t tmp_length = 0;
+// 		for (size_t j = 0; j < _uri.length() && path[j] == _uri[j]; ++j)
+// 			tmp_length++;
+// 		if (tmp_length > length)
+// 		{
+// 			location_found = true;
+// 			length = tmp_length;
+// 			location_index = i;
+// 		}
+// 	}
+// 	if (location_found)
+// 		_currentLocationConfig = new LocationConfig[location_index];
+// }

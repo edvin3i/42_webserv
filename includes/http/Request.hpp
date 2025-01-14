@@ -4,6 +4,7 @@
 #include "Message.hpp"
 #include "RequestLine.hpp"
 #include "StatusCode.hpp"
+#include "Utils.hpp"
 #include <string>
 #include <vector>
 #include <cstdio>
@@ -24,7 +25,7 @@ public:
 private:
 	Request();
 	std::string _str_trim(const std::string &str) const;
-	bool _is_whitespace(char c) const;
+
 	void _parse(const std::string&);
 	void _parse_header(const std::string&);
 	void _parse_field_value(const std::string &str, const std::string& field_name);

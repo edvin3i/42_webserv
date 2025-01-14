@@ -4,12 +4,12 @@
 #include <string>
 #include <map>
 #include <vector>
+#include "FieldValue.hpp"
 
-typedef std::multimap<std::string, std::string> Headers;
-typedef std::pair<std::string, std::string> Field;
+typedef std::multimap<std::string, FieldValue> Headers;
+typedef std::pair<std::string, FieldValue> Field;
 
 const size_t max_header_length = 1024;
-const std::string whitespace = " \t";
 
 template<class StartLine> struct Message
 {

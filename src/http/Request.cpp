@@ -31,7 +31,7 @@ void Request::_split_request(std::string str, std::string & request_line, std::v
 	pos_end = str.find(delimiter, pos_start);
 	request_line = str.substr(pos_start, pos_end - pos_start);
 	pos_start = pos_end + delim_len;
-	if (_is_whitespace(str[pos_start]))
+	if (Utils::is_whitespace(str[pos_start]))
 		throw (400); // reject message as invalid
 	while (1)
 	{
@@ -71,11 +71,6 @@ void Request::_parse_headers(std::vector<std::string> & header_lines)
 	}
 }
 
-bool Request::_is_whitespace(char c) const
-{
-	return (whitespace.find(c) != std::string::npos);
-}
-
 static bool is_delimiter(char c)
 {
 	const std::string delimiters = "(),/:;<=>?@[\\]{}";
@@ -94,7 +89,7 @@ void Request::_handle_quoted_str(const std::string& str, size_t& i, std::string&
 			throw (400);
 		if (str[i] == '\"')
 		{
-			if (str.length() == (i + 1) || is_delimiter(str[i + 1]) ||_is_whitespace(str[i + 1]))
+			if (str.length() == (i + 1) || is_delimiter(str[i + 1]) || Utils::is_whitespace(str[i + 1]))
 			{
 				i += 1;
 				return ;
@@ -122,13 +117,13 @@ void Request::_parse_field_value(const std::string & str, const std::string & fi
 			case ' ': case '\t':
 				if (element.empty())
 				{
-					while (_is_whitespace(str[i]))
+					while (Utils::is_whitespace(str[i]))
 						i += 1;
 				}
 				else
 				{
 					size_t nb_whitespace = 0;
-					while (_is_whitespace(str[i]))
+					while (Utils::is_whitespace(str[i]))
 					{
 						nb_whitespace += 1;
 						i += 1;
@@ -147,6 +142,28 @@ void Request::_parse_field_value(const std::string & str, const std::string & fi
 				element.clear();
 				i += 1;
 				break ;
+			case '(':
+			{
+				int depth = 0;
+				while (true)
+				{
+					if (i == str.length())
+						throw (STATUS_BAD_REQUEST);
+					if (str[i] == '(')
+						depth++;
+					else if (str[i] == ')')
+						depth--;
+					if (str[i] == ')' && (depth == 0))
+					{
+						i += 1;
+						break ;
+					}
+					if (depth < 0)
+						throw (STATUS_BAD_REQUEST);
+					i += 1;
+				}
+				break ;
+			}
 			default:
 				element.push_back(str[i]);
 				i += 1;
@@ -155,7 +172,7 @@ void Request::_parse_field_value(const std::string & str, const std::string & fi
 	}
 	if (!element.empty())
 		nb_non_empty_element += 1;
-	headers.insert(Field(field_name, element));
+	headers.insert(Field(field_name, FieldValue(element)));
 	if (nb_non_empty_element == 0)
 		throw (STATUS_BAD_REQUEST);
 }
@@ -178,7 +195,7 @@ void Request::_parse_header(const std::string &str)
 		throw (STATUS_BAD_REQUEST);
 	colon_pos = str.find(':');
 	field_name = str.substr(0, colon_pos);
-	if (field_name.empty() || _is_whitespace(field_name[field_name.length() - 1]))
+	if (field_name.empty() || Utils::is_whitespace(field_name[field_name.length() - 1]))
 		throw (400);
 	field_value = str.substr(colon_pos + 1);
 	field_value_trim = _str_trim(field_value);
@@ -223,9 +240,9 @@ void Request::_decode_chunked(const std::string & str)
 	std::pair<Headers::iterator, Headers::iterator> transfer_encoding_key = headers.equal_range("Transfer-Encoding");
 	for (Headers::iterator it = transfer_encoding_key.first; it != transfer_encoding_key.second; ++it)
 	{
-		if (it->second == "chunked")
+		if (it->second.getValue() == "chunked")
 		{
-			it->second = "";
+			it->second.setValue("");
 			break ;
 		}
 	}
@@ -253,7 +270,7 @@ void Request::_parse_body(const std::string & str)
 	}
 	else if (nb_encoding > 0)
 	{
-		if (nb_encoding == 1 && transfer_encoding_it.first->second == "chunked")
+		if (nb_encoding == 1 && transfer_encoding_it.first->second.getValue() == "chunked")
 			_decode_chunked(str);
 		else
 			throw (STATUS_NOT_IMPLEMENTED);
@@ -265,17 +282,17 @@ void Request::_parse_body(const std::string & str)
 			case '0':
 				throw (STATUS_LENGTH_REQUIRED);
 			case '1':
-				_read_size_t(headers.find("Content-Length")->second, content_length);
+				_read_size_t(headers.find("Content-Length")->second.getValue(), content_length);
 				break ;
 			default:
 				size_t tmp;
 				Headers::iterator it = content_length_it.first;
 
-				_read_size_t(it->second, content_length);
+				_read_size_t(it->second.getValue(), content_length);
 				it++;
 				while (it != content_length_it.second)
 				{
-					_read_size_t(it->second, tmp);
+					_read_size_t(it->second.getValue(), tmp);
 					if (tmp != content_length)
 						throw (STATUS_LENGTH_REQUIRED);
 					it++;
@@ -304,9 +321,16 @@ void Request::print() const
 	std::clog << "HEADERS: \n";
 	for (Headers::const_iterator it = headers.begin(); it != headers.end(); ++it)
 	{
-		std::cout << "header-name: " << it->first << ", header-value: ";
-		for (size_t i = 0; i < it->second.size(); ++i)
-			std::cout << it->second[i];
+		std::cout << "header-name: " << it->first << ", header-value: " << it->second.getValue();
+		const Parameters& parameters = it->second.getParameters();
+		if (parameters.size() > 0)
+		{
+			std::cout << ", parameters: ";
+			for (Parameters::const_iterator jt = parameters.begin(); jt != parameters.end(); ++jt)
+			{
+				std::cout << jt->first << '=' << jt->second << ' ';
+			}
+		}
 		std::cout << '\n';
 	}
 	std::clog << "\n\n";

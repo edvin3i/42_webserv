@@ -115,8 +115,8 @@ void Response::_handle_file(const std::string& filename)
 		throw (STATUS_INTERNAL_ERR);
 	file_content << file.rdbuf();
 	start_line = StatusLine(STATUS_OK);
-	headers.insert(Field("Content-Length:", size_t_to_str(file_content.str().length())));
-	headers.insert(Field("Content-Type:", _filename_to_mime_type(filename)));
+	headers.insert(Field("Content-Length:", FieldValue(size_t_to_str(file_content.str().length()))));
+	headers.insert(Field("Content-Type:", FieldValue(_filename_to_mime_type(filename))));
 	content = file_content.str();
 	content_length = file_content.str().length();
 }
@@ -127,8 +127,8 @@ void Response::_handle_dir()
 	if (uri[uri.length() - 1] != '/')
 	{
 		start_line = StatusLine(STATUS_MOVED);
-		headers.insert(Field("Location", _resource + "/"));
-		headers.insert(Field("Content-Length", "0"));
+		headers.insert(Field("Location", FieldValue(_resource + "/")));
+		headers.insert(Field("Content-Length", FieldValue("0")));
 	}
 	if (_is_dir_has_index_file())
 		_handle_file(_resource + _conf.index);
@@ -184,8 +184,8 @@ void Response::_handle_auto_index()
 	closedir(dir);
 
 	start_line = StatusLine(STATUS_OK);
-	headers.insert(Field("Content-Length", size_t_to_str(content.length())));
-	headers.insert(Field("Content-Type", MimeType::get_mime_type("html")));
+	headers.insert(Field("Content-Length", FieldValue(size_t_to_str(content.length()))));
+	headers.insert(Field("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
 	content_length = content.length();
 }
 
@@ -195,7 +195,7 @@ void Response::_handle_post()
 		throw (STATUS_FORBIDDEN);
 	_upload_file();
 	start_line = StatusLine(STATUS_CREATED);
-	headers.insert(Field("Content-Length", "0"));
+	headers.insert(Field("Content-Length", FieldValue("0")));
 }
 
 std::string Response::get_filename()
@@ -212,7 +212,7 @@ std::string Response::get_filename()
 		throw (STATUS_BAD_REQUEST);
 	for (Headers::iterator it = content_disposition_it.first; it != content_disposition_it.second; ++it)
 	{
-		std::string field_value = it->second;
+		std::string field_value = it->second.getValue();
 		std::size_t filename_pos = field_value.find(filename_parameter);
 		size_t i;
 		if (filename_pos != std::string::npos)
@@ -278,7 +278,7 @@ void Response::_delete_dir()
 	if (std::system(command.c_str()) == 0)
 	{
 		start_line = StatusLine(STATUS_NO_CONTENT);
-		headers.insert(Field("Content-Length", "0"));
+		headers.insert(Field("Content-Length", FieldValue("0")));
 	}
 	else
 		throw (STATUS_INTERNAL_ERR);
@@ -289,7 +289,7 @@ void Response::_delete_file()
 	if (std::remove(_resource.c_str()) != 0)
 		throw (STATUS_INTERNAL_ERR);
 	start_line = StatusLine(STATUS_NO_CONTENT);
-	headers.insert(Field("Content-Length", "0"));
+	headers.insert(Field("Content-Length", FieldValue("0")));
 
 }
 
@@ -312,8 +312,8 @@ void Response::_handle_error(enum e_status_code status_code)
 		throw (std::runtime_error("NOT IMPLEMENTED"));
 	}
 	content_length = file_content.str().length();
-	headers.insert(Field("Content-Length", size_t_to_str(content_length)));
-	headers.insert(Field("Content-Type", MimeType::get_mime_type("html")));
+	headers.insert(Field("Content-Length", FieldValue(size_t_to_str(content_length))));
+	headers.insert(Field("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
 	content = file_content.str();
 	file.close();
 }
@@ -324,7 +324,7 @@ std::string Response::toHtml() const
 
 	ss << start_line.toHtml() << "\r\n";
 	for (Headers::const_iterator it = headers.begin(); it != headers.end(); ++it)
-		ss << it->first << ": " << it->second << "\r\n";
+		ss << it->first << ": " << it->second.getValue() << "\r\n";
 	ss << "\r\n";
 	if (content_length > 0)
 		ss << content;

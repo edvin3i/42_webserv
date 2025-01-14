@@ -23,10 +23,13 @@ public:
 
 private:
 	Request();
-	void _parse(const std::string & str);
-	void _parse_header(const std::string & str);
-	void _parse_field_value(const std::string & str, const std::string & field_name);
-	void _parse_headers(std::vector<std::string> & header_lines);
+	std::string _str_trim(const std::string &str) const;
+	bool _is_whitespace(char c) const;
+	void _parse(const std::string&);
+	void _parse_header(const std::string&);
+	void _parse_field_value(const std::string &str, const std::string& field_name);
+	void _handle_quoted_str(const std::string& str, size_t& i, std::string& element) const;
+	void _parse_headers(std::vector<std::string>& header_lines);
 	void _check_headers() const;
 	void _parse_body(const std::string & str);
 	void _split_request(std::string str, std::string & request_line, std::vector<std::string> & headers_line, std::string & body);

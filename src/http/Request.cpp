@@ -31,8 +31,8 @@ void Request::_split_request(std::string str, std::string & request_line, std::v
 	pos_end = str.find(delimiter, pos_start);
 	request_line = str.substr(pos_start, pos_end - pos_start);
 	pos_start = pos_end + delim_len;
-	if (str[pos_start] == ' ')
-		throw (STATUS_BAD_REQUEST); // reject message as invalid
+	if (_is_whitespace(str[pos_start]))
+		throw (400); // reject message as invalid
 	while (1)
 	{
 		pos_end = str.find(delimiter, pos_start);
@@ -63,8 +63,48 @@ void Request::_parse(const std::string & str)
 
 void Request::_parse_headers(std::vector<std::string> & header_lines)
 {
+	std::string header_line_trim;
 	for (size_t i = 0; i < header_lines.size(); ++i)
-		_parse_header(header_lines[i]);
+	{
+		header_line_trim = _str_trim(header_lines[i]);
+		_parse_header(header_line_trim);
+	}
+}
+
+bool Request::_is_whitespace(char c) const
+{
+	return (whitespace.find(c) != std::string::npos);
+}
+
+static bool is_delimiter(char c)
+{
+	const std::string delimiters = "(),/:;<=>?@[\\]{}";
+
+	return (delimiters.find(c) != std::string::npos);
+}
+
+void Request::_handle_quoted_str(const std::string& str, size_t& i, std::string& element) const
+{
+	if (!element.empty())
+		throw (400);
+	i += 1;
+	while (1)
+	{
+		if (i == str.length())
+			throw (400);
+		if (str[i] == '\"')
+		{
+			if (str.length() == (i + 1) || is_delimiter(str[i + 1]) ||_is_whitespace(str[i + 1]))
+			{
+				i += 1;
+				return ;
+			}
+			else
+				throw (400);
+		}
+		element.push_back(str[i]);
+		i += 1;
+	}
 }
 
 void Request::_parse_field_value(const std::string & str, const std::string & field_name)
@@ -78,58 +118,71 @@ void Request::_parse_field_value(const std::string & str, const std::string & fi
 		switch (str[i])
 		{
 			case '\r': case '\n': case '\0':
-				throw (STATUS_BAD_REQUEST);
-			case ' ':
+				throw (400);
+			case ' ': case '\t':
 				if (element.empty())
 				{
-					while (str[i] == ' ')
+					while (_is_whitespace(str[i]))
 						i += 1;
 				}
 				else
 				{
-					size_t nb_space = 0;
-					while (str[i] == ' ')
+					size_t nb_whitespace = 0;
+					while (_is_whitespace(str[i]))
 					{
-						nb_space += 1;
+						nb_whitespace += 1;
 						i += 1;
 					}
-					if (str[i] != ',')
-						element.append(nb_space, ' ');
+					if (!is_delimiter(str[i]))
+						element.append(nb_whitespace, ' ');
 				}
 				break ;
-			case ',':
-				headers.insert(Field(field_name, element));
-				element.clear();
+			case '!': case '#': case '$': case '%': case '&': case '\'': case '*':
+			case '+': case '-': case '.': case '^': case '_': case '`': case '|': case '~':
+			case '0' ... '9': case 'a' ... 'z': case 'A' ... 'Z':
+				element.push_back(str[i]);
 				i += 1;
 				break ;
+			case '\"':
+				_handle_quoted_str(str, i, element);
+				break ;
 			default:
-				if (element.empty())
+				if (!element.empty())
 					nb_non_empty_element += 1;
-				element.push_back(str[i]);
+				headers.insert(std::pair<std::string, std::string>(field_name, element));
+				element.clear();
 				i += 1;
 				break ;
 		}
 	}
 	headers.insert(Field(field_name, element));
 	if (nb_non_empty_element == 0)
-		throw (STATUS_BAD_REQUEST);
+		throw (400);
 }
 
-void Request::_parse_header(const std::string & str)
+std::string Request::_str_trim(const std::string &str) const
 {
-	std::string field_name, field_value_str_trim;
-	size_t colon_pos, field_value_pos_start, field_value_pos_end;
+	size_t str_start, str_end;
+
+	str_start = str.find_first_not_of(whitespace);
+	str_end = str.find_last_not_of(whitespace);
+	return (str.substr(str_start, str_end - str_start + 1));
+}
+
+void Request::_parse_header(const std::string &str)
+{
+	std::string field_name, field_value, field_value_trim;
+	size_t colon_pos;
 
 	if (str.length() > max_header_length)
 		throw (STATUS_BAD_REQUEST);
 	colon_pos = str.find(':');
 	field_name = str.substr(0, colon_pos);
-	if (field_name.empty() || field_name.find(' ') != std::string::npos)
-		throw (STATUS_BAD_REQUEST);
-	field_value_pos_start = str.find_first_not_of(' ', colon_pos + 1);
-	field_value_pos_end = str.find_last_not_of(' ', str.length());
-	field_value_str_trim = str.substr(field_value_pos_start, field_value_pos_end - field_value_pos_start + 1);
-	_parse_field_value(field_value_str_trim, field_name);
+	if (field_name.empty() || _is_whitespace(field_name[field_name.length() - 1]))
+		throw (400);
+	field_value = str.substr(colon_pos + 1);
+	field_value_trim = _str_trim(field_value);
+	_parse_field_value(field_value_trim, field_name);
 }
 
 void Request::_check_headers() const
@@ -249,8 +302,12 @@ void Request::print() const
 	// std::clog << "\n\n";
 
 	std::clog << "HEADERS: \n";
-	for (Headers::const_iterator it = headers.begin(); it != headers.end(); ++it) {
-		std::cout << it->first << ": " << it->second << "\n";
+	for (Headers::const_iterator it = headers.begin(); it != headers.end(); ++it)
+	{
+		std::cout << "header-name: " << it->first << ", header-value: ";
+		for (size_t i = 0; i < it->second.size(); ++i)
+			std::cout << it->second[i];
+		std::cout << '\n';
 	}
 	std::clog << "\n\n";
 

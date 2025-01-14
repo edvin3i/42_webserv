@@ -9,6 +9,7 @@ typedef std::multimap<std::string, std::string> Headers;
 typedef std::pair<std::string, std::string> Field;
 
 const size_t max_header_length = 1024;
+const std::string whitespace = " \t";
 
 template<class StartLine> struct Message
 {

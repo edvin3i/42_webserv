@@ -137,27 +137,27 @@ void Request::_parse_field_value(const std::string & str, const std::string & fi
 						element.append(nb_whitespace, ' ');
 				}
 				break ;
-			case '!': case '#': case '$': case '%': case '&': case '\'': case '*':
-			case '+': case '-': case '.': case '^': case '_': case '`': case '|': case '~':
-			case '0' ... '9': case 'a' ... 'z': case 'A' ... 'Z':
-				element.push_back(str[i]);
-				i += 1;
-				break ;
 			case '\"':
 				_handle_quoted_str(str, i, element);
 				break ;
-			default:
+			case ',':
 				if (!element.empty())
 					nb_non_empty_element += 1;
 				headers.insert(std::pair<std::string, std::string>(field_name, element));
 				element.clear();
 				i += 1;
 				break ;
+			default:
+				element.push_back(str[i]);
+				i += 1;
+				break ;
 		}
 	}
+	if (!element.empty())
+		nb_non_empty_element += 1;
 	headers.insert(Field(field_name, element));
 	if (nb_non_empty_element == 0)
-		throw (400);
+		throw (STATUS_BAD_REQUEST);
 }
 
 std::string Request::_str_trim(const std::string &str) const

@@ -380,3 +380,16 @@ std::string Response::toHtml() const
 		ss << content;
 	return (ss.str());
 }
+
+std::string Response::toString() const
+{
+	std::stringstream ss;
+
+	ss << start_line.toString() << "\\r\\n" << '\n';
+	for (Headers::const_iterator it = headers.begin(); it != headers.end(); ++it)
+		ss << it->first << ": " << it->second.getValue() << "\\r\\n" << '\n';
+	ss << "\\r\\n" << '\n';
+	if (content_length > 0)
+		ss << content;
+	return (ss.str());
+}

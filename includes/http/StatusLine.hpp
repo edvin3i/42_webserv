@@ -16,6 +16,7 @@ public:
 	StatusLine(const StatusLine & other);
 	StatusLine& operator=(const StatusLine & other);
 	std::string toHtml() const;
+	std::string toString() const;
 	static std::map<int, std::string> _status_code_message;
 private:
 	static void _init_status_code_message();

@@ -41,6 +41,7 @@ public:
 	// void _buildStatusLine(int code);
 	// void _addHeader(std::string key, std::string val);
 	std::string toHtml() const;
+	std::string toString() const;
 
 private:
 	const Request &_request;

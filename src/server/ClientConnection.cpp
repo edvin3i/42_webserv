@@ -52,6 +52,7 @@ void ClientConnection::buildResponse() {
 
 	// std::string responce = ss.str(); // set string instead temporary ss.str object
 	_response = new Response(*_request, *_currentServerConfig, _currentLocationConfig);
+	std::cout << "RESPONSE:"<< '\n' << _response->toString();
 	std::string response_html = _response->toHtml();
 	_writeBuffer.clear();
     _writeBuffer.assign(response_html.begin(), response_html.end());

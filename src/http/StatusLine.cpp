@@ -72,3 +72,8 @@ std::string StatusLine::toHtml() const
 	}
 	return (ss.str());
 }
+
+std::string StatusLine::toString() const
+{
+	return (toHtml());
+}

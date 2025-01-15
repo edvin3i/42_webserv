@@ -7,9 +7,11 @@
 #include <unistd.h>
 #include <iostream>
 #include <sys/socket.h>
+#include <algorithm>
 #include "../logger/Logger.hpp"
 #include "../config/ServerConfig.hpp"
 #include "../http/response/Response.hpp"
+#include "../http/Utils.hpp"
 
 
 const int BUFFER_SIZE = 8192;
@@ -39,14 +41,15 @@ public:
 	void buildResponse();
 
 	// void setLocationConfig();
-	void select_server_config(const std::vector<ServerConfig>&);
+	void select_server_config(std::vector<ServerConfig>&);
+	void select_location();
 
 
 
 private:
 	Logger &_logger;
 	int _clientSocketFD;
-	const ServerConfig *_currentServerConfig;
+	ServerConfig *_currentServerConfig;
 	ConnectionState _connectionState;
 	std::string _responseMessage; // needs to replace to _responceBuffer
 	size_t _writeOffset;

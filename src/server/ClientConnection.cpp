@@ -51,13 +51,15 @@ void ClientConnection::buildResponse() {
 	// }
 
 	// std::string responce = ss.str(); // set string instead temporary ss.str object
-	_response = new Response(*_request, *_currentServerConfig);
+	_response = new Response(*_request, *_currentServerConfig, _currentLocationConfig);
 	std::string response_html = _response->toHtml();
 	_writeBuffer.clear();
     _writeBuffer.assign(response_html.begin(), response_html.end());
     _writeOffset = 0;
 
     _logger.writeToLog(DEBUG, "Response ready!");
+	delete _response;
+	delete _request;
 }
 
 
@@ -137,7 +139,7 @@ bool ClientConnection::isReadyToWrite() {
 
 
 //https://nginx.org/en/docs/http/request_processing.html
-void ClientConnection::select_server_config(const std::vector<ServerConfig>& confs)
+void ClientConnection::select_server_config(std::vector<ServerConfig>& confs)
 {
 	if (!_request)
 		throw (std::runtime_error("_request NULL"));
@@ -146,7 +148,7 @@ void ClientConnection::select_server_config(const std::vector<ServerConfig>& con
 	const std::string& host_request = host_it->second.getValue();
 	bool host_found = false;
 
-	for (std::vector<ServerConfig>::const_iterator it = confs.begin(); it != confs.end(); ++it)
+	for (std::vector<ServerConfig>::iterator it = confs.begin(); it != confs.end(); ++it)
 	{
 		if (it->host == host_request)
 		{
@@ -157,6 +159,40 @@ void ClientConnection::select_server_config(const std::vector<ServerConfig>& con
 	}
 	if (!host_found)
 		_currentServerConfig = &(*confs.begin());
+}
+
+static size_t matching_prefix_depth(const std::string& location_root, const std::string& uri)
+{
+	std::vector<std::string> split_root = Utils::split(location_root, "/");
+	std::vector<std::string> split_uri = Utils::split(uri, "/");
+	const size_t min_depth = std::min(split_root.size(), split_uri.size());
+	size_t i = 0;
+
+	if (location_root == "/")
+		return (1);
+	while (i < min_depth && (split_root[i] == split_uri[i]))
+		i += 1;
+	return (i);
+}
+
+void ClientConnection::select_location()
+{
+	std::vector<LocationConfig>& locations = _currentServerConfig->locations;
+	size_t max_depth = 0, depth;
+	LocationConfig* location_tmp = NULL;
+
+	if (locations.empty())
+		_currentLocationConfig = NULL;
+	for (std::vector<LocationConfig>::iterator it = locations.begin(); it != locations.end(); ++it)
+	{
+		depth = matching_prefix_depth(it->root, _request->start_line.getUri());
+		if (depth > 0)
+		{
+			max_depth = depth;
+				location_tmp = &(*it);
+		}
+	}
+	_currentLocationConfig = location_tmp;
 }
 
 // void ClientConnection::setLocationConfig()

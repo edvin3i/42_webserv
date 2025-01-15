@@ -10,6 +10,7 @@ MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & co
 	std::ostringstream oss;
 	oss << "MasterServer constructor called!\t";
 	oss << "Size of configs: " << _configs.size() << "\n";
+	MimeType::init_mime_type();
 	_logger.writeToLog(DEBUG, oss.str());
 
 	_fds.reserve(_configs.size());
@@ -116,6 +117,7 @@ void MasterServer::run() {
 					case WRITING:
 						if (revents & POLLOUT) {
 							client->select_server_config(_configs);
+							client->select_location();
 							client->buildResponse();
 
 							// add checking

@@ -9,6 +9,7 @@
 #include "TcpServer.hpp"
 #include "ClientConnection.hpp"
 #include "../logger/Logger.hpp"
+#include "../http/MimeType.hpp"
 
 class ServerConfig;
 class TcpServer;

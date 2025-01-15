@@ -33,27 +33,19 @@ class Response : public Message<StatusLine>
 {
 public:
 	// Response(Logger & logger, const ServerConfig & srv_conf, const Request & request);
-	Response(const Request&, const ServerConfig&);
-	~Response();
-
-	// virtual std::string build() = 0;
-	const std::string& str() const;
-
-// protected:
-private:
-	// Logger &_logger;
-	const Request &_request;
-	const ServerConfig &_conf;
-
-public:
 	Response();
+	Response(const Request&, const ServerConfig&, const LocationConfig*);
+	~Response();
 	Response(const Response & other);
 	Response &operator=(const Response & other);
-	void _buildStatusLine(int code);
-	void _addHeader(std::string key, std::string val);
+	// void _buildStatusLine(int code);
+	// void _addHeader(std::string key, std::string val);
 	std::string toHtml() const;
 
 private:
+	const Request &_request;
+	const ServerConfig &_conf;
+	const LocationConfig* _location;
 	std::string _str_content;
 	std::string _resource_path;
 	enum e_resource_type _resource_type;
@@ -74,8 +66,10 @@ private:
 	void _upload_file();
 	std::string get_filename();
 	void _handle_error(enum e_status_code);
+	void _handle_default_error(enum e_status_code status_code);
 
 	static const std::string _html_auto_index;
+	static const std::string _default_error_page_path;
 };
 
 

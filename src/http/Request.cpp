@@ -181,8 +181,8 @@ std::string Request::_str_trim(const std::string &str) const
 {
 	size_t str_start, str_end;
 
-	str_start = str.find_first_not_of(whitespace);
-	str_end = str.find_last_not_of(whitespace);
+	str_start = str.find_first_not_of(Utils::whitespace);
+	str_end = str.find_last_not_of(Utils::whitespace);
 	return (str.substr(str_start, str_end - str_start + 1));
 }
 

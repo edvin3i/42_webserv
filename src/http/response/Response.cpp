@@ -2,8 +2,10 @@
 
 const std::string Response::_html_auto_index = "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Directory Index</title><style>body{font-family:'Arial',sans-serif;background-color:#f8f8f8;margin:0;padding:20px;}h1{color:#333;}ul{list-style-type:none;padding:0;}li{margin:10px 0;}a{color:#007bff;text-decoration:none;}a:hover{text-decoration:underline;}</style></head><body><h1>Index of The Directory</h1><ul>";
 
-Response::Response(const Request& request, const ServerConfig& conf)
-: _request(request), _conf(conf)
+const std::string Response::_default_error_page_path = "www/website/error_pages/default_error.html";
+
+Response::Response(const Request& request, const ServerConfig& conf, const LocationConfig* location)
+: _request(request), _conf(conf), _location(location)
 {
 	try
 	{
@@ -23,19 +25,17 @@ Response::~Response()
 
 void Response::_check_location()
 {
-	// if (!_location)
-	// 	throw (STATUS_NOT_FOUND);
 	// else if (redirection)
 	// {
 	// 	redirection ?
 	// }
-	// else
-	// {
-	// 	const std::vector<std::string>& allow_methods = _location->methods;
-	// 	const std::string& request_method = _request.start_line.getMethod();
-	// 	if (std::find(allow_methods.begin(), allow_methods.end(), request_method) == allow_methods.end())
-	// 		throw (STATUS_NOT_ALLOWED);
-	// }
+	if (_location)
+	{
+		const std::vector<std::string>& allow_methods = _location->methods;
+		const std::string& request_method = _request.start_line.getMethod();
+		if (std::find(allow_methods.begin(), allow_methods.end(), request_method) == allow_methods.end())
+			throw (STATUS_NOT_ALLOWED);
+	}
 }
 
 void Response::_check_resource()
@@ -158,9 +158,9 @@ bool Response::_is_dir_has_index_file()
 
 void Response::_check_auto_index()
 {
-	// if (_conf.autoindex)
-	// 	_handle_auto_index();
-	// else
+	if (_location->autoindex)
+		_handle_auto_index();
+	else
 		throw (STATUS_FORBIDDEN);
 }
 
@@ -191,7 +191,7 @@ void Response::_handle_auto_index()
 
 void Response::_handle_post()
 {
-	// if (_conf.upload_dir.empty())
+	if (_location->upload_dir.empty())
 		throw (STATUS_FORBIDDEN);
 	_upload_file();
 	start_line = StatusLine(STATUS_CREATED);
@@ -241,7 +241,7 @@ void Response::_upload_file()
 		throw (STATUS_INTERNAL_ERR);
 
 	const std::string filename = get_filename();
-	// const std::string filepath = _location->upload_dir + "/" + filename;
+	const std::string filepath = _location->upload_dir + "/" + filename;
 	std::ofstream file(filename.c_str());
 
 	if (!file.is_open())
@@ -293,29 +293,79 @@ void Response::_delete_file()
 
 }
 
-void Response::_handle_error(enum e_status_code status_code)
+void Response::_handle_default_error(enum e_status_code status_code)
 {
-	throw (std::runtime_error("NO ERROR PAGES"));
+	// std::ifstream file(_default_error_page_path.c_str(), std::ios::binary);
+	// const std::string status_tag = "[STATUS]";
+	// std::string line;
 
-	const std::string errFilePath = "?";
-	std::ifstream file(errFilePath.c_str(), std::ios::binary);
-	std::stringstream file_content;
-	const std::string status_code_message;
+	// if (!file.is_open())
+	// 	throw (std::runtime_error("default error file error"));
+	// while (getline(file, line))
+	// {
+	// 	while (true)
+	// 	{
+	// 		size_t pos = line.find(status_tag);
+	// 		if (pos != std::string::npos)
+	// 		{
+	// 			size_t parameter_pos = pos + status_tag.length();
+	// 			char parameter = line[parameter_pos];
 
-	file_content << file.rdbuf();
-	try
-	{
-		start_line = StatusLine(status_code);
-	}
-	catch (const std::exception& e)
-	{
-		throw (std::runtime_error("NOT IMPLEMENTED"));
-	}
-	content_length = file_content.str().length();
+	// 			switch (parameter)
+	// 			{
+	// 				case 'C':
+	// 					line.replace(pos, status_tag.length() + 1, size_t_to_str(status_code));
+	// 					break;
+	// 				case 'M':
+	// 					line.replace(pos, status_tag.length() + 1, StatusLine::_status_code_message[status_code]);
+	// 					break;
+	// 				default:
+	// 					throw (std::runtime_error("default error file compromised"));
+	// 			}
+	// 		}
+	// 		else
+	// 			break;
+	// 	}
+	// 	content.append(line);
+	// }
+	std::stringstream ss;
+
+	ss << "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>";
+	ss << status_code;
+	ss << "</title></head><body><h1>";
+	ss << status_code;
+	ss << "</h1><p>";
+	ss << StatusLine::_status_code_message[status_code];
+	ss << "</p></body></html>";
+	start_line = StatusLine(STATUS_NOT_FOUND);
+	content = ss.str();
+	content_length = content.length();
 	headers.insert(Field("Content-Length", FieldValue(size_t_to_str(content_length))));
 	headers.insert(Field("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
-	content = file_content.str();
-	file.close();
+}
+
+void Response::_handle_error(enum e_status_code status_code)
+{
+	std::map<int, std::string>::const_iterator error_page_it = _conf.error_pages.find(status_code);
+	if (error_page_it != _conf.error_pages.end())
+	{
+		std::string err_file_path = error_page_it->second;
+		std::ifstream file(err_file_path.c_str(), std::ios::binary);
+		std::stringstream file_content;
+		std::string file_length_str;
+		std::string file_extension;
+
+		if (!file)
+			_handle_default_error(status_code);
+		file_content << file.rdbuf();
+		start_line = StatusLine(status_code);
+		headers.insert(Field("Content-Length:", FieldValue(size_t_to_str(file_content.str().length()))));
+		headers.insert(Field("Content-Type:", FieldValue(_filename_to_mime_type(err_file_path))));
+		content = file_content.str();
+		content_length = file_content.str().length();
+	}
+	else
+		_handle_default_error(status_code);
 }
 
 std::string Response::toHtml() const

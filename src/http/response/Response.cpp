@@ -115,8 +115,8 @@ void Response::_handle_file(const std::string& filename)
 		throw (STATUS_INTERNAL_ERR);
 	file_content << file.rdbuf();
 	start_line = StatusLine(STATUS_OK);
-	headers.insert(Field("Content-Length:", FieldValue(size_t_to_str(file_content.str().length()))));
-	headers.insert(Field("Content-Type:", FieldValue(_filename_to_mime_type(filename))));
+	headers.insert(Field("Content-Length", FieldValue(size_t_to_str(file_content.str().length()))));
+	headers.insert(Field("Content-Type", FieldValue(_filename_to_mime_type(filename))));
 	content = file_content.str();
 	content_length = file_content.str().length();
 }
@@ -359,8 +359,8 @@ void Response::_handle_error(enum e_status_code status_code)
 			_handle_default_error(status_code);
 		file_content << file.rdbuf();
 		start_line = StatusLine(status_code);
-		headers.insert(Field("Content-Length:", FieldValue(size_t_to_str(file_content.str().length()))));
-		headers.insert(Field("Content-Type:", FieldValue(_filename_to_mime_type(err_file_path))));
+		headers.insert(Field("Content-Length", FieldValue(size_t_to_str(file_content.str().length()))));
+		headers.insert(Field("Content-Type", FieldValue(_filename_to_mime_type(err_file_path))));
 		content = file_content.str();
 		content_length = file_content.str().length();
 	}

@@ -85,8 +85,10 @@ void ClientConnection::readData() {
 
 	// httpParser.parse(_readBuffer);
 	std::clog << "buffer:\n" << _readBuffer;
+
 	_request = new Request(_readBuffer);
-	_request->print();
+	if (!_request->error())
+		_request->print();
 }
 
 

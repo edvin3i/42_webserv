@@ -2,9 +2,17 @@
 
 
 Request::Request(const std::string & str)
-: Message<RequestLine>()
+: Message<RequestLine>(), _error(false), _error_code(STATUS_OK)
 {
-	_parse(str);
+	try
+	{
+		_parse(str);
+	}
+	catch (enum e_status_code error_code)
+	{
+		_error = true;
+		_error_code = error_code;
+	}
 }
 
 Request::~Request() {}
@@ -343,4 +351,12 @@ void Request::print() const
 }
 
 
+bool Request::error() const
+{
+	return (_error);
+}
 
+enum e_status_code Request::getErrorCode() const
+{
+	return (_error_code);
+}

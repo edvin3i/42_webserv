@@ -7,18 +7,26 @@ const std::string Response::_default_error_page_path = "www/website/error_pages/
 Response::Response(const Request& request, const ServerConfig& conf, const LocationConfig* location)
 : _request(request), _conf(conf), _location(location)
 {
-	try
+	if (_request.error())
 	{
-		_check_location();
-		_check_resource();
-		//_handle_cgi();
-		_check_method();
+		_handle_error(_request.getErrorCode());
 	}
-	catch (enum e_status_code status_code)
+	else
 	{
-		_handle_error(status_code);
+		try
+		{
+			_check_location();
+			_check_resource();
+			//_handle_cgi();
+			_check_method();
+		}
+		catch (enum e_status_code status_code)
+		{
+			_handle_error(status_code);
+		}
 	}
 }
+
 
 Response::~Response()
 {}
@@ -356,7 +364,10 @@ void Response::_handle_error(enum e_status_code status_code)
 		std::string file_extension;
 
 		if (!file)
+		{
 			_handle_default_error(status_code);
+			return ;
+		}
 		file_content << file.rdbuf();
 		start_line = StatusLine(status_code);
 		headers.insert(Field("Content-Length", FieldValue(size_t_to_str(file_content.str().length()))));

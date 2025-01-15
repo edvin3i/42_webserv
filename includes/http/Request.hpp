@@ -20,10 +20,13 @@ public:
 	Request &operator=(const Request & other);
 
 	void print() const;
-	std::pair<Headers::iterator, Headers::iterator> getFieldValue(const std::string&);
-
+	// std::pair<Headers::iterator, Headers::iterator> getFieldValue(const std::string&);
+	bool error() const;
+	enum e_status_code getErrorCode() const;
 private:
 	Request();
+	enum e_status_code _error_code;
+	bool _error;
 	std::string _str_trim(const std::string &str) const;
 
 	void _parse(const std::string&);
@@ -35,6 +38,7 @@ private:
 	void _parse_body(const std::string & str);
 	void _split_request(std::string str, std::string & request_line, std::vector<std::string> & headers_line, std::string & body);
 	void _decode_chunked(const std::string & str);
+
 };
 
 #endif

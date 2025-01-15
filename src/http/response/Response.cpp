@@ -108,7 +108,7 @@ static const std::string& _filename_to_mime_type(const std::string& filename)
 
 	const std::string extension = filename.substr(dot_pos + 1);
 	std::string lower_extension;
-	std::transform(extension.begin(), extension.end(), lower_extension.begin(), my_tolower);
+	std::transform(extension.begin(), extension.end(), std::back_inserter(lower_extension), my_tolower);
 	return (MimeType::get_mime_type(lower_extension));
 }
 
@@ -119,7 +119,7 @@ void Response::_handle_file(const std::string& filename)
 	std::string file_length_str;
 	std::string file_extension;
 
-	if (!file)
+	if (!file.is_open())
 		throw (STATUS_INTERNAL_ERR);
 	file_content << file.rdbuf();
 	start_line = StatusLine(STATUS_OK);
@@ -133,11 +133,7 @@ void Response::_handle_dir()
 {
 	const std::string& uri = _request.start_line.getUri();
 	if (uri[uri.length() - 1] != '/')
-	{
-		start_line = StatusLine(STATUS_MOVED);
-		headers.insert(Field("Location", FieldValue(_resource_path + "/")));
-		headers.insert(Field("Content-Length", FieldValue("0")));
-	}
+		throw (STATUS_MOVED);
 	if (_is_dir_has_index_file())
 		_handle_file(_resource_path + _conf.index);
 	else
@@ -166,7 +162,7 @@ bool Response::_is_dir_has_index_file()
 
 void Response::_check_auto_index()
 {
-	if (_location->autoindex)
+	if (_location && _location->autoindex)
 		_handle_auto_index();
 	else
 		throw (STATUS_FORBIDDEN);
@@ -345,16 +341,15 @@ void Response::_handle_default_error(enum e_status_code status_code)
 	ss << "</h1><p>";
 	ss << StatusLine::_status_code_message[status_code];
 	ss << "</p></body></html>";
-	start_line = StatusLine(STATUS_NOT_FOUND);
+	start_line = StatusLine(status_code);
 	content = ss.str();
 	content_length = content.length();
-	headers.insert(Field("Content-Length", FieldValue(size_t_to_str(content_length))));
-	headers.insert(Field("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
 }
 
 void Response::_handle_error(enum e_status_code status_code)
 {
 	std::map<int, std::string>::const_iterator error_page_it = _conf.error_pages.find(status_code);
+
 	if (error_page_it != _conf.error_pages.end())
 	{
 		std::string err_file_path = error_page_it->second;
@@ -363,20 +358,31 @@ void Response::_handle_error(enum e_status_code status_code)
 		std::string file_length_str;
 		std::string file_extension;
 
-		if (!file)
+		if (!file.is_open())
 		{
 			_handle_default_error(status_code);
 			return ;
 		}
 		file_content << file.rdbuf();
 		start_line = StatusLine(status_code);
-		headers.insert(Field("Content-Length", FieldValue(size_t_to_str(file_content.str().length()))));
-		headers.insert(Field("Content-Type", FieldValue(_filename_to_mime_type(err_file_path))));
 		content = file_content.str();
 		content_length = file_content.str().length();
 	}
 	else
+	{
 		_handle_default_error(status_code);
+	}
+	switch (status_code)
+	{
+		case STATUS_MOVED:
+			headers.insert(Field("Location", FieldValue(_resource_path + "/")));
+			headers.insert(Field("Content-Length", FieldValue("0")));
+			headers.insert(Field("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
+			break ;
+		default:
+			headers.insert(Field("Content-Length", FieldValue(size_t_to_str(content_length))));
+			headers.insert(Field("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
+	}
 }
 
 std::string Response::toHtml() const
@@ -400,7 +406,7 @@ std::string Response::toString() const
 	for (Headers::const_iterator it = headers.begin(); it != headers.end(); ++it)
 		ss << it->first << ": " << it->second.getValue() << "\\r\\n" << '\n';
 	ss << "\\r\\n" << '\n';
-	if (content_length > 0)
-		ss << content;
+	// if (content_length > 0)
+		// ss << content;
 	return (ss.str());
 }

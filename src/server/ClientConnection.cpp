@@ -85,10 +85,6 @@ void ClientConnection::readData() {
 
 	// httpParser.parse(_readBuffer);
 	std::clog << "buffer:\n" << _readBuffer;
-
-	_request = new Request(_readBuffer);
-	if (!_request->error())
-		_request->print();
 }
 
 
@@ -188,7 +184,7 @@ void ClientConnection::select_location()
 		_currentLocationConfig = NULL;
 	for (std::vector<LocationConfig>::iterator it = locations.begin(); it != locations.end(); ++it)
 	{
-		depth = matching_prefix_depth(it->root, _request->start_line.getUri());
+		depth = matching_prefix_depth(it->root, _request->start_line.getUri().getPath());
 		if (depth > 0)
 		{
 			max_depth = depth;
@@ -196,6 +192,11 @@ void ClientConnection::select_location()
 		}
 	}
 	_currentLocationConfig = location_tmp;
+}
+
+void ClientConnection::setRequest()
+{
+	_request = new Request(_readBuffer);
 }
 
 // void ClientConnection::setLocationConfig()

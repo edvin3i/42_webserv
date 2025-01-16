@@ -51,7 +51,7 @@ void Response::_check_resource()
 	struct stat file_stat;
 	std::string resource_path;
 
-	_resource_path = _conf.root + _request.start_line.getUri();
+	_resource_path = _conf.root + _request.start_line.getUri().getPath();
 	if (stat(_resource_path.c_str(), &file_stat) < 0)
 		throw (STATUS_NOT_FOUND);
 	else if (S_ISDIR(file_stat.st_mode))
@@ -131,7 +131,7 @@ void Response::_handle_file(const std::string& filename)
 
 void Response::_handle_dir()
 {
-	const std::string& uri = _request.start_line.getUri();
+	const std::string& uri = _request.start_line.getUri().getPath();
 	if (uri[uri.length() - 1] != '/')
 		throw (STATUS_MOVED);
 	if (_is_dir_has_index_file())
@@ -195,8 +195,6 @@ void Response::_handle_auto_index()
 
 void Response::_handle_post()
 {
-	if (_location->upload_dir.empty())
-		throw (STATUS_FORBIDDEN);
 	_upload_file();
 	start_line = StatusLine(STATUS_CREATED);
 	headers.insert(Field("Content-Length", FieldValue("0")));
@@ -204,52 +202,39 @@ void Response::_handle_post()
 
 std::string Response::get_filename()
 {
-
-	std::pair<Headers::iterator, Headers::iterator> content_disposition_it;
-	const std::string filename_parameter = "filename=";
+	std::pair<Headers::const_iterator, Headers::const_iterator> content_disposition_it;
 	std::string filename;
 
-	if (headers.count("Content-Disposition") == 0)
-		throw (std::runtime_error("Content-Disposition header does not exist"));
-	content_disposition_it = headers.equal_range("Content-Disposition");
-	if (content_disposition_it.first == content_disposition_it.second)
+	if (_request.headers.count("Content-Disposition") == 0)
 		throw (STATUS_BAD_REQUEST);
-	for (Headers::iterator it = content_disposition_it.first; it != content_disposition_it.second; ++it)
+	content_disposition_it = _request.headers.equal_range("Content-Disposition");
+	for (Headers::const_iterator it = content_disposition_it.first; it != content_disposition_it.second; ++it)
 	{
-		std::string field_value = it->second.getValue();
-		std::size_t filename_pos = field_value.find(filename_parameter);
-		size_t i;
-		if (filename_pos != std::string::npos)
-		{
-			if (field_value[filename_pos + filename_parameter.length()] != '\"')
-				throw (STATUS_BAD_REQUEST);
-			i = filename_pos + filename_parameter.length() + 1;
-			while (true)
-			{
-				if (i == field_value.length())
-					throw (STATUS_BAD_REQUEST);
-				if (field_value[i] == '\"')
-					return (filename);
-				filename.push_back(field_value[i]);
-				i += 1;
-			}
-		}
+		const Parameters& parameters = it->second.getParameters();
+		Parameters::const_iterator filename_it = parameters.find("filename");
+
+		if (filename_it == parameters.end() || filename_it->second.empty())
+			throw (STATUS_BAD_REQUEST);
+		filename = filename_it->second;
 	}
-	throw (STATUS_BAD_REQUEST);
+	return (filename);
 }
 
 void Response::_upload_file()
 {
-	throw (STATUS_NOT_IMPLEMENTED);
 	if (_request.content_length == 0)
-		throw (STATUS_INTERNAL_ERR);
-
+		throw (STATUS_LENGTH_REQUIRED);
+	
 	const std::string filename = get_filename();
-	const std::string filepath = _location->upload_dir + "/" + filename;
+	std::string filepath;
+	if (_location && !_location->upload_dir.empty())
+		filepath = _location->upload_dir + "/" + filename;
+	else
+		filepath = _request.start_line.getUri().getPath();
 	std::ofstream file(filename.c_str());
 
 	if (!file.is_open())
-		throw (STATUS_INTERNAL_ERR);
+		throw (STATUS_NOT_FOUND);
 	file << content;
 	file.close();
 }
@@ -263,7 +248,7 @@ void Response::_handle_delete()
 			break ;
 		case RT_DIR:
 		{
-			const std::string& uri = _request.start_line.getUri();
+			const std::string& uri = _request.start_line.getUri().getPath();
 
 			if (uri[uri.length() - 1] != '/')
 				start_line = StatusLine(STATUS_CONFLICT);

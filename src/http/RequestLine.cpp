@@ -52,6 +52,14 @@ void RequestLine::_parse_version(const std::string& str)
 	_http_version = str;
 }
 
+void RequestLine::_parse_uri(const std::string& str)
+{
+	for (size_t i = 0; i < str.length(); ++i)
+		if (Utils::is_whitespace(str[i]))
+			throw (STATUS_BAD_REQUEST);
+	_uri = Uri(str);
+}
+
 void RequestLine::_parse_request_line(const std::string& line)
 {
 	size_t i = 0;
@@ -65,7 +73,7 @@ void RequestLine::_parse_request_line(const std::string& line)
 	space_pos = line.find(' ', i);
 	if (space_pos == std::string::npos)
 		throw (STATUS_BAD_REQUEST);
-	_uri = line.substr(i, space_pos - i);
+	_parse_uri(line.substr(i, space_pos - i));
 	i = space_pos + 1;
 	space_pos = line.find(' ', i);
 	if (space_pos != std::string::npos)
@@ -92,7 +100,7 @@ RequestLine& RequestLine::operator=(const RequestLine& other)
 
 void RequestLine::print() const
 {
-	std::clog << "method: " << _method << ", request-target: " << _uri << ", HTTP-version: " << _http_version;
+	std::clog << "method: " << _method << ", request-target: " << _uri.getPath() << ", HTTP-version: " << _http_version;
 }
 
 const std::string& RequestLine::getMethod() const
@@ -100,7 +108,7 @@ const std::string& RequestLine::getMethod() const
 	return (_method);
 }
 
-const std::string& RequestLine::getUri() const
+const Uri& RequestLine::getUri() const
 {
 	return (_uri);
 }

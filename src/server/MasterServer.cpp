@@ -116,6 +116,8 @@ void MasterServer::run() {
 						break;
 					case WRITING:
 						if (revents & POLLOUT) {
+
+							client->setRequest();
 							client->select_server_config(_configs);
 							client->select_location();
 							client->buildResponse();

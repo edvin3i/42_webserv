@@ -210,11 +210,17 @@ void Request::_parse_header(const std::string &str)
 	_parse_field_value(field_value_trim, field_name);
 }
 
-void Request::_check_headers() const
+void Request::_check_headers()
 {
 	//respond with 400 when request message contains more than one Host header field line or a Host header field with an invalid field value
 	if (headers.count("Host") != 1)
 		throw (STATUS_BAD_REQUEST);
+	const std::string& authority = start_line.getUri().getAuthority();
+	if (!authority.empty())
+	{
+		Headers::iterator host_it = headers.find("Host");
+		host_it->second = authority;
+	}
 }
 
 void Request::_decode_chunked(const std::string & str)
@@ -309,6 +315,21 @@ void Request::_parse_body(const std::string & str)
 		}
 		content = str.substr(0, content_length);
 	}
+	// {
+	// 	std::string boundary = headers.find("Content-Type")->second.getParameters().find("boundary")->second;
+	// 	size_t count = 0;
+	// 	size_t old_pos = 0;
+	// 	size_t pos;
+
+	// 	while ((pos = str.find(boundary, old_pos)) != std::string::npos)
+	// 	{
+	// 		count += 1;
+	// 		old_pos = pos + boundary.length();
+	// 	}
+	// 	std::cout << "NB BOUNDARY: " << count << '\n';
+	// 	std::cout << content_length << '\n';
+	// 	std::cout << content.substr(content_length - 100, std::string::npos);
+	// }
 }
 
 void Request::print() const

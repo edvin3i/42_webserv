@@ -18,7 +18,8 @@ OBJDIR      =   .obj/
 
 MFLS        =   config/ConfigParser.cpp config/ServerConfig.cpp config/LocationConfig.cpp \
 				server/MasterServer.cpp server/ClientConnection.cpp server/TcpServer.cpp \
-				http/Request.cpp http/RequestLine.cpp \
+				http/Request.cpp http/RequestLine.cpp http/StatusLine.cpp http/MimeType.cpp \
+				http/FieldValue.cpp http/Utils.cpp http/Uri.cpp \
 				http/response/Response.cpp http/response/ResponseBuilder.cpp \
 				http/response/CGIResponse.cpp http/response/StaticResponse.cpp \
 				http/response/ErrorPages.cpp \
@@ -38,7 +39,7 @@ CXX				=   c++
 CXXFLAGS		=   -std=c++98
 CXXFLAGS		+=	#-Wall -Werror -Wextra
 CXXFLAGS		+=	-MMD -MP
-CXXFLAGS		+=	-g
+CXXFLAGS		+=	-g3
 CXXFLAGS		+=  -I$(INCDIR)
 CXXFLAGS		+=	-fPIE
 

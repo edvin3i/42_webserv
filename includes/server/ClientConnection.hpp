@@ -7,14 +7,18 @@
 #include <unistd.h>
 #include <iostream>
 #include <sys/socket.h>
+#include <algorithm>
 #include "../logger/Logger.hpp"
 #include "../config/ServerConfig.hpp"
+#include "../http/response/Response.hpp"
+#include "../http/Utils.hpp"
 
 
 const int BUFFER_SIZE = 8192;
 
 
 class Logger;
+class Request;
 
 enum ConnectionState {
 	READING,
@@ -36,17 +40,24 @@ public:
 	void writeData();
 	void buildResponse();
 
+	// void setLocationConfig();
+	void setRequest();
+	void select_server_config(std::vector<ServerConfig>&);
+	void select_location();
+
 
 
 private:
 	Logger &_logger;
 	int _clientSocketFD;
-	const ServerConfig &_serverConfig;
+	ServerConfig *_currentServerConfig;
 	ConnectionState _connectionState;
 	std::string _responseMessage; // needs to replace to _responceBuffer
 	size_t _writeOffset;
 	size_t _currentClientBodySize;
-	//	const LocationConfig *_currentLocationConfig;
+	LocationConfig *_currentLocationConfig;
+	Request *_request;
+	Response *_response;
 
 
 	// std::vector<char> _readBuffer;

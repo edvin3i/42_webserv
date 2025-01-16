@@ -88,7 +88,6 @@ int main(int argc, char **argv) {
 }
 
 
-
 // alternative main to test request class
 // int main(void)
 // {
@@ -106,3 +105,4 @@ int main(int argc, char **argv) {
 // 		std::cerr << "Error " << e << '\n';
 // 	}
 // }
+

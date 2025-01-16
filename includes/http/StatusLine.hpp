@@ -2,18 +2,27 @@
 #define STATUS_LINE_HPP
 
 #include <string>
+#include <sstream>
+#include <map>
+
+#include "StatusCode.hpp"
 
 class StatusLine
 {
 public:
-	StatusLine(std::string http_ver, int status_code, std::string reason_phrase);
+	StatusLine();
+	StatusLine(enum e_status_code status_code);
 	~StatusLine();
 	StatusLine(const StatusLine & other);
 	StatusLine& operator=(const StatusLine & other);
+	std::string toHtml() const;
+	std::string toString() const;
+	static std::map<int, std::string> _status_code_message;
 private:
-	std::string _http_version;
-	int _status_code;
-	std::string _reason_phrase;
+	static void _init_status_code_message();
+	static bool _is_status_code_message_init;
+	static const std::string _http_version;
+	enum e_status_code _status_code;
 };
 
 #endif

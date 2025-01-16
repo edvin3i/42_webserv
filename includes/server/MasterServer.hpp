@@ -9,6 +9,7 @@
 #include "TcpServer.hpp"
 #include "ClientConnection.hpp"
 #include "../logger/Logger.hpp"
+#include "../http/MimeType.hpp"
 
 class ServerConfig;
 class TcpServer;
@@ -31,8 +32,6 @@ private:
 	std::vector<pollfd> _fds;
 	std::map<int, TcpServer *> _serversMap; // socket_fd->TcpServer
 	std::map<int, ClientConnection *> _clientsMap; // socket-fd->ClientConnection
-
-
 };
 
 

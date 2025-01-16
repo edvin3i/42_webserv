@@ -2,9 +2,17 @@
 
 
 Request::Request(const std::string & str)
-: Message<RequestLine>()
+: Message<RequestLine>(), _error(false), _error_code(STATUS_OK)
 {
-	_parse(str);
+	try
+	{
+		_parse(str);
+	}
+	catch (enum e_status_code error_code)
+	{
+		_error = true;
+		_error_code = error_code;
+	}
 }
 
 Request::~Request() {}
@@ -31,13 +39,13 @@ void Request::_split_request(std::string str, std::string & request_line, std::v
 	pos_end = str.find(delimiter, pos_start);
 	request_line = str.substr(pos_start, pos_end - pos_start);
 	pos_start = pos_end + delim_len;
-	if (str[pos_start] == ' ')
+	if (Utils::is_whitespace(str[pos_start]))
 		throw (400); // reject message as invalid
 	while (1)
 	{
 		pos_end = str.find(delimiter, pos_start);
 		if (pos_end == std::string::npos)
-			throw (400);
+			throw (STATUS_BAD_REQUEST);
 		header_line = str.substr(pos_start, pos_end - pos_start);
 		if (header_line.empty())
 		{
@@ -63,8 +71,43 @@ void Request::_parse(const std::string & str)
 
 void Request::_parse_headers(std::vector<std::string> & header_lines)
 {
+	std::string header_line_trim;
 	for (size_t i = 0; i < header_lines.size(); ++i)
-		_parse_header(header_lines[i]);
+	{
+		header_line_trim = _str_trim(header_lines[i]);
+		_parse_header(header_line_trim);
+	}
+}
+
+static bool is_delimiter(char c)
+{
+	const std::string delimiters = "(),/:;<=>?@[\\]{}";
+
+	return (delimiters.find(c) != std::string::npos);
+}
+
+void Request::_handle_quoted_str(const std::string& str, size_t& i, std::string& element) const
+{
+	if (!element.empty())
+		throw (400);
+	i += 1;
+	while (1)
+	{
+		if (i == str.length())
+			throw (400);
+		if (str[i] == '\"')
+		{
+			if (str.length() == (i + 1) || is_delimiter(str[i + 1]) || Utils::is_whitespace(str[i + 1]))
+			{
+				i += 1;
+				return ;
+			}
+			else
+				throw (400);
+		}
+		element.push_back(str[i]);
+		i += 1;
+	}
 }
 
 void Request::_parse_field_value(const std::string & str, const std::string & field_name)
@@ -79,64 +122,105 @@ void Request::_parse_field_value(const std::string & str, const std::string & fi
 		{
 			case '\r': case '\n': case '\0':
 				throw (400);
-			case ' ':
+			case ' ': case '\t':
 				if (element.empty())
 				{
-					while (str[i] == ' ')
+					while (Utils::is_whitespace(str[i]))
 						i += 1;
 				}
 				else
 				{
-					size_t nb_space = 0;
-					while (str[i] == ' ')
+					size_t nb_whitespace = 0;
+					while (Utils::is_whitespace(str[i]))
 					{
-						nb_space += 1;
+						nb_whitespace += 1;
 						i += 1;
 					}
-					if (str[i] != ',')
-						element.append(nb_space, ' ');
+					if (!is_delimiter(str[i]))
+						element.append(nb_whitespace, ' ');
 				}
 				break ;
+			case '\"':
+				_handle_quoted_str(str, i, element);
+				break ;
 			case ',':
+				if (!element.empty())
+					nb_non_empty_element += 1;
 				headers.insert(std::pair<std::string, std::string>(field_name, element));
 				element.clear();
 				i += 1;
 				break ;
+			case '(':
+			{
+				int depth = 0;
+				while (true)
+				{
+					if (i == str.length())
+						throw (STATUS_BAD_REQUEST);
+					if (str[i] == '(')
+						depth++;
+					else if (str[i] == ')')
+						depth--;
+					if (str[i] == ')' && (depth == 0))
+					{
+						i += 1;
+						break ;
+					}
+					if (depth < 0)
+						throw (STATUS_BAD_REQUEST);
+					i += 1;
+				}
+				break ;
+			}
 			default:
-				if (element.empty())
-					nb_non_empty_element += 1;
 				element.push_back(str[i]);
 				i += 1;
 				break ;
 		}
 	}
-	headers.insert(std::pair<std::string, std::string>(field_name, element));
+	if (!element.empty())
+		nb_non_empty_element += 1;
+	headers.insert(Field(field_name, FieldValue(element)));
 	if (nb_non_empty_element == 0)
-		throw (400);
+		throw (STATUS_BAD_REQUEST);
 }
 
-void Request::_parse_header(const std::string & str)
+std::string Request::_str_trim(const std::string &str) const
 {
-	std::string field_name, field_value_str_trim;
-	size_t colon_pos, field_value_pos_start, field_value_pos_end;
+	size_t str_start, str_end;
+
+	str_start = str.find_first_not_of(Utils::whitespace);
+	str_end = str.find_last_not_of(Utils::whitespace);
+	return (str.substr(str_start, str_end - str_start + 1));
+}
+
+void Request::_parse_header(const std::string &str)
+{
+	std::string field_name, field_value, field_value_trim;
+	size_t colon_pos;
 
 	if (str.length() > max_header_length)
-		throw (400);
+		throw (STATUS_BAD_REQUEST);
 	colon_pos = str.find(':');
 	field_name = str.substr(0, colon_pos);
-	if (field_name.empty() || field_name.find(' ') != std::string::npos)
+	if (field_name.empty() || Utils::is_whitespace(field_name[field_name.length() - 1]))
 		throw (400);
-	field_value_pos_start = str.find_first_not_of(' ', colon_pos + 1);
-	field_value_pos_end = str.find_last_not_of(' ', str.length());
-	field_value_str_trim = str.substr(field_value_pos_start, field_value_pos_end - field_value_pos_start + 1);
-	_parse_field_value(field_value_str_trim, field_name);
+	field_value = str.substr(colon_pos + 1);
+	field_value_trim = _str_trim(field_value);
+	_parse_field_value(field_value_trim, field_name);
 }
 
-void Request::_check_headers() const
+void Request::_check_headers()
 {
 	//respond with 400 when request message contains more than one Host header field line or a Host header field with an invalid field value
-	if (headers.find("Host") == headers.end())
-		throw (400);
+	if (headers.count("Host") != 1)
+		throw (STATUS_BAD_REQUEST);
+	const std::string& authority = start_line.getUri().getAuthority();
+	if (!authority.empty())
+	{
+		Headers::iterator host_it = headers.find("Host");
+		host_it->second = authority;
+	}
 }
 
 void Request::_decode_chunked(const std::string & str)
@@ -164,15 +248,15 @@ void Request::_decode_chunked(const std::string & str)
 	}
 	std::stringstream ss_content_length;
 	ss_content_length << length;
-	headers.insert(std::pair<std::string, std::string>("Content-Length", ss_content_length.str()));
+	headers.insert(Field("Content-Length", ss_content_length.str()));
 	// headers.insert(std::pair<std::string, std::vector<std::string> >("Content-Length", std::vector<std::string>(1, ss_content_length.str())));
 	content_length = length;
 	std::pair<Headers::iterator, Headers::iterator> transfer_encoding_key = headers.equal_range("Transfer-Encoding");
 	for (Headers::iterator it = transfer_encoding_key.first; it != transfer_encoding_key.second; ++it)
 	{
-		if (it->second == "chunked")
+		if (it->second.getValue() == "chunked")
 		{
-			it->second = "";
+			it->second.setValue("");
 			break ;
 		}
 	}
@@ -195,42 +279,57 @@ void Request::_parse_body(const std::string & str)
 		return ;
 	if (nb_encoding > 0 && nb_content_length > 0)
 	{
-		throw (400);
+		throw (STATUS_BAD_REQUEST);
 		//close connection after responding
 	}
 	else if (nb_encoding > 0)
 	{
-		if (nb_encoding == 1 && transfer_encoding_it.first->second == "chunked")
+		if (nb_encoding == 1 && transfer_encoding_it.first->second.getValue() == "chunked")
 			_decode_chunked(str);
 		else
-			throw (501);
+			throw (STATUS_NOT_IMPLEMENTED);
 	}
 	else if(nb_content_length > 0)
 	{
 		switch (headers.count("Content-Length"))
 		{
 			case '0':
-				throw (411);
+				throw (STATUS_LENGTH_REQUIRED);
 			case '1':
-				_read_size_t(headers.find("Content-Length")->second, content_length);
+				_read_size_t(headers.find("Content-Length")->second.getValue(), content_length);
 				break ;
 			default:
 				size_t tmp;
 				Headers::iterator it = content_length_it.first;
 
-				_read_size_t(it->second, content_length);
+				_read_size_t(it->second.getValue(), content_length);
 				it++;
 				while (it != content_length_it.second)
 				{
-					_read_size_t(it->second, tmp);
+					_read_size_t(it->second.getValue(), tmp);
 					if (tmp != content_length)
-						throw (411);
+						throw (STATUS_LENGTH_REQUIRED);
 					it++;
 				}
 				break ;
 		}
 		content = str.substr(0, content_length);
 	}
+	// {
+	// 	std::string boundary = headers.find("Content-Type")->second.getParameters().find("boundary")->second;
+	// 	size_t count = 0;
+	// 	size_t old_pos = 0;
+	// 	size_t pos;
+
+	// 	while ((pos = str.find(boundary, old_pos)) != std::string::npos)
+	// 	{
+	// 		count += 1;
+	// 		old_pos = pos + boundary.length();
+	// 	}
+	// 	std::cout << "NB BOUNDARY: " << count << '\n';
+	// 	std::cout << content_length << '\n';
+	// 	std::cout << content.substr(content_length - 100, std::string::npos);
+	// }
 }
 
 void Request::print() const
@@ -249,8 +348,19 @@ void Request::print() const
 	// std::clog << "\n\n";
 
 	std::clog << "HEADERS: \n";
-	for (Headers::const_iterator it = headers.begin(); it != headers.end(); ++it) {
-		std::cout << it->first << ": " << it->second << "\n";
+	for (Headers::const_iterator it = headers.begin(); it != headers.end(); ++it)
+	{
+		std::cout << "header-name: " << it->first << ", header-value: " << it->second.getValue();
+		const Parameters& parameters = it->second.getParameters();
+		if (parameters.size() > 0)
+		{
+			std::cout << ", parameters: ";
+			for (Parameters::const_iterator jt = parameters.begin(); jt != parameters.end(); ++jt)
+			{
+				std::cout << jt->first << '=' << jt->second << ' ';
+			}
+		}
+		std::cout << '\n';
 	}
 	std::clog << "\n\n";
 
@@ -259,4 +369,15 @@ void Request::print() const
 		std::clog << "empty body\n";
 	else
 		std::clog << content << '\n';
+}
+
+
+bool Request::error() const
+{
+	return (_error);
+}
+
+enum e_status_code Request::getErrorCode() const
+{
+	return (_error_code);
 }

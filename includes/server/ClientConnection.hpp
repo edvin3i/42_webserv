@@ -41,6 +41,7 @@ public:
 	void buildResponse();
 
 	// void setLocationConfig();
+	void setRequest();
 	void select_server_config(std::vector<ServerConfig>&);
 	void select_location();
 

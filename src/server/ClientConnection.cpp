@@ -55,8 +55,9 @@ void ClientConnection::buildResponse() {
 	std::cout << "RESPONSE:"<< '\n' << _response->toString();
 	std::string response_html = _response->toHtml();
 	_writeBuffer.clear();
-    _writeBuffer.assign(response_html.begin(), response_html.end());
-    _writeOffset = 0;
+	_writeBuffer.resize(response_html.size());
+	std::copy(response_html.begin(), response_html.end(), _writeBuffer.begin());
+	_writeOffset = 0;
 
     _logger.writeToLog(DEBUG, "Response ready!");
 	delete _response;

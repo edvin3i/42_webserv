@@ -58,7 +58,7 @@ FieldValue::FieldValue(const std::string& str)
 				default:
 					if (_parse_state == STATE_PARAM_NAME)
 						name.push_back(str[i]);
-					else if (_parse_state = STATE_PARAM_VALUE)
+					else if (_parse_state == STATE_PARAM_VALUE)
 						value.push_back(str[i]);
 					i += 1;
 			}

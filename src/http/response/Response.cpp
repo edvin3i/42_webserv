@@ -176,7 +176,7 @@ void Response::_handle_auto_index()
 	if (!dir)
 		throw (STATUS_INTERNAL_ERR);
 	content.append(_html_auto_index);
-	while (file = readdir(dir))
+	while ((file = readdir(dir)))
 	{
 		content.append("<li><a href=\"");
 		content.append(file->d_name);

@@ -98,3 +98,8 @@ void FieldValue::setValue(const std::string &value)
 {
 	_value = value;
 }
+
+void FieldValue::addParameters(const std::string &param_name, const std::string &param_value)
+{
+	_parameters.insert(Parameter(param_name, param_value));
+}

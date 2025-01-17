@@ -30,7 +30,7 @@ Request& Request::operator=(const Request & other)
 	return (*this);
 }
 
-void Request::_split_request(std::string str, std::string & request_line, std::vector<std::string> & header_lines, std::string & body)
+void Request::_split_request(const std::string& str, std::string & request_line, std::vector<std::string> & header_lines, std::string & body)
 {
 	const std::string delimiter = "\r\n";
 	size_t pos_start = 0, pos_end, delim_len = 2;
@@ -60,154 +60,14 @@ void Request::_split_request(std::string str, std::string & request_line, std::v
 void Request::_parse(const std::string & str)
 {
 	std::string request_line, body;
-	std::vector<std::string> header_lines;
+	std::vector<std::string> fields;
 
-	_split_request(str, request_line, header_lines, body);
+	_split_request(str, request_line, fields, body);
 	start_line = RequestLine(request_line);
-	_parse_headers(header_lines);
+	headers = Headers(fields);
 	_check_headers();
 	_parse_body(body);
-}
-
-void Request::_parse_headers(std::vector<std::string> & header_lines)
-{
-	std::string header_line_trim;
-	for (size_t i = 0; i < header_lines.size(); ++i)
-	{
-		header_line_trim = _str_trim(header_lines[i]);
-		_parse_header(header_line_trim);
-	}
-}
-
-static bool is_delimiter(char c)
-{
-	const std::string delimiters = "(),/:;<=>?@[\\]{}";
-
-	return (delimiters.find(c) != std::string::npos);
-}
-
-void Request::_handle_quoted_str(const std::string& str, size_t& i, std::string& element) const
-{
-	if (!element.empty())
-		throw (400);
-	i += 1;
-	while (1)
-	{
-		if (i == str.length())
-			throw (400);
-		if (str[i] == '\"')
-		{
-			if (str.length() == (i + 1) || is_delimiter(str[i + 1]) || Utils::is_whitespace(str[i + 1]))
-			{
-				i += 1;
-				return ;
-			}
-			else
-				throw (400);
-		}
-		element.push_back(str[i]);
-		i += 1;
-	}
-}
-
-void Request::_parse_field_value(const std::string & str, const std::string & field_name)
-{
-	std::string element;
-	size_t i = 0;
-	size_t nb_non_empty_element = 0;
-
-	while (i < str.length())
-	{
-		switch (str[i])
-		{
-			case '\r': case '\n': case '\0':
-				throw (400);
-			case ' ': case '\t':
-				if (element.empty())
-				{
-					while (Utils::is_whitespace(str[i]))
-						i += 1;
-				}
-				else
-				{
-					size_t nb_whitespace = 0;
-					while (Utils::is_whitespace(str[i]))
-					{
-						nb_whitespace += 1;
-						i += 1;
-					}
-					if (!is_delimiter(str[i]))
-						element.append(nb_whitespace, ' ');
-				}
-				break ;
-			case '\"':
-				_handle_quoted_str(str, i, element);
-				break ;
-			case ',':
-				if (!element.empty())
-					nb_non_empty_element += 1;
-				headers.insert(std::pair<std::string, std::string>(field_name, element));
-				element.clear();
-				i += 1;
-				break ;
-			case '(':
-			{
-				int depth = 0;
-				while (true)
-				{
-					if (i == str.length())
-						throw (STATUS_BAD_REQUEST);
-					if (str[i] == '(')
-						depth++;
-					else if (str[i] == ')')
-						depth--;
-					if (str[i] == ')' && (depth == 0))
-					{
-						i += 1;
-						break ;
-					}
-					if (depth < 0)
-						throw (STATUS_BAD_REQUEST);
-					i += 1;
-				}
-				break ;
-			}
-			default:
-				element.push_back(str[i]);
-				i += 1;
-				break ;
-		}
-	}
-	if (!element.empty())
-		nb_non_empty_element += 1;
-	headers.insert(Field(field_name, FieldValue(element)));
-	if (nb_non_empty_element == 0)
-		throw (STATUS_BAD_REQUEST);
-}
-
-std::string Request::_str_trim(const std::string &str) const
-{
-	size_t str_start, str_end;
-
-	str_start = str.find_first_not_of(Utils::whitespace);
-	str_end = str.find_last_not_of(Utils::whitespace);
-	return (str.substr(str_start, str_end - str_start + 1));
-}
-
-void Request::_parse_header(const std::string &str)
-{
-	std::string field_name, field_value, field_value_trim;
-	size_t colon_pos;
-
-	if (str.length() > max_header_length)
-		throw (STATUS_BAD_REQUEST);
-	colon_pos = str.find(':');
-	field_name = str.substr(0, colon_pos);
-	if (field_name.empty() || Utils::is_whitespace(field_name[field_name.length() - 1]))
-		throw (400);
-	field_value = str.substr(colon_pos + 1);
-	field_value_trim = _str_trim(field_value);
-	_parse_field_value(field_value_trim, field_name);
+	_handle_multipart();
 }
 
 void Request::_check_headers()
@@ -249,7 +109,6 @@ void Request::_decode_chunked(const std::string & str)
 	std::stringstream ss_content_length;
 	ss_content_length << length;
 	headers.insert(Field("Content-Length", ss_content_length.str()));
-	// headers.insert(std::pair<std::string, std::vector<std::string> >("Content-Length", std::vector<std::string>(1, ss_content_length.str())));
 	content_length = length;
 	std::pair<Headers::iterator, Headers::iterator> transfer_encoding_key = headers.equal_range("Transfer-Encoding");
 	for (Headers::iterator it = transfer_encoding_key.first; it != transfer_encoding_key.second; ++it)
@@ -315,21 +174,6 @@ void Request::_parse_body(const std::string & str)
 		}
 		content = str.substr(0, content_length);
 	}
-	// {
-	// 	std::string boundary = headers.find("Content-Type")->second.getParameters().find("boundary")->second;
-	// 	size_t count = 0;
-	// 	size_t old_pos = 0;
-	// 	size_t pos;
-
-	// 	while ((pos = str.find(boundary, old_pos)) != std::string::npos)
-	// 	{
-	// 		count += 1;
-	// 		old_pos = pos + boundary.length();
-	// 	}
-	// 	std::cout << "NB BOUNDARY: " << count << '\n';
-	// 	std::cout << content_length << '\n';
-	// 	std::cout << content.substr(content_length - 100, std::string::npos);
-	// }
 }
 
 void Request::print() const
@@ -380,4 +224,60 @@ bool Request::error() const
 enum e_status_code Request::getErrorCode() const
 {
 	return (_error_code);
+}
+
+void Request::_skip_newline(size_t& i)
+{
+	if (content.compare(i, 2, "\r\n") != 0)
+		throw (STATUS_BAD_REQUEST);
+	i += 2;
+}
+
+void Request::_handle_multipart()
+{
+
+	size_t nb_content_type = headers.count("Content-Type");
+	static size_t test = 0;
+
+	if (nb_content_type == 0)
+		return ;
+	if (nb_content_type > 1)
+		throw (STATUS_BAD_REQUEST);
+
+	Headers::const_iterator content_type_it = headers.find("Content-Type");
+	const std::string content_type_value = content_type_it->second.getValue();
+	const std::string multipart = "multipart";
+
+	if (content_type_value.compare(0, multipart.length(), multipart) != 0)
+		return ;
+	const Parameters& parameters = content_type_it->second.getParameters();
+	std::string boundary;
+	if (!parameters.count("boundary"))
+		throw (STATUS_BAD_REQUEST);
+	boundary = parameters.at("boundary");
+
+	const std::string delimiter = "--" + boundary;
+	size_t i;
+	size_t pos;
+	if (content.compare(0, delimiter.length(), delimiter) != 0)
+		throw (STATUS_BAD_REQUEST);
+	i = delimiter.length();
+	_skip_newline(i);
+	while (i < content_length)
+	{
+		pos = content.find(delimiter, i);
+		if (pos == std::string::npos)
+			throw (STATUS_BAD_REQUEST);
+		if (content.compare(pos + delimiter.length(), 2, "--"))
+		{
+			_multipart.push_back(BodyPart(content.substr(i, pos - i)));
+			return ;
+		}
+		else
+		{
+			_multipart.push_back(BodyPart(content.substr(i, pos - i)));
+		}
+		i = pos + delimiter.length();
+		_skip_newline(i);
+	}
 }

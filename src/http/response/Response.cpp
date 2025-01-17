@@ -50,8 +50,16 @@ void Response::_check_resource()
 {
 	struct stat file_stat;
 	std::string resource_path;
+	const std::string& uri_path = _request.start_line.getUri().getPath();
 
-	_resource_path = _conf.root + _request.start_line.getUri().getPath();
+	// _resource_path = _conf.root + _request.start_line.getUri().getPath();
+	_resource_path.append(_conf.root);
+	if (_location && !_location->path.empty())
+	{
+		_resource_path.append(_location->path);
+		_resource_path.append(uri_path.substr(1));
+	}
+	_resource_path.append(uri_path);
 	if (stat(_resource_path.c_str(), &file_stat) < 0)
 		throw (STATUS_NOT_FOUND);
 	else if (S_ISDIR(file_stat.st_mode))
@@ -87,14 +95,6 @@ void Response::_handle_get()
 	}
 }
 
-static std::string size_t_to_str(size_t n)
-{
-	std::stringstream ss;
-
-	ss << n;
-	return (ss.str());
-}
-
 static char my_tolower(char c)
 {
 	return (static_cast<char>(tolower(c)));
@@ -123,7 +123,7 @@ void Response::_handle_file(const std::string& filename)
 		throw (STATUS_INTERNAL_ERR);
 	file_content << file.rdbuf();
 	start_line = StatusLine(STATUS_OK);
-	headers.insert(Field("Content-Length", FieldValue(size_t_to_str(file_content.str().length()))));
+	headers.insert(Field("Content-Length", FieldValue(Utils::size_t_to_str(file_content.str().length()))));
 	headers.insert(Field("Content-Type", FieldValue(_filename_to_mime_type(filename))));
 	content = file_content.str();
 	content_length = file_content.str().length();
@@ -188,7 +188,7 @@ void Response::_handle_auto_index()
 	closedir(dir);
 
 	start_line = StatusLine(STATUS_OK);
-	headers.insert(Field("Content-Length", FieldValue(size_t_to_str(content.length()))));
+	headers.insert(Field("Content-Length", FieldValue(Utils::size_t_to_str(content.length()))));
 	headers.insert(Field("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
 	content_length = content.length();
 }
@@ -224,7 +224,7 @@ void Response::_upload_file()
 {
 	if (_request.content_length == 0)
 		throw (STATUS_LENGTH_REQUIRED);
-	
+
 	const std::string filename = get_filename();
 	std::string filepath;
 	if (_location && !_location->upload_dir.empty())
@@ -303,7 +303,7 @@ void Response::_handle_default_error(enum e_status_code status_code)
 	// 			switch (parameter)
 	// 			{
 	// 				case 'C':
-	// 					line.replace(pos, status_tag.length() + 1, size_t_to_str(status_code));
+	// 					line.replace(pos, status_tag.length() + 1, Utils::size_t_to_str(status_code));
 	// 					break;
 	// 				case 'M':
 	// 					line.replace(pos, status_tag.length() + 1, StatusLine::_status_code_message[status_code]);
@@ -365,7 +365,7 @@ void Response::_handle_error(enum e_status_code status_code)
 			headers.insert(Field("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
 			break ;
 		default:
-			headers.insert(Field("Content-Length", FieldValue(size_t_to_str(content_length))));
+			headers.insert(Field("Content-Length", FieldValue(Utils::size_t_to_str(content_length))));
 			headers.insert(Field("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
 	}
 }

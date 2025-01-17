@@ -7,6 +7,7 @@
 #include "Utils.hpp"
 
 typedef std::map<std::string, std::string> Parameters;
+typedef std::pair<std::string, std::string> Parameter;
 
 class FieldValue
 {
@@ -20,6 +21,7 @@ public:
 	const std::string& getValue() const;
 	const Parameters& getParameters() const;
 	void setValue(const std::string &value);
+	void addParameters(const std::string& param_name, const std::string& param_value);
 private:
 	std::string _value;
 	Parameters _parameters;

@@ -160,14 +160,14 @@ void ClientConnection::select_server_config(std::vector<ServerConfig>& confs)
 		_currentServerConfig = &(*confs.begin());
 }
 
-static size_t matching_prefix_depth(const std::string& location_root, const std::string& uri)
+static size_t matching_prefix_depth(const std::string& location_path, const std::string& uri)
 {
-	std::vector<std::string> split_root = Utils::split(location_root, "/");
+	std::vector<std::string> split_root = Utils::split(location_path, "/");
 	std::vector<std::string> split_uri = Utils::split(uri, "/");
 	const size_t min_depth = std::min(split_root.size(), split_uri.size());
 	size_t i = 0;
 
-	if (location_root == "/")
+	if (location_path == "/" || uri == "/")
 		return (1);
 	while (i < min_depth && (split_root[i] == split_uri[i]))
 		i += 1;
@@ -184,11 +184,11 @@ void ClientConnection::select_location()
 		_currentLocationConfig = NULL;
 	for (std::vector<LocationConfig>::iterator it = locations.begin(); it != locations.end(); ++it)
 	{
-		depth = matching_prefix_depth(it->root, _request->start_line.getUri().getPath());
-		if (depth > 0)
+		depth = matching_prefix_depth(it->path, _request->start_line.getUri().getPath());
+		if (depth > max_depth)
 		{
 			max_depth = depth;
-				location_tmp = &(*it);
+			location_tmp = &(*it);
 		}
 	}
 	_currentLocationConfig = location_tmp;

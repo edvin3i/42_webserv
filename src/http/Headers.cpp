@@ -8,8 +8,9 @@ Headers::Headers()
 }
 
 Headers::Headers(const std::vector<std::string>& fields)
+: std::multimap<std::string, FieldValue>()
 {
-
+	_parse_fields(fields);
 }
 
 Headers::~Headers()

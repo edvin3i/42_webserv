@@ -123,8 +123,8 @@ void Response::_handle_file(const std::string& filename)
 		throw (STATUS_INTERNAL_ERR);
 	file_content << file.rdbuf();
 	start_line = StatusLine(STATUS_OK);
-	headers.insert(Field("Content-Length", FieldValue(Utils::size_t_to_str(file_content.str().length()))));
-	headers.insert(Field("Content-Type", FieldValue(_filename_to_mime_type(filename))));
+	headers.insert(SingleField("Content-Length", FieldValue(Utils::size_t_to_str(file_content.str().length()))));
+	headers.insert(SingleField("Content-Type", FieldValue(_filename_to_mime_type(filename))));
 	content = file_content.str();
 	content_length = file_content.str().length();
 }
@@ -188,8 +188,8 @@ void Response::_handle_auto_index()
 	closedir(dir);
 
 	start_line = StatusLine(STATUS_OK);
-	headers.insert(Field("Content-Length", FieldValue(Utils::size_t_to_str(content.length()))));
-	headers.insert(Field("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
+	headers.insert(SingleField("Content-Length", FieldValue(Utils::size_t_to_str(content.length()))));
+	headers.insert(SingleField("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
 	content_length = content.length();
 }
 
@@ -197,7 +197,7 @@ void Response::_handle_post()
 {
 	_upload_file();
 	start_line = StatusLine(STATUS_CREATED);
-	headers.insert(Field("Content-Length", FieldValue("0")));
+	headers.insert(SingleField("Content-Length", FieldValue("0")));
 }
 
 std::string Response::get_filename()
@@ -267,7 +267,7 @@ void Response::_delete_dir()
 	if (std::system(command.c_str()) == 0)
 	{
 		start_line = StatusLine(STATUS_NO_CONTENT);
-		headers.insert(Field("Content-Length", FieldValue("0")));
+		headers.insert(SingleField("Content-Length", FieldValue("0")));
 	}
 	else
 		throw (STATUS_INTERNAL_ERR);
@@ -278,7 +278,7 @@ void Response::_delete_file()
 	if (std::remove(_resource_path.c_str()) != 0)
 		throw (STATUS_INTERNAL_ERR);
 	start_line = StatusLine(STATUS_NO_CONTENT);
-	headers.insert(Field("Content-Length", FieldValue("0")));
+	headers.insert(SingleField("Content-Length", FieldValue("0")));
 
 }
 
@@ -360,13 +360,13 @@ void Response::_handle_error(enum e_status_code status_code)
 	switch (status_code)
 	{
 		case STATUS_MOVED:
-			headers.insert(Field("Location", FieldValue(_resource_path + "/")));
-			headers.insert(Field("Content-Length", FieldValue("0")));
-			headers.insert(Field("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
+			headers.insert(SingleField("Location", FieldValue(_resource_path + "/")));
+			headers.insert(SingleField("Content-Length", FieldValue("0")));
+			headers.insert(SingleField("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
 			break ;
 		default:
-			headers.insert(Field("Content-Length", FieldValue(Utils::size_t_to_str(content_length))));
-			headers.insert(Field("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
+			headers.insert(SingleField("Content-Length", FieldValue(Utils::size_t_to_str(content_length))));
+			headers.insert(SingleField("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
 	}
 }
 

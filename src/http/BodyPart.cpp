@@ -68,6 +68,6 @@ void BodyPart::_check_headers()
 	{
 		FieldValue field_value("text/plain");
 		field_value.addParameters("charset", "US-ASCII");
-		_headers.insert(Field("Content-Type", field_value));
+		_headers.insert(SingleField("Content-Type", field_value));
 	}
 }

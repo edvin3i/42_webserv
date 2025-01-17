@@ -22,6 +22,9 @@ public:
 	const Parameters& getParameters() const;
 	void setValue(const std::string &value);
 	void addParameters(const std::string& param_name, const std::string& param_value);
+	void _parse_value(const std::string&);
+	void _parse_parameters(const std::string&);
+	void _handle_quote(const std::string&, std::string& text, size_t& i);
 private:
 	std::string _value;
 	Parameters _parameters;

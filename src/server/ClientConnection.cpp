@@ -143,7 +143,7 @@ void ClientConnection::select_server_config(std::vector<ServerConfig>& confs)
 	if (!_request)
 		throw (std::runtime_error("_request NULL"));
 
-	const Headers::const_iterator host_it = _request->headers.find("Host");
+	Headers::const_iterator host_it = _request->headers.find("Host");
 	const std::string& host_request = host_it->second.getValue();
 	bool host_found = false;
 

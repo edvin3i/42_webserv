@@ -40,7 +40,7 @@ void Request::_split_request(const std::string& str, std::string & request_line,
 	request_line = str.substr(pos_start, pos_end - pos_start);
 	pos_start = pos_end + delim_len;
 	if (Utils::is_whitespace(str[pos_start]))
-		throw (400); // reject message as invalid
+		throw (STATUS_BAD_REQUEST); // reject message as invalid
 	while (1)
 	{
 		pos_end = str.find(delimiter, pos_start);
@@ -108,7 +108,7 @@ void Request::_decode_chunked(const std::string & str)
 	}
 	std::stringstream ss_content_length;
 	ss_content_length << length;
-	headers.insert(Field("Content-Length", ss_content_length.str()));
+	headers.insert(SingleField("Content-Length", ss_content_length.str()));
 	content_length = length;
 	std::pair<Headers::iterator, Headers::iterator> transfer_encoding_key = headers.equal_range("Transfer-Encoding");
 	for (Headers::iterator it = transfer_encoding_key.first; it != transfer_encoding_key.second; ++it)

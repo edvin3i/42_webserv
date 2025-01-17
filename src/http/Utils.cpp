@@ -38,3 +38,5 @@ std::string Utils::str_trim(const std::string &str)
 	str_end = str.find_last_not_of(Utils::whitespace);
 	return (str.substr(str_start, str_end - str_start + 1));
 }
+
+

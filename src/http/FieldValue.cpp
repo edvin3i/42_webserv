@@ -8,64 +8,230 @@ FieldValue::FieldValue()
 FieldValue::FieldValue(const std::string& str)
 : _value(), _parameters()
 {
-	size_t semi_colon_pos = str.find(';');
+	_parse_value(str);
+}
 
-	if (semi_colon_pos == std::string::npos)
-		_value = str;
-	else
+void FieldValue::_handle_quote(const std::string& str, std::string& text, size_t& i)
+{
+	i += 1;
+	while (i < str.length())
 	{
-		std::string name, value;
-		enum parse_state _parse_state = STATE_PARAM_NAME;
-		size_t value_length = semi_colon_pos;
-
-		value_length -= 1;
-		while (value_length > 0 && Utils::is_whitespace(str[value_length]))
-			value_length -= 1;
-		if (value_length == 0)
-			throw (STATUS_BAD_REQUEST);
-		_value = str.substr(0, value_length + 1);
-		// for (size_t i = semi_colon_pos + 1; i < str.length(); ++i)
-		size_t i = semi_colon_pos + 1;
-		while (i < str.length())
+		switch (str[i])
 		{
-			switch (str[i])
+			case '"':
+				i += 1;
+				return ;
+			case '\\':
 			{
-				case ' ': case '\t':
-					while (i < str.length() && Utils::is_whitespace(str[i]))
-						i += 1;
-					if (name.empty() && value.empty())
-						continue ;
-					else if ((str[i] == ';' || i == str.length()) && !name.empty() && !value.empty())
-						continue ;
-					else
-						throw (STATUS_BAD_REQUEST);
-					break ;
-				case ';':
-					if (_parse_state == STATE_PARAM_NAME || name.empty() || value.empty())
-						throw (STATUS_BAD_REQUEST);
-					_parameters[name] = value;
-					name.clear();
-					value.clear();
-					_parse_state = STATE_PARAM_NAME;
-					i += 1;
-					break ;
-				case '=':
-					if (_parse_state == STATE_PARAM_VALUE || name.empty())
-						throw (STATUS_BAD_REQUEST);
-					_parse_state = STATE_PARAM_VALUE;
-					i += 1;
-					break ;
-				default:
-					if (_parse_state == STATE_PARAM_NAME)
-						name.push_back(str[i]);
-					else if (_parse_state = STATE_PARAM_VALUE)
-						value.push_back(str[i]);
-					i += 1;
+				size_t next = i + 1;
+
+				if (next < str.length())
+					text.push_back(str[next]);
+				i += 2;
+				break ;
 			}
+			default:
+				text.push_back(str[i]);
+				i += 1;
+				break ;
 		}
-		_parameters[name] = value;
+	}
+	throw (STATUS_BAD_REQUEST);
+}
+
+void FieldValue::_parse_value(const std::string & str)
+{
+	size_t i = 0;
+
+	while (i < str.length())
+	{
+		switch (str[i])
+		{
+			case '\r': case '\n': case '\0':
+				throw (STATUS_BAD_REQUEST);
+			case ' ': case '\t':
+			{
+				std::string current_whitespace;
+
+				while (Utils::is_whitespace(str[i]))
+				{
+					current_whitespace.push_back(str[i]);
+					i += 1;
+				}
+				if (str[i] != ';')
+					_value.append(current_whitespace);
+				break ;
+			}
+			case '"':
+			{
+				if (i != 0)
+					throw (STATUS_BAD_REQUEST);
+				_handle_quote(str, _value, i);
+
+				if (Utils::is_whitespace(str[i]) || str[i] == ';')
+				{
+					while (Utils::is_whitespace(str[i]))
+						i += 1;
+					if (str[i] != ';')
+						throw (STATUS_BAD_REQUEST);
+				}
+				else
+					throw (STATUS_BAD_REQUEST);
+				break ;
+			}
+			case '(':
+			{
+				int depth = 1;
+				i += 1;
+				while (true)
+				{
+					if (i == str.length())
+						throw (STATUS_BAD_REQUEST);
+					if (str[i] == ')')
+						depth -= 1;
+					else if (str[i] == '(')
+						depth += 1;
+					if (str[i] == ')' && depth == 0)
+					{
+						i += 1;
+						break ;
+					}
+					i += 1;
+				}
+				break ;
+			}
+			case ';':
+			{
+				size_t next = i + 1;
+				if (next == str.length())
+					throw (STATUS_BAD_REQUEST);
+				_parse_parameters(Utils::str_trim(str.substr(next)));
+				if (_value.empty())
+					throw (STATUS_BAD_REQUEST);
+				return ;
+			}
+			default:
+				_value.push_back(str[i]);
+				i += 1;
+				break ;
+		}
 	}
 }
+
+void FieldValue::_parse_parameters(const std::string& str)
+{
+	std::string name, value;
+	enum parse_state _parse_state = STATE_PARAM_NAME;
+
+	size_t i = 0;
+	while (i < str.length())
+	{
+		switch (str[i])
+		{
+			case ' ': case '\t':
+				while (i < str.length() && Utils::is_whitespace(str[i]))
+					i += 1;
+				if (name.empty() && value.empty())
+					continue ;
+				else if ((str[i] == ';' || i == str.length()) && !name.empty() && !value.empty())
+					continue ;
+				else
+					throw (STATUS_BAD_REQUEST);
+				break ;
+			case ';':
+				if (_parse_state == STATE_PARAM_NAME || name.empty() || value.empty())
+					throw (STATUS_BAD_REQUEST);
+				_parameters[name] = value;
+				name.clear();
+				value.clear();
+				_parse_state = STATE_PARAM_NAME;
+				i += 1;
+				break ;
+			case '=':
+				if (_parse_state == STATE_PARAM_VALUE || name.empty())
+					throw (STATUS_BAD_REQUEST);
+				_parse_state = STATE_PARAM_VALUE;
+				i += 1;
+				break ;
+			case '"':
+				if (_parse_state == STATE_PARAM_NAME)
+				{
+					if (!name.empty())
+						throw (STATUS_BAD_REQUEST);
+					_handle_quote(str, name, i);
+					if (str[i] != '=')
+						throw (STATUS_BAD_REQUEST);
+				}
+				else if (_parse_state == STATE_PARAM_VALUE)
+				{
+					if (!value.empty())
+						throw (STATUS_BAD_REQUEST);
+					_handle_quote(str, name, i);
+					if (Utils::is_whitespace(str[i]) || str[i] == ';')
+					{
+						while (Utils::is_whitespace(str[i]))
+							i += 1;
+						if (str[i] != ';')
+							throw (STATUS_BAD_REQUEST);
+					}
+				}
+				break ;
+			default:
+				if (_parse_state == STATE_PARAM_NAME)
+					name.push_back(str[i]);
+				else if (_parse_state = STATE_PARAM_VALUE)
+					value.push_back(str[i]);
+				i += 1;
+		}
+	}
+	_parameters[name] = value;
+}
+
+// FieldValue::FieldValue(const std::string& str)
+// : _value(), _parameters()
+// {
+// 	std::string name, value;
+// 	enum parse_state _parse_state = STATE_PARAM_NAME;
+// 	size_t i = 0;
+// 	while (i < str.length())
+// 	{
+// 		switch (str[i])
+// 		{
+// 			case ' ': case '\t':
+// 				while (i < str.length() && Utils::is_whitespace(str[i]))
+// 					i += 1;
+// 				if (name.empty() && value.empty())
+// 					continue ;
+// 				else if ((str[i] == ';' || i == str.length()) && !name.empty() && !value.empty())
+// 					continue ;
+// 				else
+// 					throw (STATUS_BAD_REQUEST);
+// 				break ;
+// 			case ';':
+// 				if (_parse_state == STATE_PARAM_NAME || name.empty() || value.empty())
+// 					throw (STATUS_BAD_REQUEST);
+// 				_parameters[name] = value;
+// 				name.clear();
+// 				value.clear();
+// 				_parse_state = STATE_PARAM_NAME;
+// 				i += 1;
+// 				break ;
+// 			case '=':
+// 				if (_parse_state == STATE_PARAM_VALUE || name.empty())
+// 					throw (STATUS_BAD_REQUEST);
+// 				_parse_state = STATE_PARAM_VALUE;
+// 				i += 1;
+// 				break ;
+// 			default:
+// 				if (_parse_state == STATE_PARAM_NAME)
+// 					name.push_back(str[i]);
+// 				else if (_parse_state = STATE_PARAM_VALUE)
+// 					value.push_back(str[i]);
+// 				i += 1;
+// 		}
+// 	}
+// 	_parameters[name] = value;
+// }
 
 FieldValue::~FieldValue()
 {}

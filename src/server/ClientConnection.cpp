@@ -66,21 +66,34 @@ void ClientConnection::buildResponse() {
 
 void ClientConnection::readData() {
 	char buffer[BUFFER_SIZE] = {0};
-	size_t bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0);
+	size_t bytesReceived; //= recv(_clientSocketFD, buffer, BUFFER_SIZE, 0);
 
-	if (bytesReceived > 0) {
-		_readBuffer.insert(_readBuffer.end(), buffer, buffer + bytesReceived);
+    while ((bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0)) > 0) {
+        _readBuffer.insert(_readBuffer.end(), buffer, buffer + bytesReceived);
+        
+  
+        std::memset(buffer, 0, BUFFER_SIZE);
+   
+    }
 
-		// std::string str(_readBuffer.begin(), _readBuffer.end());
-		// _logger.writeToLog(DEBUG, "Receive a request from client:\n" + str);
+    if (bytesReceived == 0 || (bytesReceived < 0 && errno != EAGAIN && errno != EWOULDBLOCK)) {
+        _connectionState = CLOSING;
+        return;
+    }
 
-		// std::ostringstream ss;
-		// ss << "Read request from client. Len = " << bytesReceived << "\n";
-		// _logger.writeToLog(DEBUG, ss.str());
-	}
-	else {
-		_connectionState = CLOSING;
-	}
+	// if (bytesReceived > 0) {
+	// 	_readBuffer.insert(_readBuffer.end(), buffer, buffer + bytesReceived);
+
+	// 	// std::string str(_readBuffer.begin(), _readBuffer.end());
+	// 	// _logger.writeToLog(DEBUG, "Receive a request from client:\n" + str);
+
+	// 	// std::ostringstream ss;
+	// 	// ss << "Read request from client. Len = " << bytesReceived << "\n";
+	// 	// _logger.writeToLog(DEBUG, ss.str());
+	// }
+	// else {
+	// 	_connectionState = CLOSING;
+	// }
 	// RequestParser httpParser;
 
 	// httpParser.parse(_readBuffer);

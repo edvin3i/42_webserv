@@ -178,11 +178,17 @@ void Response::_handle_auto_index()
 	content.append(_html_auto_index);
 	while ((file = readdir(dir)))
 	{
-		content.append("<li><a href=\"");
-		content.append(file->d_name);
-		content.append("\"");
-		content.append(file->d_name);
-		content.append("</a></li>");
+		std::string filename(file->d_name);
+		if (filename != "." && filename != "..") {
+			content.append("<li><a href=\"");
+			if (_request.start_line.getUri().getPath() == "/")
+				content.append(filename);
+			else
+				content.append(_request.start_line.getUri().getPath() + "/" + filename);
+			content.append("\">");
+			content.append(filename);
+			content.append("</a></li>");
+		}
 	}
 	content.append("</ul></body></html>");
 	closedir(dir);

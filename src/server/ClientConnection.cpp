@@ -67,7 +67,7 @@ void ClientConnection::buildResponse() {
 
 void ClientConnection::readData() {
 	char buffer[BUFFER_SIZE] = {0};
-	size_t bytesReceived; //= recv(_clientSocketFD, buffer, BUFFER_SIZE, 0);
+	ssize_t bytesReceived; //= recv(_clientSocketFD, buffer, BUFFER_SIZE, 0);
 
     while ((bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0)) > 0) {
         _readBuffer.insert(_readBuffer.end(), buffer, buffer + bytesReceived);
@@ -200,7 +200,7 @@ void ClientConnection::select_location()
 	for (std::map<std::string, LocationConfig>::const_iterator it = locations.begin(); 
 		 it != locations.end(); ++it)
 	{
-		depth = matching_prefix_depth(it->second.root, _request->start_line.getUri().getPath());
+		depth = matching_prefix_depth(it->first, _request->start_line.getUri().getPath());
 		if (depth > 0 && depth > max_depth)
 		{
 			max_depth = depth;

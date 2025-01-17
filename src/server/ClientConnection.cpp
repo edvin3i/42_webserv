@@ -189,19 +189,21 @@ static size_t matching_prefix_depth(const std::string& location_root, const std:
 
 void ClientConnection::select_location()
 {
-	std::vector<LocationConfig>& locations = _currentServerConfig->locations;
+	const std::map<std::string, LocationConfig> & locations = _currentServerConfig->locations;
 	size_t max_depth = 0, depth;
 	LocationConfig* location_tmp = NULL;
 
 	if (locations.empty())
 		_currentLocationConfig = NULL;
-	for (std::vector<LocationConfig>::iterator it = locations.begin(); it != locations.end(); ++it)
+	
+	for (std::map<std::string, LocationConfig>::const_iterator it = locations.begin(); 
+		 it != locations.end(); ++it)
 	{
-		depth = matching_prefix_depth(it->root, _request->start_line.getUri().getPath());
-		if (depth > 0)
+		depth = matching_prefix_depth(it->second.root, _request->start_line.getUri().getPath());
+		if (depth > 0 && depth > max_depth)
 		{
 			max_depth = depth;
-				location_tmp = &(*it);
+			location_tmp = const_cast<LocationConfig*>(&(it->second));
 		}
 	}
 	_currentLocationConfig = location_tmp;

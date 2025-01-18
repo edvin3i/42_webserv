@@ -200,7 +200,8 @@ void Response::_handle_auto_index()
 		if (filename != "." && filename != "..") {
 			content.append("<li><a href=\"");
 			content.append(_request.start_line.getUri().getPath());
-			if (_request.start_line.getUri().getPath().back() != '/')
+			const std::string& path = _request.start_line.getUri().getPath();
+			if (!path.empty() && path[path.length() - 1] != '/')
 				content.append("/");
 			content.append(filename);
 			content.append("\">");

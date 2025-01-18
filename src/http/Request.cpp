@@ -283,3 +283,8 @@ void Request::_handle_multipart()
 		_skip_newline(i);
 	}
 }
+
+const std::vector<BodyPart>& Request::getMultipart() const
+{
+	return (_multipart);
+}

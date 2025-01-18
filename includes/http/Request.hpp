@@ -24,6 +24,7 @@ public:
 	// std::pair<Headers::iterator, Headers::iterator> getFieldValue(const std::string&);
 	bool error() const;
 	enum e_status_code getErrorCode() const;
+	const std::vector<BodyPart>& getMultipart() const;
 private:
 	Request();
 	enum e_status_code _error_code;

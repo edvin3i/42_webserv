@@ -71,3 +71,13 @@ void BodyPart::_check_headers()
 		_headers.insert(SingleField("Content-Type", field_value));
 	}
 }
+
+const Headers& BodyPart::getHeaders() const
+{
+	return (_headers);
+}
+
+const std::string& BodyPart::getBody() const
+{
+	return (_body);
+}

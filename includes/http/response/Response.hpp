@@ -64,10 +64,11 @@ private:
 	bool _is_dir_has_index_file();
 	void _check_auto_index();
 	void _handle_auto_index();
-	void _upload_file();
+	void _upload_file(const std::string&);
 	std::string get_filename();
 	void _handle_error(enum e_status_code);
 	void _handle_default_error(enum e_status_code status_code);
+	void _check_method_allowed();
 
 	static const std::string _html_auto_index;
 	static const std::string _default_error_page_path;

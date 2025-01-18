@@ -15,10 +15,24 @@ Response::Response(const Request& request, const ServerConfig& conf, const Locat
 	{
 		try
 		{
-			_check_location();
-			_check_resource();
-			//_handle_cgi();
-			_check_method();
+			_check_method_allowed();
+			switch (_request.start_line.getMethod().getValue())
+			{
+				case METHOD_GET:
+					_check_resource();
+					_handle_get();
+					break ;
+				case METHOD_POST:
+					_handle_post();
+					break;
+				case METHOD_DELETE:
+					_check_resource();
+					_handle_post();
+					break ;
+			}
+			// _check_resource();
+			// //_handle_cgi();
+			// _check_method();
 		}
 		catch (enum e_status_code status_code)
 		{
@@ -31,19 +45,24 @@ Response::Response(const Request& request, const ServerConfig& conf, const Locat
 Response::~Response()
 {}
 
+void Response::_check_method_allowed()
+{
+	if (_location)
+	{
+		const std::vector<std::string>& allow_methods = _location->methods;
+		const std::string& request_method = _request.start_line.getMethod().toString();
+		if (std::find(allow_methods.begin(), allow_methods.end(), request_method) == allow_methods.end())
+			throw (STATUS_NOT_ALLOWED);
+	}
+}
+
 void Response::_check_location()
 {
 	// else if (redirection)
 	// {
 	// 	redirection ?
 	// }
-	if (_location)
-	{
-		const std::vector<std::string>& allow_methods = _location->methods;
-		const std::string& request_method = _request.start_line.getMethod();
-		if (std::find(allow_methods.begin(), allow_methods.end(), request_method) == allow_methods.end())
-			throw (STATUS_NOT_ALLOWED);
-	}
+
 }
 
 void Response::_check_resource()
@@ -75,17 +94,17 @@ void Response::_check_resource()
 		_resource_type = RT_FILE;
 }
 
-void Response::_check_method()
-{
-	const std::string method = _request.start_line.getMethod();
+// void Response::_check_method()
+// {
+// 	const std::string method = _request.start_line.getMethod();
 
-	if (method == "GET")
-		_handle_get();
-	else if (method == "POST")
-		_handle_post();
-	else
-		_handle_delete();
-}
+// 	if (method == "GET")
+// 		_handle_get();
+// 	else if (method == "POST")
+// 		_handle_post();
+// 	else
+// 		_handle_delete();
+// }
 
 void Response::_handle_get()
 {
@@ -208,19 +227,31 @@ void Response::_handle_auto_index()
 
 void Response::_handle_post()
 {
-	_upload_file();
+	if (!_location)
+		throw (STATUS_NOT_FOUND);
+	if (_location->upload_dir.empty())
+		throw (STATUS_INTERNAL_ERR);
+
+	const std::string filename = get_filename();
+	std::string file_path;
+	_upload_file(_location->upload_dir + "/" + filename);
 	start_line = StatusLine(STATUS_CREATED);
 	headers.insert(SingleField("Content-Length", FieldValue("0")));
 }
 
 std::string Response::get_filename()
 {
+	const std::vector<BodyPart>& multipart = _request.getMultipart();
+
+	if (multipart.empty())
+		throw (STATUS_BAD_REQUEST);
+	const Headers& body_headers = multipart[0].getHeaders();
 	std::pair<Headers::const_iterator, Headers::const_iterator> content_disposition_it;
 	std::string filename;
 
-	if (_request.headers.count("Content-Disposition") == 0)
+	if (body_headers.count("Content-Disposition") == 0)
 		throw (STATUS_BAD_REQUEST);
-	content_disposition_it = _request.headers.equal_range("Content-Disposition");
+	content_disposition_it = body_headers.equal_range("Content-Disposition");
 	for (Headers::const_iterator it = content_disposition_it.first; it != content_disposition_it.second; ++it)
 	{
 		const Parameters& parameters = it->second.getParameters();
@@ -233,22 +264,16 @@ std::string Response::get_filename()
 	return (filename);
 }
 
-void Response::_upload_file()
+void Response::_upload_file(const std::string& file_path)
 {
 	if (_request.content_length == 0)
 		throw (STATUS_LENGTH_REQUIRED);
 
-	const std::string filename = get_filename();
-	std::string filepath;
-	if (_location && !_location->upload_dir.empty())
-		filepath = _location->upload_dir + "/" + filename;
-	else
-		filepath = _request.start_line.getUri().getPath();
-	std::ofstream file(filename.c_str());
+	std::ofstream file(file_path.c_str());
 
 	if (!file.is_open())
 		throw (STATUS_NOT_FOUND);
-	file << content;
+	file << _request.getMultipart()[0].getBody();
 	file.close();
 }
 

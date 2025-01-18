@@ -2,31 +2,14 @@
 
 const size_t RequestLine::_max_request_line_length = 8192;
 
-const char *RequestLine::_allowed_methods[] = {"GET", "POST", "DELETE"};
-
-const size_t RequestLine::_nb_allowed_methods = sizeof(_allowed_methods) / sizeof(_allowed_methods[0]);
-
-size_t RequestLine::_max_method_length = 0;
-
-void RequestLine::_init()
-{
-	for (size_t i = 0; i < _nb_allowed_methods; ++i)
-	{
-		size_t len = strlen(_allowed_methods[i]);
-		if (len > _max_method_length)
-			_max_method_length = len;
-	}
-}
 
 RequestLine::RequestLine()
 : _method(), _uri(), _http_version()
 {
-	_init();
 }
 
 RequestLine::RequestLine(const std::string& line)
 {
-	_init();
 	if (line.length() > _max_request_line_length)
 		throw (STATUS_BAD_REQUEST);
 	_parse_request_line(line);
@@ -34,15 +17,14 @@ RequestLine::RequestLine(const std::string& line)
 
 void RequestLine::_parse_method(const std::string& str)
 {
-	if (str.length() > _max_method_length)
+	try
+	{
+		_method = Method(str);
+	}
+	catch (const std::exception& e)
+	{
 		throw (STATUS_NOT_IMPLEMENTED);
-	bool is_method_exist = false;
-	for (size_t i = 0; i < _nb_allowed_methods; ++i)
-		if (strcmp(str.c_str(), _allowed_methods[i]) == 0)
-			is_method_exist = true;
-	if (is_method_exist == false)
-		throw (STATUS_NOT_IMPLEMENTED); // Not implemented
-	_method = str;
+	}
 }
 
 void RequestLine::_parse_version(const std::string& str)
@@ -100,10 +82,10 @@ RequestLine& RequestLine::operator=(const RequestLine& other)
 
 void RequestLine::print() const
 {
-	std::clog << "method: " << _method << ", request-target: " << _uri.getPath() << ", HTTP-version: " << _http_version;
+	std::clog << "method: " << _method.toString() << ", request-target: " << _uri.getPath() << ", HTTP-version: " << _http_version;
 }
 
-const std::string& RequestLine::getMethod() const
+Method RequestLine::getMethod() const
 {
 	return (_method);
 }
@@ -112,3 +94,4 @@ const Uri& RequestLine::getUri() const
 {
 	return (_uri);
 }
+

@@ -118,12 +118,11 @@ void MasterServer::run() {
 						if (revents & POLLOUT) {
 
 							client->setRequest();
-							client->select_server_config(_configs);
 							client->select_location();
 							client->buildResponse();
 
-							// add checking
-							if (client->isReadyToWrite()) {
+							// continue sending data until all data is sent
+							while (client->isReadyToWrite()) {
 								client->writeData();
 							}
 

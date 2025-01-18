@@ -1,6 +1,7 @@
 #ifndef REQUEST_HPP
 #define REQUEST_HPP
 
+#include "../logger/Logger.hpp"
 #include "Message.hpp"
 #include "RequestLine.hpp"
 #include "StatusCode.hpp"
@@ -15,7 +16,8 @@
 class Request : public Message<RequestLine>
 {
 public:
-	Request(const std::string & str);
+
+	Request(Logger & logger, const std::string & str);
 	~Request();
 	Request(const Request & other);
 	Request &operator=(const Request & other);
@@ -25,6 +27,7 @@ public:
 	bool error() const;
 	enum e_status_code getErrorCode() const;
 private:
+	Logger &_logger;
 	Request();
 	enum e_status_code _error_code;
 	bool _error;
@@ -37,6 +40,7 @@ private:
 	void _decode_chunked(const std::string & str);
 	void _handle_multipart();
 	void _skip_newline(size_t& i);
+
 };
 
 #endif

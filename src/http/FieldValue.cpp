@@ -87,6 +87,7 @@ void FieldValue::_parse_value(const std::string & str)
 				{
 					if (i == str.length())
 						throw (STATUS_BAD_REQUEST);
+// <<<<<<< antonin
 					if (str[i] == ')')
 						depth -= 1;
 					else if (str[i] == '(')
@@ -96,6 +97,16 @@ void FieldValue::_parse_value(const std::string & str)
 						i += 1;
 						break ;
 					}
+// =======
+					_parse_state = STATE_PARAM_VALUE;
+					i += 1;
+					break ;
+				default:
+					if (_parse_state == STATE_PARAM_NAME)
+						name.push_back(str[i]);
+					else if (_parse_state == STATE_PARAM_VALUE)
+						value.push_back(str[i]);
+// >>>>>>> master
 					i += 1;
 				}
 				break ;

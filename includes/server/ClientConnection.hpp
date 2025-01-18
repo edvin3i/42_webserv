@@ -14,7 +14,7 @@
 #include "../http/Utils.hpp"
 
 
-const int BUFFER_SIZE = 8192;
+const int BUFFER_SIZE = 131072;
 
 
 class Logger;
@@ -40,9 +40,7 @@ public:
 	void writeData();
 	void buildResponse();
 
-	// void setLocationConfig();
 	void setRequest();
-	void select_server_config(std::vector<ServerConfig>&);
 	void select_location();
 
 
@@ -50,7 +48,7 @@ public:
 private:
 	Logger &_logger;
 	int _clientSocketFD;
-	ServerConfig *_currentServerConfig;
+	const ServerConfig *_currentServerConfig;
 	ConnectionState _connectionState;
 	std::string _responseMessage; // needs to replace to _responceBuffer
 	size_t _writeOffset;
@@ -60,7 +58,6 @@ private:
 	Response *_response;
 
 
-	// std::vector<char> _readBuffer;
 	std::string _readBuffer;
 	std::vector<char> _writeBuffer;
 

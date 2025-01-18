@@ -32,9 +32,9 @@ enum e_resource_type
 class Response : public Message<StatusLine>
 {
 public:
-	// Response(Logger & logger, const ServerConfig & srv_conf, const Request & request);
+	Response(Logger & logger, const ServerConfig & conf, const LocationConfig  *location, const Request & request);
 	Response();
-	Response(const Request&, const ServerConfig&, const LocationConfig*);
+	//Response(const Request&, const ServerConfig&, const LocationConfig*);
 	~Response();
 	Response(const Response & other);
 	Response &operator=(const Response & other);
@@ -44,6 +44,7 @@ public:
 	std::string toString() const;
 
 private:
+	Logger &_logger;
 	const Request &_request;
 	const ServerConfig &_conf;
 	const LocationConfig* _location;

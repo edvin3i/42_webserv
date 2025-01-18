@@ -54,6 +54,7 @@ private:
 	void _check_location();
 	void _check_resource();
 	void _check_method();
+	void _check_body_size(); // add body size check
 	void _handle_get();
 	void _handle_post();
 	void _handle_delete();
@@ -72,6 +73,8 @@ private:
 
 	static const std::string _html_auto_index;
 	static const std::string _default_error_page_path;
+
+	
 };
 
 

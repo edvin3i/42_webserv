@@ -167,7 +167,7 @@ static size_t matching_prefix_depth(const std::string& location_path, const std:
 	const size_t min_depth = std::min(split_root.size(), split_uri.size());
 	size_t i = 0;
 
-	if (location_path == "/" || uri == "/")
+	if (location_path == "/")
 		return (1);
 	while (i < min_depth && (split_root[i] == split_uri[i]))
 		i += 1;

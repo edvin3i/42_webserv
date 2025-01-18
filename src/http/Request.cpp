@@ -268,9 +268,11 @@ void Request::_handle_multipart()
 		pos = content.find(delimiter, i);
 		if (pos == std::string::npos)
 			throw (STATUS_BAD_REQUEST);
-		if (content.compare(pos + delimiter.length(), 2, "--"))
+		if (content.compare(pos + delimiter.length(), 2, "--") == 0)
 		{
-			_multipart.push_back(BodyPart(content.substr(i, pos - i)));
+			size_t tmp = pos + delimiter.length() + 2;
+			_skip_newline(tmp);
+			_multipart.push_back(BodyPart(content.substr(i, pos - i - 2)));
 			return ;
 		}
 		else

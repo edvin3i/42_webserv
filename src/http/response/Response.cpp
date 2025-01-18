@@ -53,13 +53,20 @@ void Response::_check_resource()
 	const std::string& uri_path = _request.start_line.getUri().getPath();
 
 	// _resource_path = _conf.root + _request.start_line.getUri().getPath();
-	_resource_path.append(_conf.root);
 	if (_location && !_location->path.empty())
 	{
+		if (!_location->root.empty())
+			_resource_path.append(_location->root);
+		else
+			_resource_path.append(_conf.root);
 		_resource_path.append(_location->path);
 		_resource_path.append(uri_path.substr(1));
 	}
-	_resource_path.append(uri_path);
+	else
+	{
+		_resource_path.append(_conf.root);
+		_resource_path.append(uri_path);
+	}
 	if (stat(_resource_path.c_str(), &file_stat) < 0)
 		throw (STATUS_NOT_FOUND);
 	else if (S_ISDIR(file_stat.st_mode))
@@ -145,12 +152,18 @@ bool Response::_is_dir_has_index_file()
 	DIR *dir = opendir(_resource_path.c_str());
 	struct dirent *file;
 	bool index_found = false;
+	std::string index_file;
+
+	if (_location && !_location->index.empty())
+		index_file = _location->index;
+	else
+		index_file = _conf.index;
 
 	if (!dir)
 		return (false);
 	while ((file = readdir(dir)))
 	{
-		if (strcmp(file->d_name, _conf.index.c_str()) == 0)
+		if (strcmp(file->d_name, index_file.c_str()) == 0)
 		{
 			index_found = true;
 			break ;

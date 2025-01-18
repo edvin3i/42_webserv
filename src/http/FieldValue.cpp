@@ -166,7 +166,7 @@ void FieldValue::_parse_parameters(const std::string& str)
 				{
 					if (!value.empty())
 						throw (STATUS_BAD_REQUEST);
-					_handle_quote(str, name, i);
+					_handle_quote(str, value, i);
 					if (Utils::is_whitespace(str[i]) || str[i] == ';')
 					{
 						while (Utils::is_whitespace(str[i]))

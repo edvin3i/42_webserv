@@ -51,13 +51,26 @@ void Response::_check_resource()
 	struct stat file_stat;
 	std::string resource_path;
 
-	_resource_path = _conf.root + _request.start_line.getUri().getPath();
-	if (stat(_resource_path.c_str(), &file_stat) < 0)
-		throw (STATUS_NOT_FOUND);
-	else if (S_ISDIR(file_stat.st_mode))
-		_resource_type = RT_DIR;
+	// Use location root if available, otherwise use server root
+	if (_location && !_location->root.empty())
+		_resource_path = _location->root + _request.start_line.getUri().getPath();
 	else
+		_resource_path = _conf.root + _request.start_line.getUri().getPath();
+
+	std::cout << "Checking resource: " << _resource_path << std::endl;
+	
+	if (stat(_resource_path.c_str(), &file_stat) < 0) {
+		std::cout << "Resource not found: " << strerror(errno) << std::endl;
+		throw (STATUS_NOT_FOUND);
+	}
+	else if (S_ISDIR(file_stat.st_mode)) {
+		std::cout << "Resource is a directory" << std::endl;
+		_resource_type = RT_DIR;
+	}
+	else {
+		std::cout << "Resource is a file" << std::endl;
 		_resource_type = RT_FILE;
+	}
 }
 
 void Response::_check_method()
@@ -132,8 +145,13 @@ void Response::_handle_file(const std::string& filename)
 void Response::_handle_dir()
 {
 	const std::string& uri = _request.start_line.getUri().getPath();
-	if (uri[uri.length() - 1] != '/')
-		throw (STATUS_MOVED);
+	if (uri[uri.length() - 1] != '/') {
+		start_line = StatusLine(STATUS_MOVED);
+		headers.insert(Field("Content-Length", FieldValue("0")));
+		headers.insert(Field("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
+		headers.insert(Field("Location", FieldValue(uri + "/")));
+		return;
+	}
 	if (_is_dir_has_index_file())
 		_handle_file(_resource_path + _conf.index);
 	else
@@ -181,10 +199,10 @@ void Response::_handle_auto_index()
 		std::string filename(file->d_name);
 		if (filename != "." && filename != "..") {
 			content.append("<li><a href=\"");
-			if (_request.start_line.getUri().getPath() == "/")
-				content.append(filename);
-			else
-				content.append(_request.start_line.getUri().getPath() + "/" + filename);
+			content.append(_request.start_line.getUri().getPath());
+			if (_request.start_line.getUri().getPath().back() != '/')
+				content.append("/");
+			content.append(filename);
 			content.append("\">");
 			content.append(filename);
 			content.append("</a></li>");

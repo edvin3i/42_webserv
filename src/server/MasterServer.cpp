@@ -118,7 +118,6 @@ void MasterServer::run() {
 						if (revents & POLLOUT) {
 
 							client->setRequest();
-							client->select_server_config(_configs);
 							client->select_location();
 							client->buildResponse();
 

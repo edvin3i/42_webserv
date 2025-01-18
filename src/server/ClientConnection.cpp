@@ -6,15 +6,13 @@
 ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerConfig & config)
 									:	_logger(logger),
 										_clientSocketFD(socketFD),
-										_currentServerConfig(NULL),
+										_currentServerConfig(&config),
 										_connectionState(READING),
 										_writeOffset(0),
 										_currentClientBodySize(0),
 										_currentLocationConfig(NULL),
 										_request(NULL)
 									{
-	(void) _currentServerConfig; // just to mute compile error
-	(void) _currentClientBodySize;
 
 }
 
@@ -151,38 +149,21 @@ bool ClientConnection::isReadyToWrite() {
 }
 
 
-//https://nginx.org/en/docs/http/request_processing.html
-void ClientConnection::select_server_config(std::vector<ServerConfig>& confs)
-{
-	if (!_request)
-		throw (std::runtime_error("_request NULL"));
-
-	const Headers::const_iterator host_it = _request->headers.find("Host");
-	const std::string& host_request = host_it->second.getValue();
-	bool host_found = false;
-
-	for (std::vector<ServerConfig>::iterator it = confs.begin(); it != confs.end(); ++it)
-	{
-		if (it->host == host_request)
-		{
-			host_found = true;
-			_currentServerConfig = &(*it);
-			break ;
-		}
-	}
-	if (!host_found)
-		_currentServerConfig = &(*confs.begin());
-}
-
 static size_t matching_prefix_depth(const std::string& location_root, const std::string& uri)
 {
+	// Special case for root location
+	if (location_root == "/")
+		return (0);
+
+	// If URI is just "/", it should only match root location
+	if (uri == "/")
+		return (0);
+
 	std::vector<std::string> split_root = Utils::split(location_root, "/");
 	std::vector<std::string> split_uri = Utils::split(uri, "/");
 	const size_t min_depth = std::min(split_root.size(), split_uri.size());
 	size_t i = 0;
 
-	if (location_root == "/")
-		return (1);
 	while (i < min_depth && (split_root[i] == split_uri[i]))
 		i += 1;
 	return (i);
@@ -194,20 +175,68 @@ void ClientConnection::select_location()
 	size_t max_depth = 0, depth;
 	LocationConfig* location_tmp = NULL;
 
-	if (locations.empty())
+	std::ostringstream ss;
+	ss << "Request URI: " << _request->start_line.getUri().getPath() << "\n";
+	ss << "Available locations:\n";
+	for (std::map<std::string, LocationConfig>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
+		ss << "- " << it->first << " (autoindex: " << (it->second.autoindex ? "on" : "off") << ")\n";
+	}
+	_logger.writeToLog(DEBUG, ss.str());
+
+	if (locations.empty()) {
 		_currentLocationConfig = NULL;
+		_logger.writeToLog(DEBUG, "No locations found in server config");
+		return;
+	}
+
+	// First check if this is a root path request
+	if (_request->start_line.getUri().getPath() == "/") {
+		std::map<std::string, LocationConfig>::const_iterator root_it = locations.find("/");
+		if (root_it != locations.end()) {
+			_currentLocationConfig = const_cast<LocationConfig*>(&(root_it->second));
+			_logger.writeToLog(DEBUG, "Using root location / for root path");
+			return;
+		}
+	}
 	
+	// If not root path or no root location found, proceed with prefix matching
 	for (std::map<std::string, LocationConfig>::const_iterator it = locations.begin(); 
 		 it != locations.end(); ++it)
 	{
+		if (it->first == "/")
+			continue;
+			
 		depth = matching_prefix_depth(it->first, _request->start_line.getUri().getPath());
+		ss.str("");
+		ss << "Checking location " << it->first << ", depth: " << depth;
+		_logger.writeToLog(DEBUG, ss.str());
+
 		if (depth > 0 && depth > max_depth)
 		{
 			max_depth = depth;
 			location_tmp = const_cast<LocationConfig*>(&(it->second));
+			ss.str("");
+			ss << "Found better match: " << it->first << " with depth " << depth;
+			_logger.writeToLog(DEBUG, ss.str());
 		}
 	}
+	
+	if (!location_tmp) {
+		std::map<std::string, LocationConfig>::const_iterator root_it = locations.find("/");
+		if (root_it != locations.end()) {
+			location_tmp = const_cast<LocationConfig*>(&(root_it->second));
+			_logger.writeToLog(DEBUG, "Using root location / as fallback");
+		} else {
+			_logger.writeToLog(DEBUG, "No root location found");
+		}
+	}
+	
 	_currentLocationConfig = location_tmp;
+	if (_currentLocationConfig) {
+		ss.str("");
+		ss << "Selected location config: " << (_currentLocationConfig->autoindex ? "autoindex on" : "autoindex off");
+		_logger.writeToLog(DEBUG, ss.str());
+	}
 }
 
 void ClientConnection::setRequest()

@@ -50,45 +50,23 @@ void Response::_check_resource()
 {
 	struct stat file_stat;
 	std::string resource_path;
-	const std::string& uri_path = _request.start_line.getUri().getPath();
 
-//  antonin
-	// _resource_path = _conf.root + _request.start_line.getUri().getPath();
-	if (_location && !_location->path.empty())
-	{
-		if (!_location->root.empty())
-			_resource_path.append(_location->root);
-		else
-			_resource_path.append(_conf.root);
-		_resource_path.append(_location->path);
-		_resource_path.append(uri_path.substr(1));
-	}
+	if (_location && !_location->root.empty())
+		_resource_path = _location->root + _request.start_line.getUri().getPath();
 	else
-	{
-		_resource_path.append(_conf.root);
-		_resource_path.append(uri_path);
-	}
-	if (stat(_resource_path.c_str(), &file_stat) < 0)
-
-// OLD PART    
-// 	if (_location && !_location->root.empty())
-// 		_resource_path = _location->root + _request.start_line.getUri().getPath();
-// 	else
-// 		_resource_path = _conf.root + _request.start_line.getUri().getPath();
+		_resource_path = _conf.root + _request.start_line.getUri().getPath();
 
 
-// 	std::stringstream ss;
-// 	ss << "Checking resource: " << _resource_path << std::endl;
-// 	_logger.writeToLog(DEBUG, ss.str());
-// 	ss.str("");
+	std::stringstream ss;
+	ss << "Checking resource: " << _resource_path << std::endl;
+	_logger.writeToLog(DEBUG, ss.str());
+	ss.str("");
 
 
-// 	if (stat(_resource_path.c_str(), &file_stat) < 0) {
-// 		ss << "Resource not found: " << strerror(errno) << std::endl;
-// 		_logger.writeToLog(DEBUG, ss.str());
-// 		ss.str("");
-
-    
+	if (stat(_resource_path.c_str(), &file_stat) < 0) {
+		ss << "Resource not found: " << strerror(errno) << std::endl;
+		_logger.writeToLog(DEBUG, ss.str());
+		ss.str("");
 		throw (STATUS_NOT_FOUND);
 	}
 	else if (S_ISDIR(file_stat.st_mode)) {
@@ -134,6 +112,14 @@ void Response::_handle_get()
 	}
 }
 
+static std::string size_t_to_str(size_t n)
+{
+	std::stringstream ss;
+
+	ss << n;
+	return (ss.str());
+}
+
 static char my_tolower(char c)
 {
 	return (static_cast<char>(tolower(c)));
@@ -170,12 +156,8 @@ void Response::_handle_file(const std::string& filename)
 	file_content << file.rdbuf();
 
 	start_line = StatusLine(STATUS_OK);
-	
-  headers.insert(SingleField("Content-Length", FieldValue(Utils::size_t_to_str(file_content.str().length()))));
-	headers.insert(SingleField("Content-Type", FieldValue(_filename_to_mime_type(filename))));
-
-  // 	headers.insert(Field("Content-Length", FieldValue(size_t_to_str(file_size))));
-  // 	headers.insert(Field("Content-Type", FieldValue(_filename_to_mime_type(filename))));
+	headers.insert(Field("Content-Length", FieldValue(size_t_to_str(file_size))));
+	headers.insert(Field("Content-Type", FieldValue(_filename_to_mime_type(filename))));
 	content = file_content.str();
 	content_length = file_size;
 }
@@ -201,18 +183,12 @@ bool Response::_is_dir_has_index_file()
 	DIR *dir = opendir(_resource_path.c_str());
 	struct dirent *file;
 	bool index_found = false;
-	std::string index_file;
-
-	if (_location && !_location->index.empty())
-		index_file = _location->index;
-	else
-		index_file = _conf.index;
 
 	if (!dir)
 		return (false);
 	while ((file = readdir(dir)))
 	{
-		if (strcmp(file->d_name, index_file.c_str()) == 0)
+		if (strcmp(file->d_name, _conf.index.c_str()) == 0)
 		{
 			index_found = true;
 			break ;
@@ -257,8 +233,8 @@ void Response::_handle_auto_index()
 	closedir(dir);
 
 	start_line = StatusLine(STATUS_OK);
-	headers.insert(SingleField("Content-Length", FieldValue(Utils::size_t_to_str(content.length()))));
-	headers.insert(SingleField("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
+	headers.insert(Field("Content-Length", FieldValue(size_t_to_str(content.length()))));
+	headers.insert(Field("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
 	content_length = content.length();
 }
 
@@ -279,7 +255,7 @@ void Response::_handle_post()
 	
 	_upload_file();
 	start_line = StatusLine(STATUS_CREATED);
-	headers.insert(SingleField("Content-Length", FieldValue("0")));
+	headers.insert(Field("Content-Length", FieldValue("0")));
 }
 
 std::string Response::get_filename()
@@ -306,7 +282,7 @@ void Response::_upload_file()
 {
 	if (_request.content_length == 0)
 		throw (STATUS_LENGTH_REQUIRED);
-
+	
 	const std::string filename = get_filename();
 	std::string filepath;
 	if (_location && !_location->upload_dir.empty())
@@ -349,7 +325,7 @@ void Response::_delete_dir()
 	if (std::system(command.c_str()) == 0)
 	{
 		start_line = StatusLine(STATUS_NO_CONTENT);
-		headers.insert(SingleField("Content-Length", FieldValue("0")));
+		headers.insert(Field("Content-Length", FieldValue("0")));
 	}
 	else
 		throw (STATUS_INTERNAL_ERR);
@@ -360,7 +336,7 @@ void Response::_delete_file()
 	if (std::remove(_resource_path.c_str()) != 0)
 		throw (STATUS_INTERNAL_ERR);
 	start_line = StatusLine(STATUS_NO_CONTENT);
-	headers.insert(SingleField("Content-Length", FieldValue("0")));
+	headers.insert(Field("Content-Length", FieldValue("0")));
 
 }
 
@@ -385,7 +361,7 @@ void Response::_handle_default_error(enum e_status_code status_code)
 	// 			switch (parameter)
 	// 			{
 	// 				case 'C':
-	// 					line.replace(pos, status_tag.length() + 1, Utils::size_t_to_str(status_code));
+	// 					line.replace(pos, status_tag.length() + 1, size_t_to_str(status_code));
 	// 					break;
 	// 				case 'M':
 	// 					line.replace(pos, status_tag.length() + 1, StatusLine::_status_code_message[status_code]);
@@ -442,13 +418,13 @@ void Response::_handle_error(enum e_status_code status_code)
 	switch (status_code)
 	{
 		case STATUS_MOVED:
-			headers.insert(SingleField("Location", FieldValue(_resource_path + "/")));
-			headers.insert(SingleField("Content-Length", FieldValue("0")));
-			headers.insert(SingleField("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
+			headers.insert(Field("Location", FieldValue(_resource_path + "/")));
+			headers.insert(Field("Content-Length", FieldValue("0")));
+			headers.insert(Field("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
 			break ;
 		default:
-			headers.insert(SingleField("Content-Length", FieldValue(Utils::size_t_to_str(content_length))));
-			headers.insert(SingleField("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
+			headers.insert(Field("Content-Length", FieldValue(size_t_to_str(content_length))));
+			headers.insert(Field("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
 	}
 }
 

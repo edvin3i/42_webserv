@@ -4,8 +4,8 @@ const std::string Response::_html_auto_index = "<!DOCTYPE html><html lang=\"en\"
 
 const std::string Response::_default_error_page_path = "www/website/error_pages/default_error.html";
 
-Response::Response(const Request& request, const ServerConfig& conf, const LocationConfig* location)
-: _request(request), _conf(conf), _location(location)
+Response::Response(Logger & logger, const ServerConfig & conf, const LocationConfig  *location, const Request & request)
+: _logger(logger), _request(request), _conf(conf), _location(location)
 {
 	if (_request.error())
 	{
@@ -51,24 +51,34 @@ void Response::_check_resource()
 	struct stat file_stat;
 	std::string resource_path;
 
-	// Use location root if available, otherwise use server root
 	if (_location && !_location->root.empty())
 		_resource_path = _location->root + _request.start_line.getUri().getPath();
 	else
 		_resource_path = _conf.root + _request.start_line.getUri().getPath();
 
-	std::cout << "Checking resource: " << _resource_path << std::endl;
-	
+
+	std::stringstream ss;
+	ss << "Checking resource: " << _resource_path << std::endl;
+	_logger.writeToLog(DEBUG, ss.str());
+	ss.str("");
+
+
 	if (stat(_resource_path.c_str(), &file_stat) < 0) {
-		std::cout << "Resource not found: " << strerror(errno) << std::endl;
+		ss << "Resource not found: " << strerror(errno) << std::endl;
+		_logger.writeToLog(DEBUG, ss.str());
+		ss.str("");
 		throw (STATUS_NOT_FOUND);
 	}
 	else if (S_ISDIR(file_stat.st_mode)) {
-		std::cout << "Resource is a directory" << std::endl;
+		ss << "Resource is a directory" << std::endl;
+		_logger.writeToLog(DEBUG, ss.str());
+		ss.str("");
 		_resource_type = RT_DIR;
 	}
 	else {
-		std::cout << "Resource is a file" << std::endl;
+		ss << "Resource is a file" << std::endl;
+		_logger.writeToLog(DEBUG, ss.str());
+		ss.str("");
 		_resource_type = RT_FILE;
 	}
 }
@@ -81,8 +91,10 @@ void Response::_check_method()
 		_handle_get();
 	else if (method == "POST")
 		_handle_post();
-	else
+	else if (method == "DELETE")
 		_handle_delete();
+	else
+		throw (STATUS_NOT_ALLOWED);
 }
 
 void Response::_handle_get()
@@ -142,6 +154,7 @@ void Response::_handle_file(const std::string& filename)
 
 	// reading file
 	file_content << file.rdbuf();
+
 	start_line = StatusLine(STATUS_OK);
 	headers.insert(Field("Content-Length", FieldValue(size_t_to_str(file_size))));
 	headers.insert(Field("Content-Type", FieldValue(_filename_to_mime_type(filename))));

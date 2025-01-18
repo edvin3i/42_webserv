@@ -14,7 +14,7 @@
 #include "../http/Utils.hpp"
 
 
-const int BUFFER_SIZE = 8192;
+const int BUFFER_SIZE = 131072;
 
 
 class Logger;

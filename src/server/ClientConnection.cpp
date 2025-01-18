@@ -49,7 +49,7 @@ void ClientConnection::buildResponse() {
 	// }
 
 	// std::string responce = ss.str(); // set string instead temporary ss.str object
-	_response = new Response(*_request, *_currentServerConfig, _currentLocationConfig);
+	_response = new Response(_logger, *_currentServerConfig, _currentLocationConfig, *_request);
 	std::cout << "RESPONSE:"<< '\n' << _response->toString();
 	std::string response_html = _response->toHtml();
 	_writeBuffer.clear();
@@ -75,6 +75,7 @@ void ClientConnection::readData() {
    
     }
 
+	// Add EAGAIN and EWOULDBLOCK checking
     if (bytesReceived == 0 || (bytesReceived < 0 && errno != EAGAIN && errno != EWOULDBLOCK)) {
         _connectionState = CLOSING;
         return;
@@ -180,6 +181,7 @@ void ClientConnection::select_location()
 	size_t max_depth = 0, depth;
 	LocationConfig* location_tmp = NULL;
 
+	// Add debug logging
 	std::ostringstream ss;
 	ss << "Request URI: " << _request->start_line.getUri().getPath() << "\n";
 	ss << "Available locations:\n";
@@ -187,6 +189,8 @@ void ClientConnection::select_location()
 		ss << "- " << it->first << " (autoindex: " << (it->second.autoindex ? "on" : "off") << ")\n";
 	}
 	_logger.writeToLog(DEBUG, ss.str());
+
+
 
 	if (locations.empty()) {
 		_currentLocationConfig = NULL;
@@ -210,7 +214,8 @@ void ClientConnection::select_location()
 	{
 		if (it->first == "/")
 			continue;
-			
+
+
 		depth = matching_prefix_depth(it->first, _request->start_line.getUri().getPath());
 		ss.str("");
 		ss << "Checking location " << it->first << ", depth: " << depth;

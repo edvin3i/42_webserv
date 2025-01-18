@@ -7,6 +7,8 @@
 #include "Utils.hpp"
 #include "Field.hpp"
 
+typedef std::pair<std::string, FieldValue> SingleField;
+
 class Headers : public std::multimap<std::string, FieldValue>
 {
 public:
@@ -18,10 +20,9 @@ public:
 private:
 	void _parse_fields(const std::vector<std::string>&);
 	void _parse_field(const std::string&);
-	void _parse_field_value(const std::string & str, const std::string & field_name);
+	void _parse_field_values(const std::string & str, const std::string & field_name);
 	static bool _is_delimiter(char c);
 	void _handle_quoted_str(const std::string& str, size_t& i, std::string& element);
-	static const size_t _max_header_length;
 };
 
 #endif

@@ -5,11 +5,7 @@
 #include <map>
 #include <vector>
 #include "FieldValue.hpp"
-
-typedef std::multimap<std::string, FieldValue> Headers;
-typedef std::pair<std::string, FieldValue> Field;
-
-const size_t max_header_length = 1024;
+#include "Headers.hpp"
 
 template<class StartLine> struct Message
 {

@@ -31,7 +31,7 @@ Request& Request::operator=(const Request & other)
 	return (*this);
 }
 
-void Request::_split_request(std::string str, std::string & request_line, std::vector<std::string> & header_lines, std::string & body)
+void Request::_split_request(const std::string& str, std::string & request_line, std::vector<std::string> & header_lines, std::string & body)
 {
 	const std::string delimiter = "\r\n";
 	size_t pos_start = 0, pos_end, delim_len = 2;
@@ -61,14 +61,15 @@ void Request::_split_request(std::string str, std::string & request_line, std::v
 void Request::_parse(const std::string & str)
 {
 	std::string request_line, body;
-	std::vector<std::string> header_lines;
+	std::vector<std::string> fields;
 
-	_split_request(str, request_line, header_lines, body);
+	_split_request(str, request_line, fields, body);
 	start_line = RequestLine(request_line);
-	_parse_headers(header_lines);
+	headers = Headers(fields);
 	_check_headers();
 	_parse_body(body);
-}
+// antonin
+	_handle_multipart();
 
 void Request::_parse_headers(std::vector<std::string> & header_lines)
 {
@@ -249,8 +250,7 @@ void Request::_decode_chunked(const std::string & str)
 	}
 	std::stringstream ss_content_length;
 	ss_content_length << length;
-	headers.insert(Field("Content-Length", ss_content_length.str()));
-	// headers.insert(std::pair<std::string, std::vector<std::string> >("Content-Length", std::vector<std::string>(1, ss_content_length.str())));
+	headers.insert(SingleField("Content-Length", ss_content_length.str()));
 	content_length = length;
 	std::pair<Headers::iterator, Headers::iterator> transfer_encoding_key = headers.equal_range("Transfer-Encoding");
 	for (Headers::iterator it = transfer_encoding_key.first; it != transfer_encoding_key.second; ++it)
@@ -316,21 +316,6 @@ void Request::_parse_body(const std::string & str)
 		}
 		content = str.substr(0, content_length);
 	}
-	// {
-	// 	std::string boundary = headers.find("Content-Type")->second.getParameters().find("boundary")->second;
-	// 	size_t count = 0;
-	// 	size_t old_pos = 0;
-	// 	size_t pos;
-
-	// 	while ((pos = str.find(boundary, old_pos)) != std::string::npos)
-	// 	{
-	// 		count += 1;
-	// 		old_pos = pos + boundary.length();
-	// 	}
-	// 	std::cout << "NB BOUNDARY: " << count << '\n';
-	// 	std::cout << content_length << '\n';
-	// 	std::cout << content.substr(content_length - 100, std::string::npos);
-	// }
 }
 
 void Request::print() const
@@ -381,4 +366,62 @@ bool Request::error() const
 enum e_status_code Request::getErrorCode() const
 {
 	return (_error_code);
+}
+
+void Request::_skip_newline(size_t& i)
+{
+	if (content.compare(i, 2, "\r\n") != 0)
+		throw (STATUS_BAD_REQUEST);
+	i += 2;
+}
+
+void Request::_handle_multipart()
+{
+
+	size_t nb_content_type = headers.count("Content-Type");
+	static size_t test = 0;
+
+	if (nb_content_type == 0)
+		return ;
+	if (nb_content_type > 1)
+		throw (STATUS_BAD_REQUEST);
+
+	Headers::const_iterator content_type_it = headers.find("Content-Type");
+	const std::string content_type_value = content_type_it->second.getValue();
+	const std::string multipart = "multipart";
+
+	if (content_type_value.compare(0, multipart.length(), multipart) != 0)
+		return ;
+	const Parameters& parameters = content_type_it->second.getParameters();
+	std::string boundary;
+	if (!parameters.count("boundary"))
+		throw (STATUS_BAD_REQUEST);
+	boundary = parameters.at("boundary");
+
+	const std::string delimiter = "--" + boundary;
+	size_t i;
+	size_t pos;
+	if (content.compare(0, delimiter.length(), delimiter) != 0)
+		throw (STATUS_BAD_REQUEST);
+	i = delimiter.length();
+	_skip_newline(i);
+	while (i < content_length)
+	{
+		pos = content.find(delimiter, i);
+		if (pos == std::string::npos)
+			throw (STATUS_BAD_REQUEST);
+		if (content.compare(pos + delimiter.length(), 2, "--") == 0)
+		{
+			size_t tmp = pos + delimiter.length() + 2;
+			_skip_newline(tmp);
+			_multipart.push_back(BodyPart(content.substr(i, pos - i - 2)));
+			return ;
+		}
+		else
+		{
+			_multipart.push_back(BodyPart(content.substr(i, pos - i)));
+		}
+		i = pos + delimiter.length();
+		_skip_newline(i);
+	}
 }

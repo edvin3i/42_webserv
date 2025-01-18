@@ -2,6 +2,7 @@
 
 Request::Request(Logger & logger, std::string & str)
 : Message<RequestLine>(), _logger(logger), _error(false), _error_code(STATUS_OK)
+
 {
 	try
 	{
@@ -111,6 +112,15 @@ void Request::_handle_quoted_str(const std::string& str, size_t& i, std::string&
 
 void Request::_parse_field_value(const std::string & str, const std::string & field_name)
 {
+	if (field_name.find("sec-ch-ua") != std::string::npos ||
+		field_name == "Accept" ||
+		field_name == "Accept-Encoding" ||
+		field_name == "Accept-Language")
+	{
+		headers.insert(Field(field_name, FieldValue(str)));
+		return;
+	}
+	
 	std::string element;
 	size_t i = 0;
 	size_t nb_non_empty_element = 0;
@@ -346,28 +356,35 @@ void Request::print() const
 	// }
 	// std::clog << "\n\n";
 
-	std::clog << "HEADERS: \n";
+	std::stringstream ss;
+	ss << "\nHEADERS: \n";
+
 	for (Headers::const_iterator it = headers.begin(); it != headers.end(); ++it)
 	{
-		std::cout << "header-name: " << it->first << ", header-value: " << it->second.getValue();
+		ss << "header-name: " << it->first << ", header-value: " << it->second.getValue();
 		const Parameters& parameters = it->second.getParameters();
 		if (parameters.size() > 0)
 		{
-			std::cout << ", parameters: ";
+			ss << ", parameters: ";
 			for (Parameters::const_iterator jt = parameters.begin(); jt != parameters.end(); ++jt)
 			{
-				std::cout << jt->first << '=' << jt->second << ' ';
+				ss << jt->first << '=' << jt->second << ' ';
 			}
 		}
-		std::cout << '\n';
+		ss << '\n';
 	}
-	std::clog << "\n\n";
+	ss << "\n\n";
+	_logger.writeToLog(DEBUG, ss.str());
+	ss.str("");
 
-	std::clog << "BODY: \n";
+	ss << "BODY: \n";
 	if (content_length == 0)
-		std::clog << "empty body\n";
+		ss << "empty body\n";
 	else
-		std::clog << content << '\n';
+		ss << content << '\n';
+	
+	_logger.writeToLog(DEBUG, ss.str());
+	ss.str("");
 }
 
 

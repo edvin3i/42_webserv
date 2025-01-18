@@ -1,8 +1,8 @@
 #include "../../includes/http/Request.hpp"
 
 
-Request::Request(const std::string & str)
-: Message<RequestLine>(), _error(false), _error_code(STATUS_OK)
+Request::Request(Logger & logger, const std::string & str)
+: _logger(logger), Message<RequestLine>(), _error(false), _error_code(STATUS_OK)
 {
 	try
 	{
@@ -18,7 +18,7 @@ Request::Request(const std::string & str)
 Request::~Request() {}
 
 Request::Request(const Request & other)
-: Message<RequestLine>(other)
+: Message<RequestLine>(other), _logger(other._logger), _error(other._error), _error_code(other._error_code)
 {}
 
 Request& Request::operator=(const Request & other)
@@ -40,7 +40,7 @@ void Request::_split_request(std::string str, std::string & request_line, std::v
 	request_line = str.substr(pos_start, pos_end - pos_start);
 	pos_start = pos_end + delim_len;
 	if (Utils::is_whitespace(str[pos_start]))
-		throw (400); // reject message as invalid
+		throw (STATUS_BAD_REQUEST); // reject message as invalid
 	while (1)
 	{
 		pos_end = str.find(delimiter, pos_start);
@@ -89,12 +89,12 @@ static bool is_delimiter(char c)
 void Request::_handle_quoted_str(const std::string& str, size_t& i, std::string& element) const
 {
 	if (!element.empty())
-		throw (400);
+		throw (STATUS_BAD_REQUEST);
 	i += 1;
 	while (1)
 	{
 		if (i == str.length())
-			throw (400);
+			throw (STATUS_BAD_REQUEST);
 		if (str[i] == '\"')
 		{
 			if (str.length() == (i + 1) || is_delimiter(str[i + 1]) || Utils::is_whitespace(str[i + 1]))
@@ -103,7 +103,7 @@ void Request::_handle_quoted_str(const std::string& str, size_t& i, std::string&
 				return ;
 			}
 			else
-				throw (400);
+				throw (STATUS_BAD_REQUEST);
 		}
 		element.push_back(str[i]);
 		i += 1;
@@ -112,6 +112,15 @@ void Request::_handle_quoted_str(const std::string& str, size_t& i, std::string&
 
 void Request::_parse_field_value(const std::string & str, const std::string & field_name)
 {
+	if (field_name.find("sec-ch-ua") != std::string::npos ||
+		field_name == "Accept" ||
+		field_name == "Accept-Encoding" ||
+		field_name == "Accept-Language")
+	{
+		headers.insert(Field(field_name, FieldValue(str)));
+		return;
+	}
+	
 	std::string element;
 	size_t i = 0;
 	size_t nb_non_empty_element = 0;
@@ -121,7 +130,7 @@ void Request::_parse_field_value(const std::string & str, const std::string & fi
 		switch (str[i])
 		{
 			case '\r': case '\n': case '\0':
-				throw (400);
+				throw (STATUS_BAD_REQUEST);
 			case ' ': case '\t':
 				if (element.empty())
 				{
@@ -204,7 +213,7 @@ void Request::_parse_header(const std::string &str)
 	colon_pos = str.find(':');
 	field_name = str.substr(0, colon_pos);
 	if (field_name.empty() || Utils::is_whitespace(field_name[field_name.length() - 1]))
-		throw (400);
+		throw (STATUS_BAD_REQUEST);
 	field_value = str.substr(colon_pos + 1);
 	field_value_trim = _str_trim(field_value);
 	_parse_field_value(field_value_trim, field_name);
@@ -347,28 +356,35 @@ void Request::print() const
 	// }
 	// std::clog << "\n\n";
 
-	std::clog << "HEADERS: \n";
+	std::stringstream ss;
+	ss << "\nHEADERS: \n";
+
 	for (Headers::const_iterator it = headers.begin(); it != headers.end(); ++it)
 	{
-		std::cout << "header-name: " << it->first << ", header-value: " << it->second.getValue();
+		ss << "header-name: " << it->first << ", header-value: " << it->second.getValue();
 		const Parameters& parameters = it->second.getParameters();
 		if (parameters.size() > 0)
 		{
-			std::cout << ", parameters: ";
+			ss << ", parameters: ";
 			for (Parameters::const_iterator jt = parameters.begin(); jt != parameters.end(); ++jt)
 			{
-				std::cout << jt->first << '=' << jt->second << ' ';
+				ss << jt->first << '=' << jt->second << ' ';
 			}
 		}
-		std::cout << '\n';
+		ss << '\n';
 	}
-	std::clog << "\n\n";
+	ss << "\n\n";
+	_logger.writeToLog(DEBUG, ss.str());
+	ss.str("");
 
-	std::clog << "BODY: \n";
+	ss << "BODY: \n";
 	if (content_length == 0)
-		std::clog << "empty body\n";
+		ss << "empty body\n";
 	else
-		std::clog << content << '\n';
+		ss << content << '\n';
+	
+	_logger.writeToLog(DEBUG, ss.str());
+	ss.str("");
 }
 
 

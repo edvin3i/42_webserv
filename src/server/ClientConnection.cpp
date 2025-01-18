@@ -219,5 +219,5 @@ void ClientConnection::select_location()
 
 void ClientConnection::setRequest()
 {
-	_request = new Request(_readBuffer);
+	_request = new Request(_logger, _readBuffer);
 }

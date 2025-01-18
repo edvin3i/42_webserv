@@ -238,8 +238,21 @@ void Response::_handle_auto_index()
 	content_length = content.length();
 }
 
+void Response::_check_body_size() {
+	// if request has body
+	if (_request.content_length > 0) {
+		// compare with server_config limit
+		if (_conf.client_max_body_size > 0 && _request.content_length > _conf.client_max_body_size) {
+			_logger.writeToLog(ERROR, "Request body size exceeds client_max_body_size limit");
+			throw (STATUS_TOO_LARGE);
+		}
+	}
+}
+
 void Response::_handle_post()
 {
+	_check_body_size(); // add size check before handle POST
+	
 	_upload_file();
 	start_line = StatusLine(STATUS_CREATED);
 	headers.insert(Field("Content-Length", FieldValue("0")));

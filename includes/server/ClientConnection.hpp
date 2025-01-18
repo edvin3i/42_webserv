@@ -40,7 +40,6 @@ public:
 	void writeData();
 	void buildResponse();
 
-	// void setLocationConfig();
 	void setRequest();
 	void select_location();
 
@@ -59,7 +58,6 @@ private:
 	Response *_response;
 
 
-	// std::vector<char> _readBuffer;
 	std::string _readBuffer;
 	std::vector<char> _writeBuffer;
 

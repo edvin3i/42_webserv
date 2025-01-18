@@ -22,35 +22,14 @@ ClientConnection::~ClientConnection() {
 
 
 void ClientConnection::buildResponse() {
-    // std::string indexPath = _serverConfig.root + _serverConfig.index;
-    // std::ifstream htmlFile(indexPath.c_str());
-
-	// std::stringstream buffer;
-	// std::ostringstream ss;
-
-
-    // if (!htmlFile) {
-    //     // throw(STATUS_NOT_FOUND); // call 404 page
-    // 	// buffer << htmlFile.rdbuf();
-    // 	ss << "HTTP/1.1 404 Not Found\nContent-Type: text/html\nContent-Length: \r\n\r\n";
-    // 	ss << "<html>";
-	// 	ss << "<head><title>404 Not Found</title></head>";
-	// 	ss << "<body>";
-    // 	ss << "<center><h1>404 Not Found</h1></center>";
-	// 	ss << "<hr><center>WebServ42/0.00.01</center>";
-	// 	ss << "</body>";
-	// 	ss << "</html>";
-	// 	ss << "\r\n\r\n";
-    // }
-	// else {
-	// 	buffer << htmlFile.rdbuf();
-	// 	ss << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: "
-	// 		<< buffer.str().size() << "\r\n\r\n" << buffer.str();
-	// }
-
-	// std::string responce = ss.str(); // set string instead temporary ss.str object
+   
 	_response = new Response(_logger, *_currentServerConfig, _currentLocationConfig, *_request);
-	std::cout << "RESPONSE:"<< '\n' << _response->toString();
+	
+	std::stringstream ss;
+	ss << "RESPONSE:"<< '\n' << _response->toString();
+	_logger.writeToLog(DEBUG, ss.str());
+	ss.str("");
+	
 	std::string response_html = _response->toHtml();
 	_writeBuffer.clear();
 	_writeBuffer.resize(response_html.size());
@@ -81,23 +60,10 @@ void ClientConnection::readData() {
         return;
     }
 
-	// if (bytesReceived > 0) {
-	// 	_readBuffer.insert(_readBuffer.end(), buffer, buffer + bytesReceived);
-
-	// 	// std::string str(_readBuffer.begin(), _readBuffer.end());
-	// 	// _logger.writeToLog(DEBUG, "Receive a request from client:\n" + str);
-
-	// 	// std::ostringstream ss;
-	// 	// ss << "Read request from client. Len = " << bytesReceived << "\n";
-	// 	// _logger.writeToLog(DEBUG, ss.str());
-	// }
-	// else {
-	// 	_connectionState = CLOSING;
-	// }
-	// RequestParser httpParser;
-
-	// httpParser.parse(_readBuffer);
-	std::clog << "buffer:\n" << _readBuffer;
+	std::stringstream ss;
+	ss << "BUFFER Content:\n" << _readBuffer;
+	_logger.writeToLog(DEBUG, ss.str());
+	ss.str("");
 }
 
 
@@ -129,10 +95,12 @@ void ClientConnection::writeData() {
 
 	// continue sending data until all data is sent
 	if (_writeOffset >= _writeBuffer.size()) {
+		
 		ss.str("");
 		ss.clear();
 		ss << "===== All data sent to the client! =====";
 		_logger.writeToLog(DEBUG, ss.str());
+
 		_connectionState = CLOSING;
 	}
 }
@@ -253,31 +221,3 @@ void ClientConnection::setRequest()
 {
 	_request = new Request(_readBuffer);
 }
-
-// void ClientConnection::setLocationConfig()
-// {
-// 	const std::vector<LocationConfig>& locations = _serverConfig.locations;
-// 	size_t length = 0;
-// 	std::string path;
-// 	size_t location_index = 0;
-// 	bool location_found = false;
-// 	const std::string& _uri = _request->start_line.getUri();
-
-// 	for (size_t i = 0; i < locations.size(); ++i)
-// 	{
-// 		path = locations[i].path;
-// 		if (path.length() > _uri.length())
-// 			continue;
-// 		size_t tmp_length = 0;
-// 		for (size_t j = 0; j < _uri.length() && path[j] == _uri[j]; ++j)
-// 			tmp_length++;
-// 		if (tmp_length > length)
-// 		{
-// 			location_found = true;
-// 			length = tmp_length;
-// 			location_index = i;
-// 		}
-// 	}
-// 	if (location_found)
-// 		_currentLocationConfig = new LocationConfig[location_index];
-// }

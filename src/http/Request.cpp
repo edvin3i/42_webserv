@@ -1,8 +1,7 @@
 #include "../../includes/http/Request.hpp"
 
-
-Request::Request(const std::string & str)
-: Message<RequestLine>(), _error(false), _error_code(STATUS_OK)
+Request::Request(Logger & logger, std::string & str)
+: Message<RequestLine>(), _logger(logger), _error(false), _error_code(STATUS_OK)
 {
 	try
 	{
@@ -18,7 +17,7 @@ Request::Request(const std::string & str)
 Request::~Request() {}
 
 Request::Request(const Request & other)
-: Message<RequestLine>(other)
+: Message<RequestLine>(other), _logger(other._logger), _error(other._error), _error_code(other._error_code)
 {}
 
 Request& Request::operator=(const Request & other)

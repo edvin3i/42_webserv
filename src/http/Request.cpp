@@ -1,8 +1,8 @@
 #include "../../includes/http/Request.hpp"
 
+Request::Request(Logger & logger, std::string & str)
+: Message<RequestLine>(), _logger(logger), _error(false), _error_code(STATUS_OK)
 
-Request::Request(Logger & logger, const std::string & str)
-: _logger(logger), Message<RequestLine>(), _error(false), _error_code(STATUS_OK)
 {
 	try
 	{

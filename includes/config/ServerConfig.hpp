@@ -25,7 +25,7 @@ public:
 	std::string index;
 	std::map<int, std::string > error_pages;
 	size_t client_max_body_size;
-	std::vector<LocationConfig > locations;
+	std::map<std::string, LocationConfig > locations;
 
 private:
 	void _init();

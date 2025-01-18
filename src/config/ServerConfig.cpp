@@ -45,8 +45,10 @@ void ServerConfig::print_server_config() const{
 		std::cout << ss.str();
 		ss.str("");
 
-		for (std::vector<LocationConfig>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
-			it->printLocConfig();
+		for (std::map<std::string, LocationConfig>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
+			std::cout << "\nLocation path " << it->first << ": " << std::endl;
+			it->second.printLocConfig();
+			// it->printLocConfig();
 		}
 	}
 

@@ -32,9 +32,9 @@ enum e_resource_type
 class Response : public Message<StatusLine>
 {
 public:
-	// Response(Logger & logger, const ServerConfig & srv_conf, const Request & request);
+	Response(Logger & logger, const ServerConfig & conf, const LocationConfig  *location, const Request & request);
 	Response();
-	Response(const Request&, const ServerConfig&, const LocationConfig*);
+	//Response(const Request&, const ServerConfig&, const LocationConfig*);
 	~Response();
 	Response(const Response & other);
 	Response &operator=(const Response & other);
@@ -44,6 +44,7 @@ public:
 	std::string toString() const;
 
 private:
+	Logger &_logger;
 	const Request &_request;
 	const ServerConfig &_conf;
 	const LocationConfig* _location;
@@ -53,6 +54,7 @@ private:
 	void _check_location();
 	void _check_resource();
 	void _check_method();
+	void _check_body_size(); // add body size check
 	void _handle_get();
 	void _handle_post();
 	void _handle_delete();
@@ -72,6 +74,8 @@ private:
 
 	static const std::string _html_auto_index;
 	static const std::string _default_error_page_path;
+
+	
 };
 
 

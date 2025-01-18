@@ -4,8 +4,8 @@ const std::string Response::_html_auto_index = "<!DOCTYPE html><html lang=\"en\"
 
 const std::string Response::_default_error_page_path = "www/website/error_pages/default_error.html";
 
-Response::Response(const Request& request, const ServerConfig& conf, const LocationConfig* location)
-: _request(request), _conf(conf), _location(location)
+Response::Response(Logger & logger, const ServerConfig & conf, const LocationConfig  *location, const Request & request)
+: _logger(logger), _request(request), _conf(conf), _location(location)
 {
 	if (_request.error())
 	{
@@ -71,6 +71,7 @@ void Response::_check_resource()
 	std::string resource_path;
 	const std::string& uri_path = _request.start_line.getUri().getPath();
 
+//  antonin
 	// _resource_path = _conf.root + _request.start_line.getUri().getPath();
 	if (_location && !_location->path.empty())
 	{
@@ -88,10 +89,19 @@ void Response::_check_resource()
 	}
 	if (stat(_resource_path.c_str(), &file_stat) < 0)
 		throw (STATUS_NOT_FOUND);
-	else if (S_ISDIR(file_stat.st_mode))
+	}
+	else if (S_ISDIR(file_stat.st_mode)) {
+		ss << "Resource is a directory" << std::endl;
+		_logger.writeToLog(DEBUG, ss.str());
+		ss.str("");
 		_resource_type = RT_DIR;
-	else
+	}
+	else {
+		ss << "Resource is a file" << std::endl;
+		_logger.writeToLog(DEBUG, ss.str());
+		ss.str("");
 		_resource_type = RT_FILE;
+	}
 }
 
 // void Response::_check_method()
@@ -142,24 +152,40 @@ void Response::_handle_file(const std::string& filename)
 {
 	std::ifstream file(filename.c_str(), std::ios::binary);
 	std::stringstream file_content;
-	std::string file_length_str;
-	std::string file_extension;
+	// std::string file_length_str;
+	// std::string file_extension;
 
 	if (!file.is_open())
 		throw (STATUS_INTERNAL_ERR);
+
+	// getting filesize
+	file.seekg(0, std::ios::end);
+	std::streamsize file_size = file.tellg();
+	file.seekg(0, std::ios::beg);
+
+	// reading file
 	file_content << file.rdbuf();
+
 	start_line = StatusLine(STATUS_OK);
 	headers.insert(SingleField("Content-Length", FieldValue(Utils::size_t_to_str(file_content.str().length()))));
 	headers.insert(SingleField("Content-Type", FieldValue(_filename_to_mime_type(filename))));
+
+  // 	headers.insert(Field("Content-Length", FieldValue(size_t_to_str(file_size))));
+  // 	headers.insert(Field("Content-Type", FieldValue(_filename_to_mime_type(filename))));
 	content = file_content.str();
-	content_length = file_content.str().length();
+	content_length = file_size;
 }
 
 void Response::_handle_dir()
 {
 	const std::string& uri = _request.start_line.getUri().getPath();
-	if (uri[uri.length() - 1] != '/')
-		throw (STATUS_MOVED);
+	if (uri[uri.length() - 1] != '/') {
+		start_line = StatusLine(STATUS_MOVED);
+		headers.insert(Field("Content-Length", FieldValue("0")));
+		headers.insert(Field("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
+		headers.insert(Field("Location", FieldValue(uri + "/")));
+		return;
+	}
 	if (_is_dir_has_index_file())
 		_handle_file(_resource_path + _conf.index);
 	else
@@ -208,13 +234,20 @@ void Response::_handle_auto_index()
 	if (!dir)
 		throw (STATUS_INTERNAL_ERR);
 	content.append(_html_auto_index);
-	while (file = readdir(dir))
+	while ((file = readdir(dir)))
 	{
-		content.append("<li><a href=\"");
-		content.append(file->d_name);
-		content.append("\"");
-		content.append(file->d_name);
-		content.append("</a></li>");
+		std::string filename(file->d_name);
+		if (filename != "." && filename != "..") {
+			content.append("<li><a href=\"");
+			content.append(_request.start_line.getUri().getPath());
+			const std::string& path = _request.start_line.getUri().getPath();
+			if (!path.empty() && path[path.length() - 1] != '/')
+				content.append("/");
+			content.append(filename);
+			content.append("\">");
+			content.append(filename);
+			content.append("</a></li>");
+		}
 	}
 	content.append("</ul></body></html>");
 	closedir(dir);
@@ -223,6 +256,17 @@ void Response::_handle_auto_index()
 	headers.insert(SingleField("Content-Length", FieldValue(Utils::size_t_to_str(content.length()))));
 	headers.insert(SingleField("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
 	content_length = content.length();
+}
+
+void Response::_check_body_size() {
+	// if request has body
+	if (_request.content_length > 0) {
+		// compare with server_config limit
+		if (_conf.client_max_body_size > 0 && _request.content_length > _conf.client_max_body_size) {
+			_logger.writeToLog(ERROR, "Request body size exceeds client_max_body_size limit");
+			throw (STATUS_TOO_LARGE);
+		}
+	}
 }
 
 void Response::_handle_post()

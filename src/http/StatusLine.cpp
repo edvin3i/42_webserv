@@ -19,7 +19,7 @@ void StatusLine::_init_status_code_message()
 	_status_code_message[STATUS_NOT_FOUND] = "Not Found";
 	_status_code_message[STATUS_NOT_ALLOWED] = "Method Not Allowed";
 	_status_code_message[STATUS_CONFLICT] = "Conflict";
-	_status_code_message[STATUS_TOO_LARGE] = "Payload Too Large";
+	_status_code_message[STATUS_TOO_LARGE] = "Content Too Large";
 	_status_code_message[STATUS_URI_TOO_LONG] = "URI Too Long";
 	_status_code_message[STATUS_INTERNAL_ERR] = "Internal Server Error";
 	_status_code_message[STATUS_NOT_IMPLEMENTED] = "Not Implemented";

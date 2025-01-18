@@ -15,7 +15,8 @@
 class Request : public Message<RequestLine>
 {
 public:
-	Request(Logger & logger, std::string & str);
+
+	Request(Logger & logger, const std::string & str);
 	~Request();
 	Request(const Request & other);
 	Request &operator=(const Request & other);

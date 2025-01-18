@@ -129,17 +129,24 @@ void Response::_handle_file(const std::string& filename)
 {
 	std::ifstream file(filename.c_str(), std::ios::binary);
 	std::stringstream file_content;
-	std::string file_length_str;
-	std::string file_extension;
+	// std::string file_length_str;
+	// std::string file_extension;
 
 	if (!file.is_open())
 		throw (STATUS_INTERNAL_ERR);
+
+	// getting filesize
+	file.seekg(0, std::ios::end);
+	std::streamsize file_size = file.tellg();
+	file.seekg(0, std::ios::beg);
+
+	// reading file
 	file_content << file.rdbuf();
 	start_line = StatusLine(STATUS_OK);
-	headers.insert(Field("Content-Length", FieldValue(size_t_to_str(file_content.str().length()))));
+	headers.insert(Field("Content-Length", FieldValue(size_t_to_str(file_size))));
 	headers.insert(Field("Content-Type", FieldValue(_filename_to_mime_type(filename))));
 	content = file_content.str();
-	content_length = file_content.str().length();
+	content_length = file_size;
 }
 
 void Response::_handle_dir()

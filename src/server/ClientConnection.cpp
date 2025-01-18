@@ -106,9 +106,13 @@ void ClientConnection::writeData() {
 		return;
 	}
 
+	// send data by portions size of BUFFER_SIZE
+	size_t remainingBytes = _writeBuffer.size() - _writeOffset;
+	size_t bytesToSend = std::min(remainingBytes, static_cast<size_t>(BUFFER_SIZE));
+	
 	ssize_t bytesSent = send(_clientSocketFD,
 	                         &_writeBuffer[_writeOffset],
-	                         _writeBuffer.size() - _writeOffset, 0);
+	                         bytesToSend, 0);
 
 	if (bytesSent < 0) {
 		_logger.writeToLog(ERROR, "can not send the data to socket");
@@ -119,13 +123,14 @@ void ClientConnection::writeData() {
 	_writeOffset += bytesSent;
 
 	std::ostringstream ss;
-	ss << "===== Sent: " << bytesSent << " bytes to client. =====" << std::endl;
+	ss << "===== Sent: " << bytesSent << " bytes to client. =====";
 	_logger.writeToLog(DEBUG, ss.str());
-	ss.str("");
-	ss.clear();
 
+	// continue sending data until all data is sent
 	if (_writeOffset >= _writeBuffer.size()) {
-		ss << "===== All data sent to the client! =====" << std::endl;
+		ss.str("");
+		ss.clear();
+		ss << "===== All data sent to the client! =====";
 		_logger.writeToLog(DEBUG, ss.str());
 		_connectionState = CLOSING;
 	}

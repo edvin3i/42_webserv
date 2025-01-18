@@ -121,8 +121,8 @@ void MasterServer::run() {
 							client->select_location();
 							client->buildResponse();
 
-							// add checking
-							if (client->isReadyToWrite()) {
+							// continue sending data until all data is sent
+							while (client->isReadyToWrite()) {
 								client->writeData();
 							}
 

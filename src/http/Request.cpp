@@ -40,7 +40,7 @@ void Request::_split_request(std::string str, std::string & request_line, std::v
 	request_line = str.substr(pos_start, pos_end - pos_start);
 	pos_start = pos_end + delim_len;
 	if (Utils::is_whitespace(str[pos_start]))
-		throw (400); // reject message as invalid
+		throw (STATUS_BAD_REQUEST); // reject message as invalid
 	while (1)
 	{
 		pos_end = str.find(delimiter, pos_start);
@@ -89,12 +89,12 @@ static bool is_delimiter(char c)
 void Request::_handle_quoted_str(const std::string& str, size_t& i, std::string& element) const
 {
 	if (!element.empty())
-		throw (400);
+		throw (STATUS_BAD_REQUEST);
 	i += 1;
 	while (1)
 	{
 		if (i == str.length())
-			throw (400);
+			throw (STATUS_BAD_REQUEST);
 		if (str[i] == '\"')
 		{
 			if (str.length() == (i + 1) || is_delimiter(str[i + 1]) || Utils::is_whitespace(str[i + 1]))
@@ -103,7 +103,7 @@ void Request::_handle_quoted_str(const std::string& str, size_t& i, std::string&
 				return ;
 			}
 			else
-				throw (400);
+				throw (STATUS_BAD_REQUEST);
 		}
 		element.push_back(str[i]);
 		i += 1;
@@ -121,7 +121,7 @@ void Request::_parse_field_value(const std::string & str, const std::string & fi
 		switch (str[i])
 		{
 			case '\r': case '\n': case '\0':
-				throw (400);
+				throw (STATUS_BAD_REQUEST);
 			case ' ': case '\t':
 				if (element.empty())
 				{
@@ -204,7 +204,7 @@ void Request::_parse_header(const std::string &str)
 	colon_pos = str.find(':');
 	field_name = str.substr(0, colon_pos);
 	if (field_name.empty() || Utils::is_whitespace(field_name[field_name.length() - 1]))
-		throw (400);
+		throw (STATUS_BAD_REQUEST);
 	field_value = str.substr(colon_pos + 1);
 	field_value_trim = _str_trim(field_value);
 	_parse_field_value(field_value_trim, field_name);

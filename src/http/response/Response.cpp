@@ -80,7 +80,7 @@ void Response::_check_resource()
 		else
 			_resource_path.append(_conf.root);
 		_resource_path.append(_location->path);
-		_resource_path.append(uri_path.substr(1));
+		_resource_path.append(uri_path.substr(_location->path.length()));
 	}
 	else
 	{

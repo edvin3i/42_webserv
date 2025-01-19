@@ -15,9 +15,14 @@ std::vector<std::string> Utils::split(const std::string& str, const std::string&
 	while ((next = str.find(delimiter, last)) != std::string::npos)
 	{
 		token = str.substr(last, next - last);
-		if (!tokens.empty())
+		if (!token.empty())
 			tokens.push_back(token);
 		last = next + 1;
+	}
+	if (last != str.length())
+	{
+		token = str.substr(last);
+		tokens.push_back(token);
 	}
 	return (tokens);
 }

@@ -270,6 +270,43 @@ void Response::_check_body_size() {
 	}
 }
 
+void Response::_handle_multipart_datas()
+{
+	const std::vector<BodyPart>& multipart = _request.getMultipart();
+
+	if (multipart.empty())
+		throw (STATUS_BAD_REQUEST);
+
+	size_t count_file_uploaded = 0;
+	for (size_t i = 0; i < multipart.size(); ++i)
+	{
+		_handle_multipart_data(multipart[i], count_file_uploaded);
+	}
+	if (count_file_uploaded == 0)
+		throw (STATUS_INTERNAL_ERR);
+	start_line = StatusLine(STATUS_CREATED);
+	headers.insert(SingleField("Content-Length", FieldValue("0")));
+}
+
+void Response::_handle_multipart_data(const BodyPart& body_part, size_t& count)
+{
+	const Headers& bodypart_headers = body_part.getHeaders();
+	Headers::const_iterator content_disposition_it = bodypart_headers.find("Content-Disposition");
+
+	if (bodypart_headers.count("Content-Disposition") == 0)
+		throw (STATUS_BAD_REQUEST);
+
+	const Parameters& parameters = content_disposition_it->second.getParameters();
+	Parameters::const_iterator filename_it = parameters.find("filename");
+
+	if (filename_it != parameters.end() && !filename_it->second.empty())
+	{
+		const std::string file_path = _location->upload_dir + "/" + filename_it->second;
+		_upload_file(file_path);
+		count += 1;
+	}
+}
+
 void Response::_handle_post()
 {
 	if (!_location)
@@ -285,36 +322,7 @@ void Response::_handle_post()
 
 	if (content_type != "multipart/form-data")
 		throw (STATUS_UNSUPPORTED_MEDIA_TYPE);
-	const std::string filename = get_filename();
-	std::string file_path;
-	_upload_file(_location->upload_dir + "/" + filename);
-	start_line = StatusLine(STATUS_CREATED);
-	headers.insert(SingleField("Content-Length", FieldValue("0")));
-}
-
-std::string Response::get_filename()
-{
-	const std::vector<BodyPart>& multipart = _request.getMultipart();
-
-	if (multipart.empty())
-		throw (STATUS_BAD_REQUEST);
-	const Headers& body_headers = multipart[0].getHeaders();
-	std::pair<Headers::const_iterator, Headers::const_iterator> content_disposition_it;
-	std::string filename;
-
-	if (body_headers.count("Content-Disposition") == 0)
-		throw (STATUS_BAD_REQUEST);
-	content_disposition_it = body_headers.equal_range("Content-Disposition");
-	for (Headers::const_iterator it = content_disposition_it.first; it != content_disposition_it.second; ++it)
-	{
-		const Parameters& parameters = it->second.getParameters();
-		Parameters::const_iterator filename_it = parameters.find("filename");
-
-		if (filename_it == parameters.end() || filename_it->second.empty())
-			throw (STATUS_BAD_REQUEST);
-		filename = filename_it->second;
-	}
-	return (filename);
+	_handle_multipart_datas();
 }
 
 void Response::_upload_file(const std::string& file_path)

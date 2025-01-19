@@ -163,9 +163,9 @@ static const std::string& _filename_to_mime_type(const std::string& filename)
 	return (MimeType::get_mime_type(lower_extension));
 }
 
-void Response::_handle_file(const std::string& filename)
+void Response::_handle_file(const std::string& filepath)
 {
-	std::ifstream file(filename.c_str(), std::ios::binary);
+	std::ifstream file(filepath.c_str(), std::ios::binary);
 	std::stringstream file_content;
 	// std::string file_length_str;
 	// std::string file_extension;
@@ -183,7 +183,7 @@ void Response::_handle_file(const std::string& filename)
 
 	start_line = StatusLine(STATUS_OK);
 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(file_content.str().length()))));
-	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(_filename_to_mime_type(filename))));
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(_filename_to_mime_type(filepath))));
 
   // 	headers.insert(Field(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(size_t_to_str(file_size))));
   // 	headers.insert(Field(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(_filename_to_mime_type(filename))));
@@ -201,10 +201,20 @@ void Response::_handle_dir()
 	// 	headers.insert(SingleField(Headers::getTypeStr(HEADER_LOCATION), FieldValue(uri + "/")));
 	// 	return;
 	// }
+	std::string filepath;
+
 	if (_is_dir_has_index_file())
-		_handle_file(_resource_path + _conf.index);
+	{
+		filepath.append(_resource_path);
+		if (_resource_path[_resource_path.length() - 1] != '/')
+			filepath.append("/");
+		filepath.append(_location->index);
+		_handle_file(filepath);
+	}
 	else
+	{
 		_check_auto_index();
+	}
 }
 
 bool Response::_is_dir_has_index_file()

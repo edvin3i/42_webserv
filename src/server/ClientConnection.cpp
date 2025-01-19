@@ -130,7 +130,7 @@ bool ClientConnection::isReadyToWrite() {
 // 		return (0);
 
 // // <<<<<<< antonin
-// 	Headers::const_iterator host_it = _request->headers.find("Host");
+// 	Headers::const_iterator host_it = _request->headers.find(Headers::getTypeStr(HEADER_HOST));
 // 	const std::string& host_request = host_it->second.getValue();
 // 	bool host_found = false;
 

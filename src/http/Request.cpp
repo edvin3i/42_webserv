@@ -215,12 +215,12 @@ void Request::_parse(const std::string & str)
 void Request::_check_headers()
 {
 	//respond with 400 when request message contains more than one Host header field line or a Host header field with an invalid field value
-	if (headers.count("Host") != 1)
+	if (headers.count(Headers::getTypeStr(HEADER_HOST)) != 1)
 		throw (STATUS_BAD_REQUEST);
 	const std::string& authority = start_line.getUri().getAuthority();
 	if (!authority.empty())
 	{
-		Headers::iterator host_it = headers.find("Host");
+		Headers::iterator host_it = headers.find(Headers::getTypeStr(HEADER_HOST));
 		host_it->second = authority;
 	}
 }
@@ -250,7 +250,7 @@ void Request::_decode_chunked(const std::string & str)
 	}
 	std::stringstream ss_content_length;
 	ss_content_length << length;
-	headers.insert(SingleField("Content-Length", ss_content_length.str()));
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), ss_content_length.str()));
 	content_length = length;
 	std::pair<Headers::iterator, Headers::iterator> transfer_encoding_key = headers.equal_range("Transfer-Encoding");
 	for (Headers::iterator it = transfer_encoding_key.first; it != transfer_encoding_key.second; ++it)
@@ -272,9 +272,9 @@ static void _read_size_t(const std::string & str, size_t & n)
 void Request::_parse_body(const std::string & str)
 {
 	std::pair<Headers::iterator, Headers::iterator> transfer_encoding_it = headers.equal_range("Transfer-Encoding");
-	std::pair<Headers::iterator, Headers::iterator> content_length_it = headers.equal_range("Content-Length");
+	std::pair<Headers::iterator, Headers::iterator> content_length_it = headers.equal_range(Headers::getTypeStr(HEADER_CONTENT_LENGTH));
 	size_t nb_encoding = headers.count("Transfer-Encoding");
-	size_t nb_content_length = headers.count("Content-Length");
+	size_t nb_content_length = headers.count(Headers::getTypeStr(HEADER_CONTENT_LENGTH));
 
 	if (str.empty())
 		return ;
@@ -292,12 +292,12 @@ void Request::_parse_body(const std::string & str)
 	}
 	else if(nb_content_length > 0)
 	{
-		switch (headers.count("Content-Length"))
+		switch (headers.count(Headers::getTypeStr(HEADER_CONTENT_LENGTH)))
 		{
 			case '0':
 				throw (STATUS_LENGTH_REQUIRED);
 			case '1':
-				_read_size_t(headers.find("Content-Length")->second.getValue(), content_length);
+				_read_size_t(headers.find(Headers::getTypeStr(HEADER_CONTENT_LENGTH))->second.getValue(), content_length);
 				break ;
 			default:
 				size_t tmp;
@@ -378,7 +378,7 @@ void Request::_skip_newline(size_t& i)
 void Request::_handle_multipart()
 {
 
-	size_t nb_content_type = headers.count("Content-Type");
+	size_t nb_content_type = headers.count(Headers::getTypeStr(HEADER_CONTENT_TYPE));
 	static size_t test = 0;
 
 	if (nb_content_type == 0)
@@ -386,7 +386,7 @@ void Request::_handle_multipart()
 	if (nb_content_type > 1)
 		throw (STATUS_BAD_REQUEST);
 
-	Headers::const_iterator content_type_it = headers.find("Content-Type");
+	Headers::const_iterator content_type_it = headers.find(Headers::getTypeStr(HEADER_CONTENT_TYPE));
 	const std::string content_type_value = content_type_it->second.getValue();
 	const std::string multipart = "multipart";
 

@@ -193,14 +193,14 @@ void Response::_handle_file(const std::string& filename)
 
 void Response::_handle_dir()
 {
-	const std::string& uri = _request.getStartLine().getUri().getPath();
-	if (uri[uri.length() - 1] != '/') {
-		start_line = StatusLine(STATUS_MOVED);
-		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue("0")));
-		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
-		headers.insert(SingleField(Headers::getTypeStr(HEADER_LOCATION), FieldValue(uri + "/")));
-		return;
-	}
+	// const std::string& uri = _request.getStartLine().getUri().getPath();
+	// if (uri[uri.length() - 1] != '/') {
+	// 	start_line = StatusLine(STATUS_MOVED);
+	// 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue("0")));
+	// 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
+	// 	headers.insert(SingleField(Headers::getTypeStr(HEADER_LOCATION), FieldValue(uri + "/")));
+	// 	return;
+	// }
 	if (_is_dir_has_index_file())
 		_handle_file(_resource_path + _conf.index);
 	else
@@ -466,18 +466,20 @@ void Response::_handle_error(enum e_status_code status_code)
 	else
 	{
 		_handle_default_error(status_code);
+		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(content_length))));
+		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
 	}
-	switch (status_code)
-	{
-		case STATUS_MOVED:
-			headers.insert(SingleField(Headers::getTypeStr(HEADER_LOCATION), FieldValue(_resource_path + "/")));
-			headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue("0")));
-			headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
-			break ;
-		default:
-			headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(content_length))));
-			headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
-	}
+// 	switch (status_code)
+// 	{
+// 		// case STATUS_MOVED:
+// 		// 	headers.insert(SingleField(Headers::getTypeStr(HEADER_LOCATION), FieldValue(_resource_path + "/")));
+// 		// 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue("0")));
+// 		// 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
+// 		// 	break ;
+// 		// default:
+// 			headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(content_length))));
+// 			headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
+// 	}
 }
 
 std::string Response::toHtml() const

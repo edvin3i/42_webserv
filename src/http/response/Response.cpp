@@ -27,7 +27,7 @@ Response::Response(Logger & logger, const ServerConfig & conf, const LocationCon
 					break;
 				case METHOD_DELETE:
 					_check_resource();
-					_handle_post();
+					_handle_delete();
 					break ;
 			}
 			// _check_resource();
@@ -333,8 +333,7 @@ void Response::_handle_delete()
 		{
 			const std::string& uri = _request.start_line.getUri().getPath();
 
-			if (uri[uri.length() - 1] != '/')
-				start_line = StatusLine(STATUS_CONFLICT);
+			_delete_dir();
 			break ;
 		}
 		default:
@@ -344,21 +343,18 @@ void Response::_handle_delete()
 
 void Response::_delete_dir()
 {
-	if (access(_resource_path.c_str(), W_OK) != 0)
+	if (access(_resource_path.c_str(), W_OK) < 0)
 		throw (STATUS_FORBIDDEN);
 	const std::string command = "rm -rf " + _resource_path;
-	if (std::system(command.c_str()) == 0)
-	{
-		start_line = StatusLine(STATUS_NO_CONTENT);
-		headers.insert(SingleField("Content-Length", FieldValue("0")));
-	}
-	else
+	if (std::system(command.c_str()) != 0)
 		throw (STATUS_INTERNAL_ERR);
+	start_line = StatusLine(STATUS_NO_CONTENT);
+	headers.insert(SingleField("Content-Length", FieldValue("0")));
 }
 
 void Response::_delete_file()
 {
-	if (std::remove(_resource_path.c_str()) != 0)
+	if (std::remove(_resource_path.c_str()) < 0)
 		throw (STATUS_INTERNAL_ERR);
 	start_line = StatusLine(STATUS_NO_CONTENT);
 	headers.insert(SingleField("Content-Length", FieldValue("0")));

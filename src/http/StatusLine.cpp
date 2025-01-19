@@ -19,10 +19,13 @@ void StatusLine::_init_status_code_message()
 	_status_code_message[STATUS_NOT_FOUND] = "Not Found";
 	_status_code_message[STATUS_NOT_ALLOWED] = "Method Not Allowed";
 	_status_code_message[STATUS_CONFLICT] = "Conflict";
+	_status_code_message[STATUS_LENGTH_REQUIRED] = "Length Required";
 	_status_code_message[STATUS_TOO_LARGE] = "Content Too Large";
 	_status_code_message[STATUS_URI_TOO_LONG] = "URI Too Long";
+	_status_code_message[STATUS_UNSUPPORTED_MEDIA_TYPE] = "Unsupported Media Type";
 	_status_code_message[STATUS_INTERNAL_ERR] = "Internal Server Error";
 	_status_code_message[STATUS_NOT_IMPLEMENTED] = "Not Implemented";
+	_status_code_message[STATUS_VERSION_NOT_SUPPORTED] = "HTTP Version Not Supported";
 	_is_status_code_message_init = true;
 }
 

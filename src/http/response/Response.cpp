@@ -20,7 +20,7 @@ Response::Response(Logger & logger, const ServerConfig & conf, const LocationCon
 			return ;
 		}
 		_check_method_allowed();
-		switch (_request.start_line.getMethod().getValue())
+		switch (_request.getStartLine().getMethod().getValue())
 		{
 			case METHOD_GET:
 				_check_resource();
@@ -63,7 +63,7 @@ void Response::_check_method_allowed()
 	if (_location)
 	{
 		const std::vector<std::string>& allow_methods = _location->methods;
-		const std::string& request_method = _request.start_line.getMethod().toString();
+		const std::string& request_method = _request.getStartLine().getMethod().toString();
 		if (std::find(allow_methods.begin(), allow_methods.end(), request_method) == allow_methods.end())
 			throw (STATUS_NOT_ALLOWED);
 	}
@@ -83,10 +83,10 @@ void Response::_check_resource()
 {
 	struct stat file_stat;
 	std::string resource_path;
-	const std::string& uri_path = _request.start_line.getUri().getPath();
+	const std::string& uri_path = _request.getStartLine().getUri().getPath();
 
 //  antonin
-	// _resource_path = _conf.root + _request.start_line.getUri().getPath();
+	// _resource_path = _conf.root + _request.getStartLine().getUri().getPath();
 	if (_location && !_location->path.empty())
 	{
 		if (!_location->root.empty())
@@ -121,7 +121,7 @@ void Response::_check_resource()
 
 // void Response::_check_method()
 // {
-// 	const std::string method = _request.start_line.getMethod();
+// 	const std::string method = _request.getStartLine().getMethod();
 
 // 	if (method == "GET")
 // 		_handle_get();
@@ -193,7 +193,7 @@ void Response::_handle_file(const std::string& filename)
 
 void Response::_handle_dir()
 {
-	const std::string& uri = _request.start_line.getUri().getPath();
+	const std::string& uri = _request.getStartLine().getUri().getPath();
 	if (uri[uri.length() - 1] != '/') {
 		start_line = StatusLine(STATUS_MOVED);
 		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue("0")));
@@ -254,8 +254,8 @@ void Response::_handle_auto_index()
 		std::string filename(file->d_name);
 		if (filename != "." && filename != "..") {
 			content.append("<li><a href=\"");
-			content.append(_request.start_line.getUri().getPath());
-			const std::string& path = _request.start_line.getUri().getPath();
+			content.append(_request.getStartLine().getUri().getPath());
+			const std::string& path = _request.getStartLine().getUri().getPath();
 			if (!path.empty() && path[path.length() - 1] != '/')
 				content.append("/");
 			content.append(filename);
@@ -275,9 +275,9 @@ void Response::_handle_auto_index()
 
 void Response::_check_body_size() {
 	// if request has body
-	if (_request.content_length > 0) {
+	if (_request.getContentLength() > 0) {
 		// compare with server_config limit
-		if (_conf.client_max_body_size > 0 && _request.content_length > _conf.client_max_body_size) {
+		if (_conf.client_max_body_size > 0 && _request.getContentLength() > _conf.client_max_body_size) {
 			_logger.writeToLog(ERROR, "Request body size exceeds client_max_body_size limit");
 			throw (STATUS_TOO_LARGE);
 		}
@@ -328,9 +328,10 @@ void Response::_handle_post()
 	if (_location->upload_dir.empty())
 		throw (STATUS_INTERNAL_ERR);
 
-	Headers::const_iterator request_content_type_it = _request.headers.find(Headers::getTypeStr(HEADER_CONTENT_TYPE));
+	const Headers& request_headers = _request.getHeaders();
+	Headers::const_iterator request_content_type_it = request_headers.find(Headers::getTypeStr(HEADER_CONTENT_TYPE));
 
-	if (request_content_type_it == _request.headers.end())
+	if (request_content_type_it == request_headers.end())
 		throw (STATUS_BAD_REQUEST);
 	const std::string content_type = request_content_type_it->second.getValue();
 
@@ -341,7 +342,7 @@ void Response::_handle_post()
 
 void Response::_upload_file(const std::string& file_path)
 {
-	if (_request.content_length == 0)
+	if (_request.getContentLength() == 0)
 		throw (STATUS_LENGTH_REQUIRED);
 
 	std::ofstream file(file_path.c_str());
@@ -361,7 +362,7 @@ void Response::_handle_delete()
 			break ;
 		case RT_DIR:
 		{
-			const std::string& uri = _request.start_line.getUri().getPath();
+			const std::string& uri = _request.getStartLine().getUri().getPath();
 
 			_delete_dir();
 			break ;

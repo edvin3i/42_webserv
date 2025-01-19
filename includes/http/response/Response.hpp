@@ -29,7 +29,7 @@ enum e_resource_type
 	RT_DIR
 };
 
-class Response : public Message<StatusLine>
+class Response : protected Message<StatusLine>
 {
 public:
 	Response(Logger & logger, const ServerConfig & conf, const LocationConfig  *location, const Request & request);

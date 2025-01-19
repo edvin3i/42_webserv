@@ -13,7 +13,7 @@
 #include <iostream>
 #include <sstream>
 
-class Request : public Message<RequestLine>
+class Request : protected Message<RequestLine>
 {
 public:
 
@@ -27,6 +27,11 @@ public:
 	bool error() const;
 	enum e_status_code getErrorCode() const;
 	const std::vector<BodyPart>& getMultipart() const;
+	const RequestLine& getStartLine() const;
+	const Headers& getHeaders() const;
+	const std::string& getContent() const;
+	size_t getContentLength() const;
+
 private:
 	Logger &_logger;
 	Request();

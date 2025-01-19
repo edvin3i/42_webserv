@@ -34,12 +34,14 @@ Request& Request::operator=(const Request & other)
 void Request::_split_request(const std::string& str, std::string & request_line, std::vector<std::string> & header_lines, std::string & body)
 {
 	const std::string delimiter = "\r\n";
-	size_t pos_start = 0, pos_end, delim_len = 2;
+	size_t pos_start = 0, pos_end;
 	std::string header_line;
 
 	pos_end = str.find(delimiter, pos_start);
+	if (pos_end == std::string::npos)
+		throw (STATUS_BAD_REQUEST);
 	request_line = str.substr(pos_start, pos_end - pos_start);
-	pos_start = pos_end + delim_len;
+	pos_start = pos_end + delimiter.length();
 	if (Utils::is_whitespace(str[pos_start]))
 		throw (STATUS_BAD_REQUEST); // reject message as invalid
 	while (1)
@@ -54,7 +56,7 @@ void Request::_split_request(const std::string& str, std::string & request_line,
 			break ;
 		}
 		header_lines.push_back(header_line);
-		pos_start = pos_end + delim_len;
+		pos_start = pos_end + delimiter.length();
 	}
 }
 
@@ -70,147 +72,6 @@ void Request::_parse(const std::string & str)
 	_parse_body(body);
 	_handle_multipart();
 }
-
-// void Request::_parse_headers(std::vector<std::string> & header_lines)
-// {
-// 	std::string header_line_trim;
-// 	for (size_t i = 0; i < header_lines.size(); ++i)
-// 	{
-// 		header_line_trim = _str_trim(header_lines[i]);
-// 		_parse_header(header_line_trim);
-// 	}
-// }
-
-// static bool is_delimiter(char c)
-// {
-// 	const std::string delimiters = "(),/:;<=>?@[\\]{}";
-
-// 	return (delimiters.find(c) != std::string::npos);
-// }
-
-// void Request::_handle_quoted_str(const std::string& str, size_t& i, std::string& element) const
-// {
-// 	if (!element.empty())
-// 		throw (STATUS_BAD_REQUEST);
-// 	i += 1;
-// 	while (1)
-// 	{
-// 		if (i == str.length())
-// 			throw (STATUS_BAD_REQUEST);
-// 		if (str[i] == '\"')
-// 		{
-// 			if (str.length() == (i + 1) || is_delimiter(str[i + 1]) || Utils::is_whitespace(str[i + 1]))
-// 			{
-// 				i += 1;
-// 				return ;
-// 			}
-// 			else
-// 				throw (STATUS_BAD_REQUEST);
-// 		}
-// 		element.push_back(str[i]);
-// 		i += 1;
-// 	}
-// }
-
-// void Request::_parse_field_value(const std::string & str, const std::string & field_name)
-// {
-// 	std::string element;
-// 	size_t i = 0;
-// 	size_t nb_non_empty_element = 0;
-
-// 	while (i < str.length())
-// 	{
-// 		switch (str[i])
-// 		{
-// 			case '\r': case '\n': case '\0':
-// 				throw (STATUS_BAD_REQUEST);
-// 			case ' ': case '\t':
-// 				if (element.empty())
-// 				{
-// 					while (Utils::is_whitespace(str[i]))
-// 						i += 1;
-// 				}
-// 				else
-// 				{
-// 					size_t nb_whitespace = 0;
-// 					while (Utils::is_whitespace(str[i]))
-// 					{
-// 						nb_whitespace += 1;
-// 						i += 1;
-// 					}
-// 					if (!is_delimiter(str[i]))
-// 						element.append(nb_whitespace, ' ');
-// 				}
-// 				break ;
-// 			case '\"':
-// 				_handle_quoted_str(str, i, element);
-// 				break ;
-// 			case ',':
-// 				if (!element.empty())
-// 					nb_non_empty_element += 1;
-// 				headers.insert(std::pair<std::string, std::string>(field_name, element));
-// 				element.clear();
-// 				i += 1;
-// 				break ;
-// 			case '(':
-// 			{
-// 				int depth = 0;
-// 				while (true)
-// 				{
-// 					if (i == str.length())
-// 						throw (STATUS_BAD_REQUEST);
-// 					if (str[i] == '(')
-// 						depth++;
-// 					else if (str[i] == ')')
-// 						depth--;
-// 					if (str[i] == ')' && (depth == 0))
-// 					{
-// 						i += 1;
-// 						break ;
-// 					}
-// 					if (depth < 0)
-// 						throw (STATUS_BAD_REQUEST);
-// 					i += 1;
-// 				}
-// 				break ;
-// 			}
-// 			default:
-// 				element.push_back(str[i]);
-// 				i += 1;
-// 				break ;
-// 		}
-// 	}
-// 	if (!element.empty())
-// 		nb_non_empty_element += 1;
-// 	headers.insert(Field(field_name, FieldValue(element)));
-// 	if (nb_non_empty_element == 0)
-// 		throw (STATUS_BAD_REQUEST);
-// }
-
-// std::string Request::_str_trim(const std::string &str) const
-// {
-// 	size_t str_start, str_end;
-
-// 	str_start = str.find_first_not_of(Utils::whitespace);
-// 	str_end = str.find_last_not_of(Utils::whitespace);
-// 	return (str.substr(str_start, str_end - str_start + 1));
-// }
-
-// void Request::_parse_header(const std::string &str)
-// {
-// 	std::string field_name, field_value, field_value_trim;
-// 	size_t colon_pos;
-
-// 	if (str.length() > max_header_length)
-// 		throw (STATUS_BAD_REQUEST);
-// 	colon_pos = str.find(':');
-// 	field_name = str.substr(0, colon_pos);
-// 	if (field_name.empty() || Utils::is_whitespace(field_name[field_name.length() - 1]))
-// 		throw (STATUS_BAD_REQUEST);
-// 	field_value = str.substr(colon_pos + 1);
-// 	field_value_trim = _str_trim(field_value);
-// 	_parse_field_value(field_value_trim, field_name);
-// }
 
 void Request::_check_headers()
 {
@@ -429,4 +290,24 @@ void Request::_handle_multipart()
 const std::vector<BodyPart>& Request::getMultipart() const
 {
 	return (_multipart);
+}
+
+const RequestLine& Request::getStartLine() const
+{
+	return (start_line);
+}
+
+const Headers& Request::getHeaders() const
+{
+	return (headers);
+}
+
+const std::string& Request::getContent() const
+{
+	return (content);
+}
+
+size_t Request::getContentLength() const
+{
+	return (content_length);
 }

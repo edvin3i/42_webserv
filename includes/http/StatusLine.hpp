@@ -18,7 +18,7 @@ public:
 	std::string toHtml() const;
 	std::string toString() const;
 	static std::map<int, std::string> _status_code_message;
-private:
+protected:
 	static void _init_status_code_message();
 	static bool _is_status_code_message_init;
 	static const std::string _http_version;

@@ -195,7 +195,7 @@ void ClientConnection::select_location()
 
 	// Add debug logging
 	std::ostringstream ss;
-	ss << "Request URI: " << _request->start_line.getUri().getPath() << "\n";
+	ss << "Request URI: " << _request->getStartLine().getUri().getPath() << "\n";
 	ss << "Available locations:\n";
 	for (std::map<std::string, LocationConfig>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
 		ss << "- " << it->first << " (autoindex: " << (it->second.autoindex ? "on" : "off") << ")\n";
@@ -211,7 +211,7 @@ void ClientConnection::select_location()
 	}
 
 	// First check if this is a root path request
-	if (_request->start_line.getUri().getPath() == "/") {
+	if (_request->getStartLine().getUri().getPath() == "/") {
 		std::map<std::string, LocationConfig>::const_iterator root_it = locations.find("/");
 		if (root_it != locations.end()) {
 			_currentLocationConfig = const_cast<LocationConfig*>(&(root_it->second));
@@ -228,7 +228,7 @@ void ClientConnection::select_location()
 			continue;
 
 
-		depth = matching_prefix_depth(it->first, _request->start_line.getUri().getPath());
+		depth = matching_prefix_depth(it->first, _request->getStartLine().getUri().getPath());
 		ss.str("");
 		ss << "Checking location " << it->first << ", depth: " << depth;
 		_logger.writeToLog(DEBUG, ss.str());

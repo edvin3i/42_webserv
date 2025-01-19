@@ -277,6 +277,14 @@ void Response::_handle_post()
 	if (_location->upload_dir.empty())
 		throw (STATUS_INTERNAL_ERR);
 
+	Headers::const_iterator request_content_type_it = _request.headers.find("Content-Type");
+
+	if (request_content_type_it == _request.headers.end())
+		throw (STATUS_BAD_REQUEST);
+	const std::string content_type = request_content_type_it->second.getValue();
+
+	if (content_type != "multipart/form-data")
+		throw (STATUS_UNSUPPORTED_MEDIA_TYPE);
 	const std::string filename = get_filename();
 	std::string file_path;
 	_upload_file(_location->upload_dir + "/" + filename);

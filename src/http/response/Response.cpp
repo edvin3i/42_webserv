@@ -88,16 +88,17 @@ void Response::_check_resource()
 		_resource_path.append(uri_path);
 	}
 	if (stat(_resource_path.c_str(), &file_stat) < 0)
+	{
 		throw (STATUS_NOT_FOUND);
 	}
 	else if (S_ISDIR(file_stat.st_mode)) {
-		ss << "Resource is a directory" << std::endl;
+		std::ostringstream ss; ss << "Resource is a directory" << std::endl;
 		_logger.writeToLog(DEBUG, ss.str());
 		ss.str("");
 		_resource_type = RT_DIR;
 	}
 	else {
-		ss << "Resource is a file" << std::endl;
+		std::ostringstream ss; ss << "Resource is a file" << std::endl;
 		_logger.writeToLog(DEBUG, ss.str());
 		ss.str("");
 		_resource_type = RT_FILE;
@@ -181,9 +182,9 @@ void Response::_handle_dir()
 	const std::string& uri = _request.start_line.getUri().getPath();
 	if (uri[uri.length() - 1] != '/') {
 		start_line = StatusLine(STATUS_MOVED);
-		headers.insert(Field("Content-Length", FieldValue("0")));
-		headers.insert(Field("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
-		headers.insert(Field("Location", FieldValue(uri + "/")));
+		headers.insert(SingleField("Content-Length", FieldValue("0")));
+		headers.insert(SingleField("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
+		headers.insert(SingleField("Location", FieldValue(uri + "/")));
 		return;
 	}
 	if (_is_dir_has_index_file())

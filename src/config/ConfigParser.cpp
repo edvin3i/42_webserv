@@ -129,7 +129,7 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 
 			_parseLocationBlock(location);
 			_logger.writeToLog(DEBUG, "PARSE SERVER BLOCK CALLED");
-			server.locations.push_back(location);
+			server.locations[tokens[1]] = location;
 		}
 		else {
 			std::vector<std::string > tokens = _tokenize(_current_line);

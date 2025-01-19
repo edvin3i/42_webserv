@@ -1,13 +1,36 @@
 #include "../../includes/http/Headers.hpp"
 
+std::vector<std::string> Headers::_type_to_str;
+
+bool Headers::is_init = false;
+
+void Headers::_init()
+{
+	if (is_init)
+		return ;
+	_type_to_str.resize(NB_HEADER_TYPE);
+	_type_to_str[HEADER_CONTENT_TYPE] = "Content-Type";
+	_type_to_str[HEADER_CONTENT_LENGTH] = "Content-Length";
+	_type_to_str[HEADER_LOCATION] = "Location";
+	_type_to_str[HEADER_HOST] = "Host";
+	_type_to_str[HEADER_CONTENT_DISPOSITION] = "Content-Disposition";
+}
+
+std::string Headers::getTypeStr(HeaderType type)
+{
+	return (std::string(_type_to_str[type]));
+}
+
 Headers::Headers()
 : std::multimap<std::string, FieldValue>()
 {
+	_init();
 }
 
 Headers::Headers(const std::vector<std::string>& fields)
 : std::multimap<std::string, FieldValue>()
 {
+	_init();
 	_parse_fields(fields);
 }
 
@@ -16,7 +39,9 @@ Headers::~Headers()
 
 Headers::Headers(const Headers& other)
 : std::multimap<std::string, FieldValue>(other)
-{}
+{
+	_init();
+}
 
 Headers& Headers::operator=(const Headers& other)
 {
@@ -42,33 +67,4 @@ void Headers::_parse_fields(const std::vector<std::string>& fields)
 	}
 }
 
-bool Headers::_is_delimiter(char c)
-{
-	const std::string delimiters = "(),/:;<=>?@[\\]{}";
 
-	return (delimiters.find(c) != std::string::npos);
-}
-
-void Headers::_handle_quoted_str(const std::string& str, size_t& i, std::string& element)
-{
-	if (!element.empty())
-		throw (STATUS_BAD_REQUEST);
-	i += 1;
-	while (1)
-	{
-		if (i == str.length())
-			throw (STATUS_BAD_REQUEST);
-		if (str[i] == '\"')
-		{
-			if (str.length() == (i + 1) || _is_delimiter(str[i + 1]) || Utils::is_whitespace(str[i + 1]))
-			{
-				i += 1;
-				return ;
-			}
-			else
-				throw (STATUS_BAD_REQUEST);
-		}
-		element.push_back(str[i]);
-		i += 1;
-	}
-}

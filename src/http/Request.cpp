@@ -1,8 +1,7 @@
 #include "../../includes/http/Request.hpp"
 
-
-Request::Request(const std::string & str)
-: Message<RequestLine>(), _error(false), _error_code(STATUS_OK)
+Request::Request(Logger & logger, const std::string & str)
+: _logger(logger), Message<RequestLine>(), _error(false), _error_code(STATUS_OK)
 {
 	try
 	{
@@ -18,7 +17,7 @@ Request::Request(const std::string & str)
 Request::~Request() {}
 
 Request::Request(const Request & other)
-: Message<RequestLine>(other)
+: Message<RequestLine>(other), _logger(other._logger), _error(other._error), _error_code(other._error_code)
 {}
 
 Request& Request::operator=(const Request & other)
@@ -26,6 +25,8 @@ Request& Request::operator=(const Request & other)
 	if (this != &other)
 	{
 		Message<RequestLine>::operator=(other);
+		_error = other._error;
+		_error_code = other._error_code;
 	}
 	return (*this);
 }
@@ -70,15 +71,156 @@ void Request::_parse(const std::string & str)
 	_handle_multipart();
 }
 
+// void Request::_parse_headers(std::vector<std::string> & header_lines)
+// {
+// 	std::string header_line_trim;
+// 	for (size_t i = 0; i < header_lines.size(); ++i)
+// 	{
+// 		header_line_trim = _str_trim(header_lines[i]);
+// 		_parse_header(header_line_trim);
+// 	}
+// }
+
+// static bool is_delimiter(char c)
+// {
+// 	const std::string delimiters = "(),/:;<=>?@[\\]{}";
+
+// 	return (delimiters.find(c) != std::string::npos);
+// }
+
+// void Request::_handle_quoted_str(const std::string& str, size_t& i, std::string& element) const
+// {
+// 	if (!element.empty())
+// 		throw (STATUS_BAD_REQUEST);
+// 	i += 1;
+// 	while (1)
+// 	{
+// 		if (i == str.length())
+// 			throw (STATUS_BAD_REQUEST);
+// 		if (str[i] == '\"')
+// 		{
+// 			if (str.length() == (i + 1) || is_delimiter(str[i + 1]) || Utils::is_whitespace(str[i + 1]))
+// 			{
+// 				i += 1;
+// 				return ;
+// 			}
+// 			else
+// 				throw (STATUS_BAD_REQUEST);
+// 		}
+// 		element.push_back(str[i]);
+// 		i += 1;
+// 	}
+// }
+
+// void Request::_parse_field_value(const std::string & str, const std::string & field_name)
+// {
+// 	std::string element;
+// 	size_t i = 0;
+// 	size_t nb_non_empty_element = 0;
+
+// 	while (i < str.length())
+// 	{
+// 		switch (str[i])
+// 		{
+// 			case '\r': case '\n': case '\0':
+// 				throw (STATUS_BAD_REQUEST);
+// 			case ' ': case '\t':
+// 				if (element.empty())
+// 				{
+// 					while (Utils::is_whitespace(str[i]))
+// 						i += 1;
+// 				}
+// 				else
+// 				{
+// 					size_t nb_whitespace = 0;
+// 					while (Utils::is_whitespace(str[i]))
+// 					{
+// 						nb_whitespace += 1;
+// 						i += 1;
+// 					}
+// 					if (!is_delimiter(str[i]))
+// 						element.append(nb_whitespace, ' ');
+// 				}
+// 				break ;
+// 			case '\"':
+// 				_handle_quoted_str(str, i, element);
+// 				break ;
+// 			case ',':
+// 				if (!element.empty())
+// 					nb_non_empty_element += 1;
+// 				headers.insert(std::pair<std::string, std::string>(field_name, element));
+// 				element.clear();
+// 				i += 1;
+// 				break ;
+// 			case '(':
+// 			{
+// 				int depth = 0;
+// 				while (true)
+// 				{
+// 					if (i == str.length())
+// 						throw (STATUS_BAD_REQUEST);
+// 					if (str[i] == '(')
+// 						depth++;
+// 					else if (str[i] == ')')
+// 						depth--;
+// 					if (str[i] == ')' && (depth == 0))
+// 					{
+// 						i += 1;
+// 						break ;
+// 					}
+// 					if (depth < 0)
+// 						throw (STATUS_BAD_REQUEST);
+// 					i += 1;
+// 				}
+// 				break ;
+// 			}
+// 			default:
+// 				element.push_back(str[i]);
+// 				i += 1;
+// 				break ;
+// 		}
+// 	}
+// 	if (!element.empty())
+// 		nb_non_empty_element += 1;
+// 	headers.insert(Field(field_name, FieldValue(element)));
+// 	if (nb_non_empty_element == 0)
+// 		throw (STATUS_BAD_REQUEST);
+// }
+
+// std::string Request::_str_trim(const std::string &str) const
+// {
+// 	size_t str_start, str_end;
+
+// 	str_start = str.find_first_not_of(Utils::whitespace);
+// 	str_end = str.find_last_not_of(Utils::whitespace);
+// 	return (str.substr(str_start, str_end - str_start + 1));
+// }
+
+// void Request::_parse_header(const std::string &str)
+// {
+// 	std::string field_name, field_value, field_value_trim;
+// 	size_t colon_pos;
+
+// 	if (str.length() > max_header_length)
+// 		throw (STATUS_BAD_REQUEST);
+// 	colon_pos = str.find(':');
+// 	field_name = str.substr(0, colon_pos);
+// 	if (field_name.empty() || Utils::is_whitespace(field_name[field_name.length() - 1]))
+// 		throw (STATUS_BAD_REQUEST);
+// 	field_value = str.substr(colon_pos + 1);
+// 	field_value_trim = _str_trim(field_value);
+// 	_parse_field_value(field_value_trim, field_name);
+// }
+
 void Request::_check_headers()
 {
 	//respond with 400 when request message contains more than one Host header field line or a Host header field with an invalid field value
-	if (headers.count("Host") != 1)
+	if (headers.count(Headers::getTypeStr(HEADER_HOST)) != 1)
 		throw (STATUS_BAD_REQUEST);
 	const std::string& authority = start_line.getUri().getAuthority();
 	if (!authority.empty())
 	{
-		Headers::iterator host_it = headers.find("Host");
+		Headers::iterator host_it = headers.find(Headers::getTypeStr(HEADER_HOST));
 		host_it->second = authority;
 	}
 }
@@ -108,7 +250,7 @@ void Request::_decode_chunked(const std::string & str)
 	}
 	std::stringstream ss_content_length;
 	ss_content_length << length;
-	headers.insert(SingleField("Content-Length", ss_content_length.str()));
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), ss_content_length.str()));
 	content_length = length;
 	std::pair<Headers::iterator, Headers::iterator> transfer_encoding_key = headers.equal_range("Transfer-Encoding");
 	for (Headers::iterator it = transfer_encoding_key.first; it != transfer_encoding_key.second; ++it)
@@ -130,9 +272,9 @@ static void _read_size_t(const std::string & str, size_t & n)
 void Request::_parse_body(const std::string & str)
 {
 	std::pair<Headers::iterator, Headers::iterator> transfer_encoding_it = headers.equal_range("Transfer-Encoding");
-	std::pair<Headers::iterator, Headers::iterator> content_length_it = headers.equal_range("Content-Length");
+	std::pair<Headers::iterator, Headers::iterator> content_length_it = headers.equal_range(Headers::getTypeStr(HEADER_CONTENT_LENGTH));
 	size_t nb_encoding = headers.count("Transfer-Encoding");
-	size_t nb_content_length = headers.count("Content-Length");
+	size_t nb_content_length = headers.count(Headers::getTypeStr(HEADER_CONTENT_LENGTH));
 
 	if (str.empty())
 		return ;
@@ -150,12 +292,12 @@ void Request::_parse_body(const std::string & str)
 	}
 	else if(nb_content_length > 0)
 	{
-		switch (headers.count("Content-Length"))
+		switch (headers.count(Headers::getTypeStr(HEADER_CONTENT_LENGTH)))
 		{
 			case '0':
 				throw (STATUS_LENGTH_REQUIRED);
 			case '1':
-				_read_size_t(headers.find("Content-Length")->second.getValue(), content_length);
+				_read_size_t(headers.find(Headers::getTypeStr(HEADER_CONTENT_LENGTH))->second.getValue(), content_length);
 				break ;
 			default:
 				size_t tmp;
@@ -236,7 +378,7 @@ void Request::_skip_newline(size_t& i)
 void Request::_handle_multipart()
 {
 
-	size_t nb_content_type = headers.count("Content-Type");
+	size_t nb_content_type = headers.count(Headers::getTypeStr(HEADER_CONTENT_TYPE));
 	static size_t test = 0;
 
 	if (nb_content_type == 0)
@@ -244,7 +386,7 @@ void Request::_handle_multipart()
 	if (nb_content_type > 1)
 		throw (STATUS_BAD_REQUEST);
 
-	Headers::const_iterator content_type_it = headers.find("Content-Type");
+	Headers::const_iterator content_type_it = headers.find(Headers::getTypeStr(HEADER_CONTENT_TYPE));
 	const std::string content_type_value = content_type_it->second.getValue();
 	const std::string multipart = "multipart";
 

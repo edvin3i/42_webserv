@@ -53,7 +53,6 @@ private:
 	enum e_resource_type _resource_type;
 	void _check_location();
 	void _check_resource();
-	void _check_method();
 	void _check_body_size(); // add body size check
 	void _handle_get();
 	void _handle_post();
@@ -62,19 +61,20 @@ private:
 	void _delete_dir();
 	void _handle_file(const std::string& filename);
 	void _handle_dir();
-	void _check_dir();
 	bool _is_dir_has_index_file();
 	void _check_auto_index();
 	void _handle_auto_index();
-	void _upload_file();
-	std::string get_filename();
+	void _upload_file(const std::string&);
 	void _handle_error(enum e_status_code);
 	void _handle_default_error(enum e_status_code status_code);
+	void _check_method_allowed();
+	void _handle_multipart_datas();
+	void _handle_multipart_data(const BodyPart&, size_t&);
 
 	static const std::string _html_auto_index;
 	static const std::string _default_error_page_path;
 
-	
+
 };
 
 

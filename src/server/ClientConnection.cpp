@@ -22,14 +22,14 @@ ClientConnection::~ClientConnection() {
 
 
 void ClientConnection::buildResponse() {
-   
+
 	_response = new Response(_logger, *_currentServerConfig, _currentLocationConfig, *_request);
-	
+
 	std::stringstream ss;
 	ss << "RESPONSE:"<< '\n' << _response->toString();
 	_logger.writeToLog(DEBUG, ss.str());
 	ss.str("");
-	
+
 	std::string response_html = _response->toHtml();
 	_writeBuffer.clear();
 	_writeBuffer.resize(response_html.size());
@@ -48,10 +48,10 @@ void ClientConnection::readData() {
 
     while ((bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0)) > 0) {
         _readBuffer.insert(_readBuffer.end(), buffer, buffer + bytesReceived);
-        
-  
+
+
         std::memset(buffer, 0, BUFFER_SIZE);
-   
+
     }
 
 	// Add EAGAIN and EWOULDBLOCK checking
@@ -76,7 +76,7 @@ void ClientConnection::writeData() {
 	// send data by portions size of BUFFER_SIZE
 	size_t remainingBytes = _writeBuffer.size() - _writeOffset;
 	size_t bytesToSend = std::min(remainingBytes, static_cast<size_t>(BUFFER_SIZE));
-	
+
 	ssize_t bytesSent = send(_clientSocketFD,
 	                         &_writeBuffer[_writeOffset],
 	                         bytesToSend, 0);
@@ -95,7 +95,7 @@ void ClientConnection::writeData() {
 
 	// continue sending data until all data is sent
 	if (_writeOffset >= _writeBuffer.size()) {
-		
+
 		ss.str("");
 		ss.clear();
 		ss << "===== All data sent to the client! =====";
@@ -123,48 +123,65 @@ bool ClientConnection::isReadyToWrite() {
 }
 
 
-static size_t matching_prefix_depth(const std::string& location_root, const std::string& uri)
-{
-	// Special case for root location
-	if (location_root == "/")
-		return (0);
+// static size_t matching_prefix_depth(const std::string& location_root, const std::string& uri)
+// {
+// 	// Special case for root location
+// 	if (location_root == "/")
+// 		return (0);
 
-// <<<<<<< antonin
-	Headers::const_iterator host_it = _request->headers.find("Host");
-	const std::string& host_request = host_it->second.getValue();
-	bool host_found = false;
+// // <<<<<<< antonin
+// 	Headers::const_iterator host_it = _request->headers.find(Headers::getTypeStr(HEADER_HOST));
+// 	const std::string& host_request = host_it->second.getValue();
+// 	bool host_found = false;
 
-	for (std::vector<ServerConfig>::iterator it = confs.begin(); it != confs.end(); ++it)
-	{
-		if (it->host == host_request)
-		{
-			host_found = true;
-			_currentServerConfig = &(*it);
-			break ;
-		}
-	}
-	if (!host_found)
-		_currentServerConfig = &(*confs.begin());
-}
+// 	for (std::vector<ServerConfig>::iterator it = confs.begin(); it != confs.end(); ++it)
+// 	{
+// 		if (it->host == host_request)
+// 		{
+// 			host_found = true;
+// 			_currentServerConfig = &(*it);
+// 			break ;
+// 		}
+// 	}
+// 	if (!host_found)
+// 		_currentServerConfig = &(*confs.begin());
+// }
+
+// static size_t matching_prefix_depth(const std::string& location_path, const std::string& uri)
+// {
+// 	std::vector<std::string> split_root = Utils::split(location_path, "/");
+// // =======
+// 	// If URI is just "/", it should only match root location
+//   // 	if (uri == "/")
+//   // 		return (0);
+
+//   // 	std::vector<std::string> split_root = Utils::split(location_root, "/");
+// // >>>>>>> master
+// // 	std::vector<std::string> split_uri = Utils::split(uri, "/");
+// // 	const size_t min_depth = std::min(split_root.size(), split_uri.size());
+// // 	size_t i = 0;
+
+// // <<<<<<< antonin
+// 	if (location_path == "/")
+// 		return (1);
+
+// 	while (i < min_depth && (split_root[i] == split_uri[i]))
+// 		i += 1;
+// 	return (i);
+// }
 
 static size_t matching_prefix_depth(const std::string& location_path, const std::string& uri)
 {
 	std::vector<std::string> split_root = Utils::split(location_path, "/");
-// =======
-	// If URI is just "/", it should only match root location
-  // 	if (uri == "/")
-  // 		return (0);
+	std::vector<std::string> split_uri = Utils::split(uri, "/");
+	bool uri_is_file = !(uri[uri.length() - 1] == '/');
+	if (uri_is_file)
+		split_uri.resize(split_uri.size() - 1);
+	const size_t min_depth = std::min(split_root.size(), split_uri.size());
+	size_t i = 0;
 
-  // 	std::vector<std::string> split_root = Utils::split(location_root, "/");
-// >>>>>>> master
-// 	std::vector<std::string> split_uri = Utils::split(uri, "/");
-// 	const size_t min_depth = std::min(split_root.size(), split_uri.size());
-// 	size_t i = 0;
-
-// <<<<<<< antonin
 	if (location_path == "/")
-		return (1);
-
+		return (0);
 	while (i < min_depth && (split_root[i] == split_uri[i]))
 		i += 1;
 	return (i);
@@ -202,18 +219,11 @@ void ClientConnection::select_location()
 			return;
 		}
 	}
-	
+
 	// If not root path or no root location found, proceed with prefix matching
-	for (std::map<std::string, LocationConfig>::const_iterator it = locations.begin(); 
+	for (std::map<std::string, LocationConfig>::const_iterator it = locations.begin();
 		 it != locations.end(); ++it)
 	{
-// <<<<<<< antonin
-		depth = matching_prefix_depth(it->path, _request->start_line.getUri().getPath());
-		if (depth > max_depth)
-		{
-			max_depth = depth;
-			location_tmp = &(*it);
-// =======
 		if (it->first == "/")
 			continue;
 
@@ -230,10 +240,9 @@ void ClientConnection::select_location()
 			ss.str("");
 			ss << "Found better match: " << it->first << " with depth " << depth;
 			_logger.writeToLog(DEBUG, ss.str());
-// >>>>>>> master
 		}
 	}
-	
+
 	if (!location_tmp) {
 		std::map<std::string, LocationConfig>::const_iterator root_it = locations.find("/");
 		if (root_it != locations.end()) {
@@ -243,7 +252,7 @@ void ClientConnection::select_location()
 			_logger.writeToLog(DEBUG, "No root location found");
 		}
 	}
-	
+
 	_currentLocationConfig = location_tmp;
 	if (_currentLocationConfig) {
 		ss.str("");

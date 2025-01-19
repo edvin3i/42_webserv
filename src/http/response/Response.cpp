@@ -15,10 +15,24 @@ Response::Response(Logger & logger, const ServerConfig & conf, const LocationCon
 	{
 		try
 		{
-			_check_location();
-			_check_resource();
-			//_handle_cgi();
-			_check_method();
+			_check_method_allowed();
+			switch (_request.start_line.getMethod().getValue())
+			{
+				case METHOD_GET:
+					_check_resource();
+					_handle_get();
+					break ;
+				case METHOD_POST:
+					_handle_post();
+					break;
+				case METHOD_DELETE:
+					_check_resource();
+					_handle_delete();
+					break ;
+			}
+			// _check_resource();
+			// //_handle_cgi();
+			// _check_method();
 		}
 		catch (enum e_status_code status_code)
 		{
@@ -31,19 +45,24 @@ Response::Response(Logger & logger, const ServerConfig & conf, const LocationCon
 Response::~Response()
 {}
 
+void Response::_check_method_allowed()
+{
+	if (_location)
+	{
+		const std::vector<std::string>& allow_methods = _location->methods;
+		const std::string& request_method = _request.start_line.getMethod().toString();
+		if (std::find(allow_methods.begin(), allow_methods.end(), request_method) == allow_methods.end())
+			throw (STATUS_NOT_ALLOWED);
+	}
+}
+
 void Response::_check_location()
 {
 	// else if (redirection)
 	// {
 	// 	redirection ?
 	// }
-	if (_location)
-	{
-		const std::vector<std::string>& allow_methods = _location->methods;
-		const std::string& request_method = _request.start_line.getMethod();
-		if (std::find(allow_methods.begin(), allow_methods.end(), request_method) == allow_methods.end())
-			throw (STATUS_NOT_ALLOWED);
-	}
+
 }
 
 void Response::_check_resource()
@@ -61,7 +80,7 @@ void Response::_check_resource()
 		else
 			_resource_path.append(_conf.root);
 		_resource_path.append(_location->path);
-		_resource_path.append(uri_path.substr(1));
+		_resource_path.append(uri_path.substr(_location->path.length()));
 	}
 	else
 	{
@@ -69,55 +88,34 @@ void Response::_check_resource()
 		_resource_path.append(uri_path);
 	}
 	if (stat(_resource_path.c_str(), &file_stat) < 0)
-
-// OLD PART    
-// 	if (_location && !_location->root.empty())
-// 		_resource_path = _location->root + _request.start_line.getUri().getPath();
-// 	else
-// 		_resource_path = _conf.root + _request.start_line.getUri().getPath();
-
-
-// 	std::stringstream ss;
-// 	ss << "Checking resource: " << _resource_path << std::endl;
-// 	_logger.writeToLog(DEBUG, ss.str());
-// 	ss.str("");
-
-
-// 	if (stat(_resource_path.c_str(), &file_stat) < 0) {
-// 		ss << "Resource not found: " << strerror(errno) << std::endl;
-// 		_logger.writeToLog(DEBUG, ss.str());
-// 		ss.str("");
-
-    
+	{
 		throw (STATUS_NOT_FOUND);
 	}
 	else if (S_ISDIR(file_stat.st_mode)) {
-		ss << "Resource is a directory" << std::endl;
+		std::ostringstream ss; ss << "Resource is a directory" << std::endl;
 		_logger.writeToLog(DEBUG, ss.str());
 		ss.str("");
 		_resource_type = RT_DIR;
 	}
 	else {
-		ss << "Resource is a file" << std::endl;
+		std::ostringstream ss; ss << "Resource is a file" << std::endl;
 		_logger.writeToLog(DEBUG, ss.str());
 		ss.str("");
 		_resource_type = RT_FILE;
 	}
 }
 
-void Response::_check_method()
-{
-	const std::string method = _request.start_line.getMethod();
+// void Response::_check_method()
+// {
+// 	const std::string method = _request.start_line.getMethod();
 
-	if (method == "GET")
-		_handle_get();
-	else if (method == "POST")
-		_handle_post();
-	else if (method == "DELETE")
-		_handle_delete();
-	else
-		throw (STATUS_NOT_ALLOWED);
-}
+// 	if (method == "GET")
+// 		_handle_get();
+// 	else if (method == "POST")
+// 		_handle_post();
+// 	else
+// 		_handle_delete();
+// }
 
 void Response::_handle_get()
 {
@@ -170,12 +168,11 @@ void Response::_handle_file(const std::string& filename)
 	file_content << file.rdbuf();
 
 	start_line = StatusLine(STATUS_OK);
-	
-  headers.insert(SingleField("Content-Length", FieldValue(Utils::size_t_to_str(file_content.str().length()))));
-	headers.insert(SingleField("Content-Type", FieldValue(_filename_to_mime_type(filename))));
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(file_content.str().length()))));
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(_filename_to_mime_type(filename))));
 
-  // 	headers.insert(Field("Content-Length", FieldValue(size_t_to_str(file_size))));
-  // 	headers.insert(Field("Content-Type", FieldValue(_filename_to_mime_type(filename))));
+  // 	headers.insert(Field(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(size_t_to_str(file_size))));
+  // 	headers.insert(Field(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(_filename_to_mime_type(filename))));
 	content = file_content.str();
 	content_length = file_size;
 }
@@ -185,9 +182,9 @@ void Response::_handle_dir()
 	const std::string& uri = _request.start_line.getUri().getPath();
 	if (uri[uri.length() - 1] != '/') {
 		start_line = StatusLine(STATUS_MOVED);
-		headers.insert(Field("Content-Length", FieldValue("0")));
-		headers.insert(Field("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
-		headers.insert(Field("Location", FieldValue(uri + "/")));
+		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue("0")));
+		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
+		headers.insert(SingleField(Headers::getTypeStr(HEADER_LOCATION), FieldValue(uri + "/")));
 		return;
 	}
 	if (_is_dir_has_index_file())
@@ -257,8 +254,8 @@ void Response::_handle_auto_index()
 	closedir(dir);
 
 	start_line = StatusLine(STATUS_OK);
-	headers.insert(SingleField("Content-Length", FieldValue(Utils::size_t_to_str(content.length()))));
-	headers.insert(SingleField("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(content.length()))));
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
 	content_length = content.length();
 }
 
@@ -273,51 +270,71 @@ void Response::_check_body_size() {
 	}
 }
 
+void Response::_handle_multipart_datas()
+{
+	const std::vector<BodyPart>& multipart = _request.getMultipart();
+
+	if (multipart.empty())
+		throw (STATUS_BAD_REQUEST);
+
+	size_t count_file_uploaded = 0;
+	for (size_t i = 0; i < multipart.size(); ++i)
+	{
+		_handle_multipart_data(multipart[i], count_file_uploaded);
+	}
+	if (count_file_uploaded == 0)
+		throw (STATUS_INTERNAL_ERR);
+	start_line = StatusLine(STATUS_CREATED);
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue("0")));
+}
+
+void Response::_handle_multipart_data(const BodyPart& body_part, size_t& count)
+{
+	const Headers& bodypart_headers = body_part.getHeaders();
+	Headers::const_iterator content_disposition_it = bodypart_headers.find(Headers::getTypeStr(HEADER_CONTENT_DISPOSITION));
+
+	if (bodypart_headers.count(Headers::getTypeStr(HEADER_CONTENT_DISPOSITION)) == 0)
+		throw (STATUS_BAD_REQUEST);
+
+	const Parameters& parameters = content_disposition_it->second.getParameters();
+	Parameters::const_iterator filename_it = parameters.find("filename");
+
+	if (filename_it != parameters.end() && !filename_it->second.empty())
+	{
+		const std::string file_path = _location->upload_dir + "/" + filename_it->second;
+		_upload_file(file_path);
+		count += 1;
+	}
+}
+
 void Response::_handle_post()
 {
-	_check_body_size(); // add size check before handle POST
-	
-	_upload_file();
-	start_line = StatusLine(STATUS_CREATED);
-	headers.insert(SingleField("Content-Length", FieldValue("0")));
-}
+	if (!_location)
+		throw (STATUS_NOT_FOUND);
+	if (_location->upload_dir.empty())
+		throw (STATUS_INTERNAL_ERR);
 
-std::string Response::get_filename()
-{
-	std::pair<Headers::const_iterator, Headers::const_iterator> content_disposition_it;
-	std::string filename;
+	Headers::const_iterator request_content_type_it = _request.headers.find(Headers::getTypeStr(HEADER_CONTENT_TYPE));
 
-	if (_request.headers.count("Content-Disposition") == 0)
+	if (request_content_type_it == _request.headers.end())
 		throw (STATUS_BAD_REQUEST);
-	content_disposition_it = _request.headers.equal_range("Content-Disposition");
-	for (Headers::const_iterator it = content_disposition_it.first; it != content_disposition_it.second; ++it)
-	{
-		const Parameters& parameters = it->second.getParameters();
-		Parameters::const_iterator filename_it = parameters.find("filename");
+	const std::string content_type = request_content_type_it->second.getValue();
 
-		if (filename_it == parameters.end() || filename_it->second.empty())
-			throw (STATUS_BAD_REQUEST);
-		filename = filename_it->second;
-	}
-	return (filename);
+	if (content_type != "multipart/form-data")
+		throw (STATUS_UNSUPPORTED_MEDIA_TYPE);
+	_handle_multipart_datas();
 }
 
-void Response::_upload_file()
+void Response::_upload_file(const std::string& file_path)
 {
 	if (_request.content_length == 0)
 		throw (STATUS_LENGTH_REQUIRED);
 
-	const std::string filename = get_filename();
-	std::string filepath;
-	if (_location && !_location->upload_dir.empty())
-		filepath = _location->upload_dir + "/" + filename;
-	else
-		filepath = _request.start_line.getUri().getPath();
-	std::ofstream file(filename.c_str());
+	std::ofstream file(file_path.c_str());
 
 	if (!file.is_open())
 		throw (STATUS_NOT_FOUND);
-	file << content;
+	file << _request.getMultipart()[0].getBody();
 	file.close();
 }
 
@@ -332,8 +349,7 @@ void Response::_handle_delete()
 		{
 			const std::string& uri = _request.start_line.getUri().getPath();
 
-			if (uri[uri.length() - 1] != '/')
-				start_line = StatusLine(STATUS_CONFLICT);
+			_delete_dir();
 			break ;
 		}
 		default:
@@ -343,24 +359,21 @@ void Response::_handle_delete()
 
 void Response::_delete_dir()
 {
-	if (access(_resource_path.c_str(), W_OK) != 0)
+	if (access(_resource_path.c_str(), W_OK) < 0)
 		throw (STATUS_FORBIDDEN);
 	const std::string command = "rm -rf " + _resource_path;
-	if (std::system(command.c_str()) == 0)
-	{
-		start_line = StatusLine(STATUS_NO_CONTENT);
-		headers.insert(SingleField("Content-Length", FieldValue("0")));
-	}
-	else
+	if (std::system(command.c_str()) != 0)
 		throw (STATUS_INTERNAL_ERR);
+	start_line = StatusLine(STATUS_NO_CONTENT);
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue("0")));
 }
 
 void Response::_delete_file()
 {
-	if (std::remove(_resource_path.c_str()) != 0)
+	if (std::remove(_resource_path.c_str()) < 0)
 		throw (STATUS_INTERNAL_ERR);
 	start_line = StatusLine(STATUS_NO_CONTENT);
-	headers.insert(SingleField("Content-Length", FieldValue("0")));
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue("0")));
 
 }
 
@@ -442,13 +455,13 @@ void Response::_handle_error(enum e_status_code status_code)
 	switch (status_code)
 	{
 		case STATUS_MOVED:
-			headers.insert(SingleField("Location", FieldValue(_resource_path + "/")));
-			headers.insert(SingleField("Content-Length", FieldValue("0")));
-			headers.insert(SingleField("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
+			headers.insert(SingleField(Headers::getTypeStr(HEADER_LOCATION), FieldValue(_resource_path + "/")));
+			headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue("0")));
+			headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
 			break ;
 		default:
-			headers.insert(SingleField("Content-Length", FieldValue(Utils::size_t_to_str(content_length))));
-			headers.insert(SingleField("Content-Type", FieldValue(MimeType::get_mime_type("html"))));
+			headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(content_length))));
+			headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
 	}
 }
 

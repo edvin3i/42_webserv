@@ -55,12 +55,12 @@ void BodyPart::_parse_body(const std::string &str)
 
 void BodyPart::_check_headers()
 {
-	if (_headers.count("Content-Disposition") != 1)
+	if (_headers.count(Headers::getTypeStr(HEADER_CONTENT_DISPOSITION)) != 1)
 		throw (STATUS_BAD_REQUEST);
-	const Parameters& parameters = _headers.find("Content-Disposition")->second.getParameters();
+	const Parameters& parameters = _headers.find(Headers::getTypeStr(HEADER_CONTENT_DISPOSITION))->second.getParameters();
 	if (parameters.count("name") != 1)
 		throw (STATUS_BAD_REQUEST);
-	const size_t nb_content_type = _headers.count("Content-Type");
+	const size_t nb_content_type = _headers.count(Headers::getTypeStr(HEADER_CONTENT_TYPE));
 
 	if (nb_content_type > 1)
 		throw (STATUS_BAD_REQUEST);
@@ -68,6 +68,16 @@ void BodyPart::_check_headers()
 	{
 		FieldValue field_value("text/plain");
 		field_value.addParameters("charset", "US-ASCII");
-		_headers.insert(SingleField("Content-Type", field_value));
+		_headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), field_value));
 	}
+}
+
+const Headers& BodyPart::getHeaders() const
+{
+	return (_headers);
+}
+
+const std::string& BodyPart::getBody() const
+{
+	return (_body);
 }

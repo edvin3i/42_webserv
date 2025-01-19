@@ -10,40 +10,53 @@ Response::Response(Logger & logger, const ServerConfig & conf, const LocationCon
 	if (_request.error())
 	{
 		_handle_error(_request.getErrorCode());
+		return ;
 	}
-	else
+	try
 	{
-		try
+		if (_is_redirect())
 		{
-			_check_method_allowed();
-			switch (_request.start_line.getMethod().getValue())
-			{
-				case METHOD_GET:
-					_check_resource();
-					_handle_get();
-					break ;
-				case METHOD_POST:
-					_handle_post();
-					break;
-				case METHOD_DELETE:
-					_check_resource();
-					_handle_delete();
-					break ;
-			}
-			// _check_resource();
-			// //_handle_cgi();
-			// _check_method();
+			_handle_redirect();
+			return ;
 		}
-		catch (enum e_status_code status_code)
+		_check_method_allowed();
+		switch (_request.start_line.getMethod().getValue())
 		{
-			_handle_error(status_code);
+			case METHOD_GET:
+				_check_resource();
+				_handle_get();
+				break ;
+			case METHOD_POST:
+				_handle_post();
+				break;
+			case METHOD_DELETE:
+				_check_resource();
+				_handle_delete();
+				break ;
 		}
+	}
+	catch (enum e_status_code status_code)
+	{
+		_handle_error(status_code);
 	}
 }
 
 
 Response::~Response()
 {}
+
+bool Response::_is_redirect() const
+{
+	return(_location && !_location->return_url.empty());
+}
+
+void Response::_handle_redirect()
+{
+	start_line = StatusLine(STATUS_MOVED);
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_LOCATION), FieldValue(_location->return_url)));
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue("0")));
+	content_length = 0;
+}
 
 void Response::_check_method_allowed()
 {
@@ -55,6 +68,7 @@ void Response::_check_method_allowed()
 			throw (STATUS_NOT_ALLOWED);
 	}
 }
+
 
 void Response::_check_location()
 {

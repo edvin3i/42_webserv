@@ -70,6 +70,8 @@ private:
 	void _check_method_allowed();
 	void _handle_multipart_datas();
 	void _handle_multipart_data(const BodyPart&, size_t&);
+	void _handle_redirect();
+	bool _is_redirect() const;
 
 	static const std::string _html_auto_index;
 	static const std::string _default_error_page_path;

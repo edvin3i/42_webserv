@@ -6,6 +6,8 @@
 #include <dirent.h>
 #include <algorithm>
 #include <unistd.h>
+# include <sys/wait.h>
+#include <cstdlib>
 
 #include "ErrorPages.hpp"
 #include "../Message.hpp"
@@ -23,6 +25,8 @@
 */
 
 
+extern char **environ;
+
 enum e_resource_type
 {
 	RT_FILE,
@@ -33,15 +37,16 @@ class Response : protected Message<StatusLine>
 {
 public:
 	Response(Logger & logger, const ServerConfig & conf, const LocationConfig  *location, const Request & request);
-	Response();
-	//Response(const Request&, const ServerConfig&, const LocationConfig*);
 	~Response();
-	Response(const Response & other);
-	Response &operator=(const Response & other);
-	// void _buildStatusLine(int code);
-	// void _addHeader(std::string key, std::string val);
 	std::string toHtml() const;
 	std::string toString() const;
+	const std::string& getResourcePath() const;
+	const Request& getRequest() const;
+	void content_append(const char *str, size_t n);
+	void content_length_add(size_t n);
+	void headers_insert(const SingleField&);
+	size_t getContentLength() const;
+	void setStatusLine(const StatusLine&);
 
 private:
 	Logger &_logger;
@@ -51,6 +56,15 @@ private:
 	std::string _str_content;
 	std::string _resource_path;
 	enum e_resource_type _resource_type;
+	bool _has_index_file;
+	std::string _index_file;
+	static const size_t _cgi_buffer_size;
+	char **_env;
+
+	Response();
+	Response(const Response & other);
+	Response &operator=(const Response & other);
+	void _copy_env();
 	void _check_location();
 	void _check_resource();
 	void _check_body_size(); // add body size check
@@ -61,8 +75,8 @@ private:
 	void _delete_dir();
 	void _handle_file(const std::string& filename);
 	void _handle_dir();
-	bool _is_dir_has_index_file();
-	void _check_auto_index();
+	// bool _is_dir_has_index_file();
+	bool _check_auto_index();
 	void _handle_auto_index();
 	void _upload_file(const std::string&);
 	void _handle_error(enum e_status_code);
@@ -71,7 +85,13 @@ private:
 	void _handle_multipart_datas();
 	void _handle_multipart_data(const BodyPart&, size_t&);
 	void _handle_redirect();
-	bool _is_redirect() const;
+	void _handle_cgi();
+	bool _check_cgi_extension() const;
+	void _setEnvironmentVariables();
+	void _readCgi(int fd);
+	void _buildCgiResponse(int fd);
+	bool _check_redirect() const;
+	void _check_index_file();
 
 	static const std::string _html_auto_index;
 	static const std::string _default_error_page_path;

@@ -4,8 +4,12 @@ const std::string Response::_html_auto_index = "<!DOCTYPE html><html lang=\"en\"
 
 const std::string Response::_default_error_page_path = "www/website/error_pages/default_error.html";
 
+const size_t Response::_cgi_buffer_size = 1024;
+
 Response::Response(Logger & logger, const ServerConfig & conf, const LocationConfig  *location, const Request & request)
-: _logger(logger), _request(request), _conf(conf), _location(location)
+: _logger(logger), _request(request), _conf(conf), _location(location),
+  _str_content(), _resource_path(), _resource_type(), _has_index_file(false),
+  _index_file(), _env(NULL)
 {
 	if (_request.error())
 	{
@@ -14,23 +18,28 @@ Response::Response(Logger & logger, const ServerConfig & conf, const LocationCon
 	}
 	try
 	{
-		if (_is_redirect())
+		if (_check_redirect())
 		{
 			_handle_redirect();
 			return ;
 		}
 		_check_method_allowed();
+		_check_resource();
+		if (_check_cgi_extension())
+		{
+			_copy_env();
+			_handle_cgi();
+			return ;
+		}
 		switch (_request.getStartLine().getMethod().getValue())
 		{
 			case METHOD_GET:
-				_check_resource();
 				_handle_get();
 				break ;
 			case METHOD_POST:
 				_handle_post();
 				break;
 			case METHOD_DELETE:
-				_check_resource();
 				_handle_delete();
 				break ;
 		}
@@ -43,9 +52,33 @@ Response::Response(Logger & logger, const ServerConfig & conf, const LocationCon
 
 
 Response::~Response()
-{}
+{
+	if (_env == NULL)
+		return ;
+	for (size_t i = 0; _env[i]; ++i)
+	{
+		delete _env[i];
+	}
+	delete _env;
+}
 
-bool Response::_is_redirect() const
+void Response::_copy_env()
+{
+	size_t env_size = 0;
+
+	for (size_t i = 0; environ[i]; ++i)
+		env_size += 1;
+
+	_env = new char*[env_size];
+	for (size_t i = 0; environ[i]; ++i)
+	{
+		size_t length = strlen(environ[i]);
+		_env[i] = new char[length];
+		memcpy(_env[i], environ[i], length);
+	}
+}
+
+bool Response::_check_redirect() const
 {
 	return(_location && !_location->return_url.empty());
 }
@@ -85,8 +118,11 @@ void Response::_check_resource()
 	std::string resource_path;
 	const std::string& uri_path = _request.getStartLine().getUri().getPath();
 
-//  antonin
-	// _resource_path = _conf.root + _request.getStartLine().getUri().getPath();
+	if (_request.getStartLine().getMethod().toString() == "POST")
+	{
+		if (!_location || _location->upload_dir.empty())
+			throw (STATUS_INTERNAL_ERR);
+	}
 	if (_location && !_location->path.empty())
 	{
 		if (!_location->root.empty())
@@ -110,6 +146,9 @@ void Response::_check_resource()
 		_logger.writeToLog(DEBUG, ss.str());
 		ss.str("");
 		_resource_type = RT_DIR;
+		if (_resource_path[_resource_path.length() - 1] != '/')
+			_resource_path.push_back('/');
+		_check_index_file();
 	}
 	else {
 		std::ostringstream ss; ss << "Resource is a file" << std::endl;
@@ -119,17 +158,128 @@ void Response::_check_resource()
 	}
 }
 
-// void Response::_check_method()
-// {
-// 	const std::string method = _request.getStartLine().getMethod();
+bool Response::_check_cgi_extension() const
+{
+	std::string filepath;
 
-// 	if (method == "GET")
-// 		_handle_get();
-// 	else if (method == "POST")
-// 		_handle_post();
-// 	else
-// 		_handle_delete();
-// }
+	switch (_resource_type)
+	{
+		case RT_FILE:
+			filepath = _resource_path;
+			break ;
+		case RT_DIR:
+			if (!_has_index_file)
+				return (false);
+			filepath = _resource_path + _index_file;
+			break ;
+		default:
+			throw (STATUS_INTERNAL_ERR);
+	}
+
+	if (!_location || _location->cgi_extension.empty())
+		return (false);
+
+	size_t dot_pos = filepath.find_last_of('.');
+
+	if (dot_pos == std::string::npos)
+		return (false);
+	if (filepath.substr(dot_pos) != _location->cgi_extension)
+		return (false);
+	return (true);
+}
+
+void Response::_setEnvironmentVariables()
+{
+	const Headers& request_headers = _request.getHeaders();
+
+	if (setenv("REQUEST_METHOD", _request.getStartLine().getMethod().toString().c_str(), 1) < 0)
+		throw (std::exception());
+
+	Headers::const_iterator content_type_it = request_headers.find(Headers::getTypeStr(HEADER_CONTENT_TYPE));
+
+	if (content_type_it != request_headers.end())
+		if (setenv("CONTENT_TYPE", content_type_it->second.getValue().c_str(), 1) < 0)
+			throw (std::exception());
+
+	Headers::const_iterator content_length_it = request_headers.find(Headers::getTypeStr(HEADER_CONTENT_LENGTH));
+
+	if (content_length_it != request_headers.end())
+		if (setenv("CONTENT_LENGTH", content_length_it->second.getValue().c_str(), 1) < 0)
+			throw (std::exception());
+
+	if (setenv("SCRIPT_NAME", _resource_path.c_str(), 1))
+		throw (std::exception());
+}
+
+void Response::_buildCgiResponse(int fd)
+{
+	_readCgi(fd);
+	start_line = StatusLine(STATUS_OK);
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(content_length))));
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
+}
+
+void Response::_readCgi(int fd)
+{
+	char buffer[_cgi_buffer_size];
+	ssize_t ret;
+
+	while (true)
+	{
+		ret = read(fd, buffer, sizeof(buffer));
+
+		if (ret < 0)
+			throw (std::exception());
+		if (ret == 0)
+			return ;
+		if (ret > 0)
+		{
+			content.append(buffer, ret);
+			content_length += ret;
+		}
+	}
+}
+
+void Response::_handle_cgi()
+{
+	if ( _location->cgi_path.empty())
+		throw (STATUS_INTERNAL_ERR);
+
+	int	fd[2];
+
+	pipe(fd);
+	int pid = fork();
+	if (pid < 0){
+		std::cerr << "Error: fork" << std::endl;
+		close(fd[1]);
+		close(fd[0]);
+		throw (STATUS_INTERNAL_ERR);
+		return ;
+	}
+	else if (pid == 0) {
+		try
+		{
+			_setEnvironmentVariables();
+		}
+		catch (...)
+		{
+			std::cerr << "Error: setenv\n" << std::endl;
+			exit (1);
+		}
+		dup2(fd[1], STDOUT_FILENO);
+		close(fd[1]);
+		close(fd[0]);
+		const char *arg[] = {_location->cgi_path.c_str(), _resource_path.c_str(), NULL};
+		execve(_location->cgi_path.c_str(), const_cast<char *const *>(arg), environ);
+		std::cerr << "Error: execve" << std::endl;
+		exit(1);} // autorised?
+	else {
+		close(fd[1]);
+		waitpid(pid, 0, 0);
+		_buildCgiResponse(fd[0]);
+		close(fd[0]);
+	}
+}
 
 void Response::_handle_get()
 {
@@ -193,35 +343,24 @@ void Response::_handle_file(const std::string& filepath)
 
 void Response::_handle_dir()
 {
-	// const std::string& uri = _request.getStartLine().getUri().getPath();
-	// if (uri[uri.length() - 1] != '/') {
-	// 	start_line = StatusLine(STATUS_MOVED);
-	// 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue("0")));
-	// 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
-	// 	headers.insert(SingleField(Headers::getTypeStr(HEADER_LOCATION), FieldValue(uri + "/")));
-	// 	return;
-	// }
 	std::string filepath;
 
-	if (_is_dir_has_index_file())
+	if (_has_index_file)
 	{
 		filepath.append(_resource_path);
-		if (_resource_path[_resource_path.length() - 1] != '/')
-			filepath.append("/");
-		filepath.append(_location->index);
+		filepath.append(_index_file);
 		_handle_file(filepath);
 	}
+	else if (_check_auto_index())
+		_handle_auto_index();
 	else
-	{
-		_check_auto_index();
-	}
+		throw (STATUS_FORBIDDEN);
 }
 
-bool Response::_is_dir_has_index_file()
+void Response::_check_index_file()
 {
 	DIR *dir = opendir(_resource_path.c_str());
 	struct dirent *file;
-	bool index_found = false;
 	std::string index_file;
 
 	if (_location && !_location->index.empty())
@@ -230,25 +369,48 @@ bool Response::_is_dir_has_index_file()
 		index_file = _conf.index;
 
 	if (!dir)
-		return (false);
+		return ;
 	while ((file = readdir(dir)))
 	{
 		if (strcmp(file->d_name, index_file.c_str()) == 0)
 		{
-			index_found = true;
+			_has_index_file = true;
 			break ;
 		}
 	}
+	_index_file = index_file;
 	closedir(dir);
-	return (index_found);
 }
 
-void Response::_check_auto_index()
+// bool Response::_is_dir_has_index_file()
+// {
+// 	DIR *dir = opendir(_resource_path.c_str());
+// 	struct dirent *file;
+// 	bool index_found = false;
+// 	std::string index_file;
+
+// 	if (_location && !_location->index.empty())
+// 		index_file = _location->index;
+// 	else
+// 		index_file = _conf.index;
+
+// 	if (!dir)
+// 		return (false);
+// 	while ((file = readdir(dir)))
+// 	{
+// 		if (strcmp(file->d_name, index_file.c_str()) == 0)
+// 		{
+// 			index_found = true;
+// 			break ;
+// 		}
+// 	}
+// 	closedir(dir);
+// 	return (index_found);
+// }
+
+bool Response::_check_auto_index()
 {
-	if (_location && _location->autoindex)
-		_handle_auto_index();
-	else
-		throw (STATUS_FORBIDDEN);
+	return (_location && _location->autoindex);
 }
 
 void Response::_handle_auto_index()
@@ -516,4 +678,40 @@ std::string Response::toString() const
 	// if (content_length > 0)
 		// ss << content;
 	return (ss.str());
+}
+
+
+const std::string& Response::getResourcePath() const
+{
+	return (_resource_path);
+}
+
+const Request& Response::getRequest() const
+{
+	return (_request);
+}
+
+void Response::content_append(const char *str, size_t n)
+{
+	content.append(str, n);
+}
+
+void Response::content_length_add(size_t n)
+{
+	content_length += n;
+}
+
+void Response::headers_insert(const SingleField& field)
+{
+	headers.insert(field);
+}
+
+size_t Response::getContentLength() const
+{
+	return (content_length);
+}
+
+void Response::setStatusLine(const StatusLine& status_line)
+{
+	start_line = status_line;
 }

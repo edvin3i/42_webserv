@@ -28,7 +28,7 @@ enum ConnectionState {
 
 class ClientConnection {
 public:
-	ClientConnection(Logger & logger, int socketFD, const ServerConfig & config);
+	ClientConnection(Logger & logger, int socketFD, const ServerConfig & config, char **env);
 	~ClientConnection();
 
 	ConnectionState getState() const;
@@ -45,7 +45,7 @@ public:
 	void select_location();
 
 
-
+	char **env;
 private:
 	Logger &_logger;
 	int _clientSocketFD;

@@ -14,7 +14,7 @@
 #define ERR_WRNG_NUM_ARGS "wrong number of args!"
 
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv, char **env) {
 
 	/*
 	* Zero step: init signal handler
@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
 	 * Fourth: Start Master Server with main loop
 	 */
 	std::vector<ServerConfig> configs = conf_parser.getConfig();
-	MasterServer masterServer(logger, configs);
+	MasterServer masterServer(logger, configs, env);
 
 	try {
 		masterServer.run();

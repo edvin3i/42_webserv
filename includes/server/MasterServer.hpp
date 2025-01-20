@@ -18,11 +18,12 @@ class Logger;
 
 class MasterServer {
 public:
-	MasterServer(Logger & logger, const std::vector<ServerConfig> & configs);
+	MasterServer(Logger & logger, const std::vector<ServerConfig> & configs, char **env);
 	~MasterServer();
 	void run();
 	void stop();
 
+	char **env;
 private:
 	Logger &_logger;
 

@@ -3,9 +3,10 @@
 
 const int TIMEOUT = 32;
 
-MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & configs)
+MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & configs, char **env)
 						: _logger(logger),
-						  _configs(configs) {
+						  _configs(configs),
+						  env(env) {
 
 	std::ostringstream oss;
 	oss << "MasterServer constructor called!\t";
@@ -91,8 +92,8 @@ void MasterServer::run() {
 						_clientsMap[new_socket] = new ClientConnection(
 																_logger,
 																client_fd.fd,
-																_serversMap[_fds[i].fd]->getConfig()
-																);
+																_serversMap[_fds[i].fd]->getConfig(),
+																env);
 
 
 					}

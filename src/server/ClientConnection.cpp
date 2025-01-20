@@ -3,7 +3,7 @@
 
 #include <iterator>
 
-ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerConfig & config)
+ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerConfig & config, char **env)
 									:	_logger(logger),
 										_clientSocketFD(socketFD),
 										_currentServerConfig(&config),
@@ -11,7 +11,8 @@ ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerCo
 										_writeOffset(0),
 										_currentClientBodySize(0),
 										_currentLocationConfig(NULL),
-										_request(NULL)
+										_request(NULL),
+										env(env)
 									{
 
 }

@@ -45,3 +45,14 @@ std::string Utils::str_trim(const std::string &str)
 }
 
 
+int Utils::stoi(const std::string& str)
+{
+	std::istringstream iss(str);
+	int value = 0;
+
+	iss >> value;
+
+	if (iss.fail() || !iss.eof())
+		throw (std::invalid_argument("Invalid argument"));
+	return (value);
+}

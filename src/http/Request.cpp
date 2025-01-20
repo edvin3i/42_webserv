@@ -12,6 +12,11 @@ Request::Request(Logger & logger, const std::string & str)
 		_error = true;
 		_error_code = error_code;
 	}
+	catch (...)
+	{
+		_error = true;
+		_error_code = STATUS_BAD_REQUEST;
+	}
 }
 
 Request::~Request() {}
@@ -42,6 +47,8 @@ void Request::_split_request(const std::string& str, std::string & request_line,
 		throw (STATUS_BAD_REQUEST);
 	request_line = str.substr(pos_start, pos_end - pos_start);
 	pos_start = pos_end + delimiter.length();
+	if (pos_start >= str.length())
+		throw (STATUS_BAD_REQUEST);
 	if (Utils::is_whitespace(str[pos_start]))
 		throw (STATUS_BAD_REQUEST); // reject message as invalid
 	while (1)

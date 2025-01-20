@@ -265,3 +265,8 @@ void ClientConnection::setRequest()
 {
 	_request = new Request(_logger, _readBuffer);
 }
+
+const Request* ClientConnection::getRequest() const
+{
+	return (_request);
+}

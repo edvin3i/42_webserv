@@ -39,6 +39,7 @@ public:
 	void readData();
 	void writeData();
 	void buildResponse();
+	const Request* getRequest() const;
 
 	void setRequest();
 	void select_location();

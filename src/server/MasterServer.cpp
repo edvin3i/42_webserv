@@ -118,7 +118,8 @@ void MasterServer::run() {
 						if (revents & POLLOUT) {
 
 							client->setRequest();
-							client->select_location();
+							if (!client->getRequest()->error())
+								client->select_location();
 							client->buildResponse();
 
 							// continue sending data until all data is sent

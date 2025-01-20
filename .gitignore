@@ -1,5 +1,7 @@
 .vscode/
 www/upload/
+cgi_tester
+tester
 
 # Prerequisites
 *.d

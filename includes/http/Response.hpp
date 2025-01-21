@@ -46,6 +46,14 @@ public:
 	size_t getContentLength() const;
 	void setStatusLine(const StatusLine&);
 
+public:
+	class ChildProcessException : public std::exception
+	{
+	public:
+		const char *what() const throw();
+		~ChildProcessException() throw();
+	};
+
 private:
 	Logger &_logger;
 	const Request &_request;

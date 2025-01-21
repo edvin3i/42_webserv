@@ -311,7 +311,9 @@ void Response::_execute_cgi()
 		const char *arg[] = {_location->cgi_path.c_str(), _resource_path.c_str(), NULL};
 		execve(_location->cgi_path.c_str(), const_cast<char *const *>(arg), env);
 		std::cerr << "Error: execve" << std::endl;
-		exit(EXIT_FAILURE);} // autorised?
+		Env::freeArray(env);
+		throw (ChildProcessException());
+	}
 	else
 	{
 		if (_request.getStartLine().getMethod().getValue() == METHOD_POST)
@@ -773,3 +775,11 @@ void Response::setStatusLine(const StatusLine& status_line)
 {
 	start_line = status_line;
 }
+
+const char *Response::ChildProcessException::what() const throw ()
+{
+	return ("Child Process Error");
+}
+
+Response::ChildProcessException::~ChildProcessException() throw()
+{}

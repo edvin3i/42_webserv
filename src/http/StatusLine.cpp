@@ -61,19 +61,22 @@ StatusLine& StatusLine::operator=(const StatusLine& other)
 std::string StatusLine::toHtml() const
 {
 	std::stringstream ss;
+	std::string message;
 
 	try
 	{
-		ss << _http_version;
-		ss << ' ';
-		ss << _status_code;
-		ss << ' ';
-		ss << _status_code_message.at(_status_code);
+		message = _status_code_message.at(_status_code);
 	}
-	catch (std::exception& e)
+	catch (const std::exception& e)
 	{
-		std::runtime_error("NOT IMPLEMENTED");
+		message = "No Message";
 	}
+
+	ss << _http_version;
+	ss << ' ';
+	ss << _status_code;
+	ss << ' ';
+	ss << message;
 	return (ss.str());
 }
 

@@ -68,11 +68,13 @@ void Env::freeArray(char **env)
 	size_t i;
 	for (i = 0; env[i]; ++i)
 	{
-		delete env[i];
+		std::cerr << "DEBUG env[i]: " << env[i] << '\n';
+		delete[] env[i];
 		env[i] = NULL;
 	}
+	std::cerr << "FIN DEBUG\n";
 	delete env[i];
 	env[i] = NULL;
-	delete env;
+	delete[] env;
 	env = NULL;
 }

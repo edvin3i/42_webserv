@@ -4,6 +4,7 @@
 #include <string>
 #include <map>
 #include <cstring>
+#include <iostream>
 
 class Env : protected std::map<std::string, std::string>
 {

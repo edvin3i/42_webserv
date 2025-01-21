@@ -62,7 +62,7 @@ int main(int argc, char **argv, char **env) {
 	catch (std::exception &e) {
 		std::cerr << BG_BRIGHT_RED << BRIGHT_WHITE << e.what() << RESET << std::endl;
 		delete &logger;
-		exit(EXIT_FAILURE);
+		return (EXIT_FAILURE);
 	}
 
 	// conf_parser.printConfig();
@@ -77,14 +77,22 @@ int main(int argc, char **argv, char **env) {
 	try {
 		masterServer.run();
 	}
+	catch (const Response::ChildProcessException& e)
+	{
+		return (EXIT_FAILURE);
+	}
 	catch (std::exception &e) {
 		std::cerr << BG_BRIGHT_RED << BRIGHT_WHITE << e.what() << RESET << std::endl;
 		delete &logger;
-		exit(EXIT_FAILURE);
+		return (EXIT_FAILURE);
+	}
+	catch (...)
+	{
+		return (EXIT_FAILURE);
 	}
 
 	delete &logger;
-	return (0);
+	return (EXIT_SUCCESS);
 }
 
 

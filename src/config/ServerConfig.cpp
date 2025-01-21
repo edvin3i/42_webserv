@@ -20,8 +20,6 @@ void ServerConfig::_init() {
 	error_pages[404] = "www/error_pages/404.html";
 	error_pages[500] = "www/error_pages/500.html";
 	error_pages[501] = "www/error_pages/501.html";
-
-
 }
 
 void ServerConfig::print_server_config() const{

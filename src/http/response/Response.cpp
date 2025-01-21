@@ -6,10 +6,10 @@ const std::string Response::_default_error_page_path = "www/website/error_pages/
 
 const size_t Response::_cgi_buffer_size = 1024;
 
-Response::Response(Logger & logger, const ServerConfig & conf, const LocationConfig  *location, const Request & request)
+Response::Response(Logger & logger, const ServerConfig & conf, const LocationConfig  *location, const Request & request, Env env)
 : _logger(logger), _request(request), _conf(conf), _location(location),
   _str_content(), _resource_path(), _resource_type(), _has_index_file(false),
-  _index_file(), _env(NULL)
+  _index_file(), _env(env)
 {
 	if (_request.error())
 	{
@@ -27,8 +27,7 @@ Response::Response(Logger & logger, const ServerConfig & conf, const LocationCon
 		_check_resource();
 		if (_check_cgi_extension())
 		{
-			_copy_env();
-			_handle_cgi();
+			_execute_cgi();
 			return ;
 		}
 		switch (_request.getStartLine().getMethod().getValue())
@@ -52,31 +51,7 @@ Response::Response(Logger & logger, const ServerConfig & conf, const LocationCon
 
 
 Response::~Response()
-{
-	if (_env == NULL)
-		return ;
-	for (size_t i = 0; _env[i]; ++i)
-	{
-		delete _env[i];
-	}
-	delete _env;
-}
-
-void Response::_copy_env()
-{
-	size_t env_size = 0;
-
-	for (size_t i = 0; environ[i]; ++i)
-		env_size += 1;
-
-	_env = new char*[env_size];
-	for (size_t i = 0; environ[i]; ++i)
-	{
-		size_t length = strlen(environ[i]);
-		_env[i] = new char[length];
-		memcpy(_env[i], environ[i], length);
-	}
-}
+{}
 
 bool Response::_check_redirect() const
 {
@@ -181,9 +156,9 @@ bool Response::_check_cgi_extension() const
 
 	size_t dot_pos = filepath.find_last_of('.');
 
-	if (dot_pos == std::string::npos)
+	if (dot_pos == std::string::npos || (dot_pos == filepath.length() - 1))
 		return (false);
-	if (filepath.substr(dot_pos) != _location->cgi_extension)
+	if (filepath.substr(dot_pos + 1) != _location->cgi_extension)
 		return (false);
 	return (true);
 }
@@ -192,34 +167,79 @@ void Response::_setEnvironmentVariables()
 {
 	const Headers& request_headers = _request.getHeaders();
 
-	if (setenv("REQUEST_METHOD", _request.getStartLine().getMethod().toString().c_str(), 1) < 0)
-		throw (std::exception());
+	_env.setEnv("REDIRECT_STATUS", "200");
+
+	_env.setEnv("REQUEST_METHOD", _request.getStartLine().getMethod().toString());
 
 	Headers::const_iterator content_type_it = request_headers.find(Headers::getTypeStr(HEADER_CONTENT_TYPE));
 
 	if (content_type_it != request_headers.end())
-		if (setenv("CONTENT_TYPE", content_type_it->second.getValue().c_str(), 1) < 0)
-			throw (std::exception());
+		_env.setEnv("CONTENT_TYPE", content_type_it->second.getValue());
+	else
+		_env.setEnv("CONTENT_TYPE", "");
 
 	Headers::const_iterator content_length_it = request_headers.find(Headers::getTypeStr(HEADER_CONTENT_LENGTH));
 
 	if (content_length_it != request_headers.end())
-		if (setenv("CONTENT_LENGTH", content_length_it->second.getValue().c_str(), 1) < 0)
-			throw (std::exception());
+		_env.setEnv("CONTENT_LENGTH", content_length_it->second.getValue());
+	else
+		_env.setEnv("CONTENT_LENGTH", "");
+	std::string filepath = _resource_path;
 
-	if (setenv("SCRIPT_NAME", _resource_path.c_str(), 1))
-		throw (std::exception());
+	if (_resource_type == RT_DIR && _has_index_file)
+		filepath.append(_index_file);
+
+	_env.setEnv("SCRIPT_FILENAME", filepath);
+
+	_env.setEnv("SERVER_PROTOCOL", "HTTP/1.1");
+
+	_env.setEnv("GATEWAY_INTERFACE", "CGI/1.1");
+
+	const std::string& query =_request.getStartLine().getUri().getQuery().c_str();
+
+	_env.setEnv("QUERY_STRING", query);
 }
 
-void Response::_buildCgiResponse(int fd)
+void Response::_buildCgiResponse(const std::string& cgi_output)
 {
-	_readCgi(fd);
+	std::string cgi_content;
+	Headers cgi_headers;
+	_parse_cgi(cgi_output, cgi_content, cgi_headers);
+	content = cgi_content;
+	content_length = cgi_content.length();
+
+	Headers::const_iterator content_type_it, content_length_it;
+
+	content_type_it = cgi_headers.find(Headers::getTypeStr(HEADER_CONTENT_TYPE));
+	content_length_it = cgi_headers.find(Headers::getTypeStr(HEADER_CONTENT_LENGTH));
+
+	if (content_type_it == cgi_headers.end())
+		throw (STATUS_INTERNAL_ERR);
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(content_type_it->second.getValue())));
+
+	if (content_length_it != cgi_headers.end())
+		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(content_length_it->second.getValue())));
+	else
+		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(content_length))));
 	start_line = StatusLine(STATUS_OK);
-	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(content_length))));
-	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
 }
 
-void Response::_readCgi(int fd)
+void Response::_parse_cgi(const std::string& cgi_output, std::string& cgi_content, Headers& cgi_headers)
+{
+	size_t header_end = cgi_output.find("\r\n\r\n");
+
+	if (header_end != std::string::npos)
+	{
+		std::vector<std::string> fields;
+		std::string cgi_headers_str = cgi_output.substr(0, header_end);
+		cgi_content = cgi_output.substr(header_end + 4);
+
+		fields = Utils::split(cgi_headers_str, "\r\n");
+		cgi_headers = Headers(fields);
+	}
+}
+
+void Response::_readCgi(int fd, std::string& str)
 {
 	char buffer[_cgi_buffer_size];
 	ssize_t ret;
@@ -229,23 +249,49 @@ void Response::_readCgi(int fd)
 		ret = read(fd, buffer, sizeof(buffer));
 
 		if (ret < 0)
-			throw (std::exception());
+			throw (STATUS_INTERNAL_ERR);
 		if (ret == 0)
 			return ;
 		if (ret > 0)
+			str.append(buffer, ret);
+	}
+}
+
+bool Response::_check_cgi_path() const
+{
+	struct stat file_stat;
+	if (_location->cgi_path.empty())
+		return (false);
+	if (stat(_location->cgi_path.c_str(), &file_stat) != 0)
+		return (false);
+	if (!S_ISREG(file_stat.st_mode))
+		return (false);
+	if (access(_location->cgi_path.c_str(), X_OK) != 0)
+		return (false);
+	return (true);
+}
+
+void Response::_sendCgi(int fd)
+{
+	if (!_request.getContent().empty())
+	{
+		ssize_t written = write(fd, _request.getContent().c_str(), _request.getContent().length());
+		if (written < 0)
 		{
-			content.append(buffer, ret);
-			content_length += ret;
+			close (fd);
+			throw (STATUS_INTERNAL_ERR);
 		}
 	}
 }
 
-void Response::_handle_cgi()
+void Response::_execute_cgi()
 {
-	if ( _location->cgi_path.empty())
+	if (!_check_cgi_path())
 		throw (STATUS_INTERNAL_ERR);
 
 	int	fd[2];
+	_setEnvironmentVariables();
+	char **env = _env.toArray();
 
 	pipe(fd);
 	int pid = fork();
@@ -256,29 +302,41 @@ void Response::_handle_cgi()
 		throw (STATUS_INTERNAL_ERR);
 		return ;
 	}
-	else if (pid == 0) {
-		try
-		{
-			_setEnvironmentVariables();
-		}
-		catch (...)
-		{
-			std::cerr << "Error: setenv\n" << std::endl;
-			exit (1);
-		}
+	else if (pid == 0)
+	{
 		dup2(fd[1], STDOUT_FILENO);
+		dup2(fd[0], STDIN_FILENO);
 		close(fd[1]);
 		close(fd[0]);
 		const char *arg[] = {_location->cgi_path.c_str(), _resource_path.c_str(), NULL};
-		execve(_location->cgi_path.c_str(), const_cast<char *const *>(arg), environ);
+		execve(_location->cgi_path.c_str(), const_cast<char *const *>(arg), env);
 		std::cerr << "Error: execve" << std::endl;
-		exit(1);} // autorised?
-	else {
+		exit(EXIT_FAILURE);} // autorised?
+	else
+	{
+		if (_request.getStartLine().getMethod().getValue() == METHOD_POST)
+			_sendCgi(fd[1]);
 		close(fd[1]);
-		waitpid(pid, 0, 0);
-		_buildCgiResponse(fd[0]);
+
+		int status;
+		waitpid(pid, &status, 0);
+		if (WIFEXITED(status))
+		{
+			int exit_code = WEXITSTATUS(status);
+			if (exit_code != 0)
+				throw (STATUS_INTERNAL_ERR);
+		}
+		else if (WIFSIGNALED(status))
+			throw (STATUS_INTERNAL_ERR);
+
+		std::string cgi_output;
+
+		_readCgi(fd[0], cgi_output);
 		close(fd[0]);
+
+		_buildCgiResponse(cgi_output);
 	}
+	Env::freeArray(env);
 }
 
 void Response::_handle_get()
@@ -374,11 +432,11 @@ void Response::_check_index_file()
 	{
 		if (strcmp(file->d_name, index_file.c_str()) == 0)
 		{
+			_index_file = index_file;
 			_has_index_file = true;
 			break ;
 		}
 	}
-	_index_file = index_file;
 	closedir(dir);
 }
 

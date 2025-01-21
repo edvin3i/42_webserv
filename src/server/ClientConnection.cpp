@@ -3,7 +3,7 @@
 
 #include <iterator>
 
-ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerConfig & config, char **env)
+ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerConfig & config, Env& env)
 									:	_logger(logger),
 										_clientSocketFD(socketFD),
 										_currentServerConfig(&config),
@@ -12,7 +12,7 @@ ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerCo
 										_currentClientBodySize(0),
 										_currentLocationConfig(NULL),
 										_request(NULL),
-										env(env)
+										_env(env)
 									{
 
 }
@@ -24,7 +24,7 @@ ClientConnection::~ClientConnection() {
 
 void ClientConnection::buildResponse() {
 
-	_response = new Response(_logger, *_currentServerConfig, _currentLocationConfig, *_request);
+	_response = new Response(_logger, *_currentServerConfig, _currentLocationConfig, *_request, _env);
 
 	std::stringstream ss;
 	ss << "RESPONSE:"<< '\n' << _response->toString();
@@ -173,8 +173,8 @@ bool ClientConnection::isReadyToWrite() {
 
 static size_t matching_prefix_depth(const std::string& location_path, const std::string& uri)
 {
-	std::vector<std::string> split_root = Utils::split(location_path, "/");
-	std::vector<std::string> split_uri = Utils::split(uri, "/");
+	std::vector<std::string> split_root = Utils::split_path(location_path);
+	std::vector<std::string> split_uri = Utils::split_path(uri);
 	bool uri_is_file = !(uri[uri.length() - 1] == '/');
 	if (uri_is_file)
 		split_uri.resize(split_uri.size() - 1);
@@ -186,6 +186,36 @@ static size_t matching_prefix_depth(const std::string& location_path, const std:
 	while (i < min_depth && (split_root[i] == split_uri[i]))
 		i += 1;
 	return (i);
+}
+
+static bool is_localhost(const std::string& str)
+{
+	return (str == "127.0.0.1" || str == "localhost");
+}
+
+void ClientConnection::select_server_config(const std::vector<ServerConfig>& configs)
+{
+	const ServerConfig *config_ptr = NULL;
+	bool host_equal, port_equal;
+
+	for (size_t i = 0; i < configs.size(); ++i)
+	{
+		host_equal = false;
+		port_equal = false;
+		if (is_localhost(configs[i].host) && is_localhost(_request->getHost()))
+			host_equal = true;
+		else if (configs[i].host == _request->getHost())
+			host_equal = true;
+		if (configs[i].port == _request->getPort())
+			port_equal = true;
+		if (host_equal && port_equal)
+			config_ptr = &configs[i];
+
+	}
+	if (config_ptr == NULL)
+		_currentServerConfig = &configs[0];
+	else
+		_currentServerConfig = config_ptr;
 }
 
 void ClientConnection::select_location()

@@ -12,6 +12,7 @@
 #include "../config/ServerConfig.hpp"
 #include "../http/response/Response.hpp"
 #include "../http/Utils.hpp"
+#include "../Env.hpp"
 
 
 const int BUFFER_SIZE = 8192;
@@ -28,7 +29,7 @@ enum ConnectionState {
 
 class ClientConnection {
 public:
-	ClientConnection(Logger & logger, int socketFD, const ServerConfig & config, char **env);
+	ClientConnection(Logger & logger, int socketFD, const ServerConfig & config, Env& env);
 	~ClientConnection();
 
 	ConnectionState getState() const;
@@ -43,9 +44,8 @@ public:
 
 	void setRequest();
 	void select_location();
+	void select_server_config(const std::vector<ServerConfig>&);
 
-
-	char **env;
 private:
 	Logger &_logger;
 	int _clientSocketFD;
@@ -57,6 +57,7 @@ private:
 	LocationConfig *_currentLocationConfig;
 	Request *_request;
 	Response *_response;
+	Env &_env;
 
 
 	std::string _readBuffer;

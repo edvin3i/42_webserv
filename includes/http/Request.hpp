@@ -31,6 +31,8 @@ public:
 	const Headers& getHeaders() const;
 	const std::string& getContent() const;
 	size_t getContentLength() const;
+	std::string getHost() const;
+	int getPort() const;
 
 private:
 	Logger &_logger;
@@ -38,6 +40,8 @@ private:
 	enum e_status_code _error_code;
 	bool _error;
 	std::vector<BodyPart> _multipart;
+	std::string _host;
+	int _port;
 
 	void _parse(const std::string&);
 	void _check_headers();

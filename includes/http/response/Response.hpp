@@ -17,15 +17,13 @@
 #include "../MimeType.hpp"
 #include "../../logger/Logger.hpp"
 #include "../../../includes/config/ServerConfig.hpp"
+#include "../../Env.hpp"
 
 /*
 	Response class is a base class for all response classes (CGIResponse, StaticResponse, etc.)
 	It contains all the common methods and fields for all response classes
 	Specific response class chooses at the ResponseBuilder class (factory)
 */
-
-
-extern char **environ;
 
 enum e_resource_type
 {
@@ -36,7 +34,7 @@ enum e_resource_type
 class Response : protected Message<StatusLine>
 {
 public:
-	Response(Logger & logger, const ServerConfig & conf, const LocationConfig  *location, const Request & request);
+	Response(Logger & logger, const ServerConfig & conf, const LocationConfig  *location, const Request & request, Env env);
 	~Response();
 	std::string toHtml() const;
 	std::string toString() const;
@@ -59,12 +57,11 @@ private:
 	bool _has_index_file;
 	std::string _index_file;
 	static const size_t _cgi_buffer_size;
-	char **_env;
+	Env _env;
 
 	Response();
 	Response(const Response & other);
 	Response &operator=(const Response & other);
-	void _copy_env();
 	void _check_location();
 	void _check_resource();
 	void _check_body_size(); // add body size check
@@ -85,11 +82,14 @@ private:
 	void _handle_multipart_datas();
 	void _handle_multipart_data(const BodyPart&, size_t&);
 	void _handle_redirect();
-	void _handle_cgi();
+	void _execute_cgi();
 	bool _check_cgi_extension() const;
+	bool _check_cgi_path() const;
+	void _parse_cgi(const std::string&, std::string& cgi_content, Headers& cgi_headers);
 	void _setEnvironmentVariables();
-	void _readCgi(int fd);
-	void _buildCgiResponse(int fd);
+	void _readCgi(int fd, std::string&);
+	void _sendCgi(int fd);
+	void _buildCgiResponse(const std::string&);
 	bool _check_redirect() const;
 	void _check_index_file();
 

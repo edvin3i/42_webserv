@@ -6,7 +6,7 @@ const int TIMEOUT = 32;
 MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & configs, char **env)
 						: _logger(logger),
 						  _configs(configs),
-						  env(env) {
+						  _env(env) {
 
 	std::ostringstream oss;
 	oss << "MasterServer constructor called!\t";
@@ -93,8 +93,7 @@ void MasterServer::run() {
 																_logger,
 																client_fd.fd,
 																_serversMap[_fds[i].fd]->getConfig(),
-																env);
-
+																_env);
 
 					}
 				}
@@ -120,7 +119,10 @@ void MasterServer::run() {
 
 							client->setRequest();
 							if (!client->getRequest()->error())
+							{
+								client->select_server_config(_configs);
 								client->select_location();
+							}
 							client->buildResponse();
 
 							// continue sending data until all data is sent

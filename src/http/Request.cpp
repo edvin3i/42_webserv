@@ -1,7 +1,7 @@
 #include "../../includes/http/Request.hpp"
 
 Request::Request(Logger & logger, const std::string & str)
-: _logger(logger), Message<RequestLine>(), _error(false), _error_code(STATUS_OK)
+: _logger(logger), Message<RequestLine>(), _error(false), _error_code(STATUS_OK), _host(), _port(0)
 {
 	try
 	{
@@ -22,7 +22,7 @@ Request::Request(Logger & logger, const std::string & str)
 Request::~Request() {}
 
 Request::Request(const Request & other)
-: Message<RequestLine>(other), _logger(other._logger), _error(other._error), _error_code(other._error_code)
+: Message<RequestLine>(other), _logger(other._logger), _error(other._error), _error_code(other._error_code), _host(other._host), _port(other._port)
 {}
 
 Request& Request::operator=(const Request & other)
@@ -32,6 +32,9 @@ Request& Request::operator=(const Request & other)
 		Message<RequestLine>::operator=(other);
 		_error = other._error;
 		_error_code = other._error_code;
+		_multipart = other._multipart;
+		_host = other._host;
+		_port = other._port;
 	}
 	return (*this);
 }
@@ -82,8 +85,7 @@ void Request::_parse(const std::string & str)
 
 void Request::_check_headers()
 {
-	//respond with 400 when request message contains more than one Host header field line or a Host header field with an invalid field value
-	if (headers.count(Headers::getTypeStr(HEADER_HOST)) != 1)
+	 	if (headers.count(Headers::getTypeStr(HEADER_HOST)) != 1)
 		throw (STATUS_BAD_REQUEST);
 	const std::string& authority = start_line.getUri().getAuthority();
 	if (!authority.empty())
@@ -91,6 +93,26 @@ void Request::_check_headers()
 		Headers::iterator host_it = headers.find(Headers::getTypeStr(HEADER_HOST));
 		host_it->second = authority;
 	}
+
+	Headers::iterator host_it = headers.find(Headers::getTypeStr(HEADER_HOST));
+	std::string host_field_value = host_it->second.getValue();
+	std::string port_str;
+
+	size_t colon_pos = host_field_value.find(':');
+
+	if (colon_pos != host_field_value.length() && host_field_value.find(':', colon_pos + 1) != std::string::npos)
+		throw (STATUS_BAD_REQUEST);
+	_host = host_field_value.substr(0, colon_pos);
+	try
+	{
+		port_str = host_field_value.substr(colon_pos + 1);
+		_port = Utils::stoi(port_str);
+	}
+	catch (const std::exception& e)
+	{
+		throw (STATUS_BAD_REQUEST);
+	}
+
 }
 
 void Request::_decode_chunked(const std::string & str)
@@ -317,4 +339,14 @@ const std::string& Request::getContent() const
 size_t Request::getContentLength() const
 {
 	return (content_length);
+}
+
+std::string Request::getHost() const
+{
+	return (_host);
+}
+
+int Request::getPort() const
+{
+	return (_port);
 }

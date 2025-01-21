@@ -10,6 +10,7 @@
 #include "ClientConnection.hpp"
 #include "../logger/Logger.hpp"
 #include "../http/MimeType.hpp"
+#include "../Env.hpp"
 
 class ServerConfig;
 class TcpServer;
@@ -23,12 +24,13 @@ public:
 	void run();
 	void stop();
 
-	char **env;
 private:
+
 	Logger &_logger;
 
 	std::vector<ServerConfig> _configs;
 	std::vector<TcpServer *> _servers;
+	Env _env;
 
 	std::vector<pollfd> _fds;
 	std::map<int, TcpServer *> _serversMap; // socket_fd->TcpServer

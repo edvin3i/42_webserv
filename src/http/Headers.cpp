@@ -9,11 +9,11 @@ void Headers::_init()
 	if (is_init)
 		return ;
 	_type_to_str.resize(NB_HEADER_TYPE);
-	_type_to_str[HEADER_CONTENT_TYPE] = "Content-Type";
-	_type_to_str[HEADER_CONTENT_LENGTH] = "Content-Length";
-	_type_to_str[HEADER_LOCATION] = "Location";
-	_type_to_str[HEADER_HOST] = "Host";
-	_type_to_str[HEADER_CONTENT_DISPOSITION] = "Content-Disposition";
+	_type_to_str[HEADER_CONTENT_TYPE] = "content-type";
+	_type_to_str[HEADER_CONTENT_LENGTH] = "content-length";
+	_type_to_str[HEADER_LOCATION] = "location";
+	_type_to_str[HEADER_HOST] = "host";
+	_type_to_str[HEADER_CONTENT_DISPOSITION] = "content-disposition";
 }
 
 std::string Headers::getTypeStr(HeaderType type)

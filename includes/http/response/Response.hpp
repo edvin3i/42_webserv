@@ -9,7 +9,7 @@
 # include <sys/wait.h>
 #include <cstdlib>
 
-#include "ErrorPages.hpp"
+// #include "ErrorPages.hpp"
 #include "../Message.hpp"
 #include "../StatusLine.hpp"
 #include "../Utils.hpp"

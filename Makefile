@@ -21,9 +21,7 @@ MFLS        =   config/ConfigParser.cpp config/ServerConfig.cpp config/LocationC
 				http/Request.cpp http/RequestLine.cpp http/StatusLine.cpp http/MimeType.cpp \
 				http/FieldValue.cpp http/Utils.cpp http/Uri.cpp http/Method.cpp http/Message.cpp \
 				http/Field.cpp http/Headers.cpp http/BodyPart.cpp Env.cpp \
-				http/response/Response.cpp http/response/ResponseBuilder.cpp \
-				http/response/CGIResponse.cpp http/response/StaticResponse.cpp \
-				http/response/ErrorPages.cpp \
+				http/response/Response.cpp \
 				logger/Logger.cpp \
 				signals/signals.cpp \
 				main.cpp

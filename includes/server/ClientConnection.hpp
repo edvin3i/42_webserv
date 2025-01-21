@@ -10,8 +10,8 @@
 #include <algorithm>
 #include "../logger/Logger.hpp"
 #include "../config/ServerConfig.hpp"
-#include "../http/response/Response.hpp"
-#include "../http/Utils.hpp"
+#include "../http/Response.hpp"
+#include "../Utils.hpp"
 #include "../Env.hpp"
 
 

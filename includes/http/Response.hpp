@@ -10,14 +10,14 @@
 #include <cstdlib>
 
 // #include "ErrorPages.hpp"
-#include "../Message.hpp"
-#include "../StatusLine.hpp"
-#include "../Utils.hpp"
-#include "../Request.hpp"
-#include "../MimeType.hpp"
-#include "../../logger/Logger.hpp"
-#include "../../../includes/config/ServerConfig.hpp"
-#include "../../Env.hpp"
+#include "Message.hpp"
+#include "StatusLine.hpp"
+#include "Utils.hpp"
+#include "Request.hpp"
+#include "MimeType.hpp"
+#include "../logger/Logger.hpp"
+#include "../../includes/config/ServerConfig.hpp"
+#include "../Env.hpp"
 
 /*
 	Response class is a base class for all response classes (CGIResponse, StaticResponse, etc.)

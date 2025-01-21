@@ -19,9 +19,9 @@ OBJDIR      =   .obj/
 MFLS        =   config/ConfigParser.cpp config/ServerConfig.cpp config/LocationConfig.cpp \
 				server/MasterServer.cpp server/ClientConnection.cpp server/TcpServer.cpp \
 				http/Request.cpp http/RequestLine.cpp http/StatusLine.cpp http/MimeType.cpp \
-				http/FieldValue.cpp http/Utils.cpp http/Uri.cpp http/Method.cpp http/Message.cpp \
+				http/FieldValue.cpp Utils.cpp http/Uri.cpp http/Method.cpp http/Message.cpp \
 				http/Field.cpp http/Headers.cpp http/BodyPart.cpp Env.cpp \
-				http/response/Response.cpp \
+				http/Response.cpp \
 				logger/Logger.cpp \
 				signals/signals.cpp \
 				main.cpp

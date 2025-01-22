@@ -16,6 +16,7 @@ public:
 	static std::vector<std::string> split(const std::string& str, const std::string& delimiter);
 	static std::string size_t_to_str(size_t n);
 	static int stoi(const std::string&);
+	static unsigned long stoul(const std::string& str);
 	static std::string str_trim(const std::string &str);
 	static std::string to_lowercase(const std::string& str);
 	template <class InputIt, class UnaryPred> static bool all_of(InputIt first, InputIt last, UnaryPred p);

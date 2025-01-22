@@ -163,7 +163,7 @@ bool Response::_check_cgi_extension() const
 	return (true);
 }
 
-void Response::_setEnvironmentVariables()
+void Response::_setEnvironmentVariables(const std::string& script_filename)
 {
 	const Headers& request_headers = _request.getHeaders();
 
@@ -184,12 +184,17 @@ void Response::_setEnvironmentVariables()
 		_env.setEnv("CONTENT_LENGTH", content_length_it->second.getValue());
 	else
 		_env.setEnv("CONTENT_LENGTH", "");
-	std::string filepath = _resource_path;
+	// std::string filepath;
 
-	if (_resource_type == RT_DIR && _has_index_file)
-		filepath.append(_index_file);
+	// // if (_resource_path[0] != '/')
+	// // 	filepath.append("/");
+	// filepath.append(_resource_path);
+	// if (_resource_type == RT_DIR && _has_index_file)
+	// 	filepath.append(_index_file);
 
-	_env.setEnv("SCRIPT_FILENAME", filepath);
+
+	_env.setEnv("SCRIPT_FILENAME", script_filename);
+	_env.setEnv("PATH_INFO", "");
 
 	_env.setEnv("SERVER_PROTOCOL", "HTTP/1.1");
 
@@ -205,23 +210,29 @@ void Response::_buildCgiResponse(const std::string& cgi_output)
 	std::string cgi_content;
 	Headers cgi_headers;
 	_parse_cgi(cgi_output, cgi_content, cgi_headers);
-	content = cgi_content;
-	content_length = cgi_content.length();
 
 	Headers::const_iterator content_type_it, content_length_it;
 
 	content_type_it = cgi_headers.find(Headers::getTypeStr(HEADER_CONTENT_TYPE));
 	content_length_it = cgi_headers.find(Headers::getTypeStr(HEADER_CONTENT_LENGTH));
 
+
 	if (content_type_it == cgi_headers.end())
 		throw (STATUS_INTERNAL_ERR);
 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(content_type_it->second.getValue())));
 
 	if (content_length_it != cgi_headers.end())
+	{
+		content_length = Utils::stoul(content_length_it->second.getValue());
 		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(content_length_it->second.getValue())));
+	}
 	else
+	{
+		content_length = cgi_content.length();
 		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(content_length))));
+	}
 	start_line = StatusLine(STATUS_OK);
+	content = cgi_content.substr(0, content_length);
 }
 
 void Response::_parse_cgi(const std::string& cgi_output, std::string& cgi_content, Headers& cgi_headers)
@@ -290,7 +301,20 @@ void Response::_execute_cgi()
 		throw (STATUS_INTERNAL_ERR);
 
 	int	fd[2];
-	_setEnvironmentVariables();
+
+	std::string path = _resource_path;
+
+	if (_has_index_file)
+			path.append(_index_file);
+	size_t pos = path.find_last_of('/');
+	std::string script_directory;
+
+	if (pos == 0)
+		script_directory = "/";
+	else
+		script_directory = path.substr(0, pos);
+	std::string script_file = path.substr(pos + 1);
+	_setEnvironmentVariables(script_file);
 	char **env = _env.toArray();
 
 	pipe(fd);
@@ -308,7 +332,13 @@ void Response::_execute_cgi()
 		dup2(fd[0], STDIN_FILENO);
 		close(fd[1]);
 		close(fd[0]);
-		const char *arg[] = {_location->cgi_path.c_str(), _resource_path.c_str(), NULL};
+
+		if (chdir(script_directory.c_str()) < 0)
+		{
+			Env::freeArray(env);
+			throw (ChildProcessException());
+		}
+		const char *arg[] = {script_file.c_str(), NULL};
 		execve(_location->cgi_path.c_str(), const_cast<char *const *>(arg), env);
 		std::cerr << "Error: execve" << std::endl;
 		Env::freeArray(env);

@@ -94,7 +94,7 @@ private:
 	bool _check_cgi_extension() const;
 	bool _check_cgi_path() const;
 	void _parse_cgi(const std::string&, std::string& cgi_content, Headers& cgi_headers);
-	void _setEnvironmentVariables();
+	void _setEnvironmentVariables(const std::string& script);
 	void _readCgi(int fd, std::string&);
 	void _sendCgi(int fd);
 	void _buildCgiResponse(const std::string&);

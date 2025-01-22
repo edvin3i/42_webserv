@@ -35,6 +35,8 @@ private:
 	std::vector<pollfd> _fds;
 	std::map<int, TcpServer *> _serversMap; // socket_fd->TcpServer
 	std::map<int, ClientConnection *> _clientsMap; // socket-fd->ClientConnection
+
+	void _free();
 };
 
 

@@ -72,16 +72,16 @@ int main(int argc, char **argv, char **env) {
 	 * Fourth: Start Master Server with main loop
 	 */
 	std::vector<ServerConfig> configs = conf_parser.getConfig();
-	MasterServer masterServer(logger, configs, env);
 
 	try {
+		MasterServer masterServer(logger, configs, env);
 		masterServer.run();
 	}
 	catch (const Response::ChildProcessException& e)
 	{
 		return (EXIT_FAILURE);
 	}
-	catch (std::exception &e) {
+	catch (const std::exception &e) {
 		std::cerr << BG_BRIGHT_RED << BRIGHT_WHITE << e.what() << RESET << std::endl;
 		delete &logger;
 		return (EXIT_FAILURE);

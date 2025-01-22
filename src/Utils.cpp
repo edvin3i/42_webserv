@@ -77,6 +77,17 @@ int Utils::stoi(const std::string& str)
 	return (value);
 }
 
+unsigned long Utils::stoul(const std::string& str)
+{
+	std::istringstream iss(str);
+	unsigned long value = 0;
+
+	iss >> value;
+	if (iss.fail() || !iss.eof())
+		throw (std::invalid_argument("Invalid argument"));
+	return (value);
+}
+
 std::string Utils::to_lowercase(const std::string& str)
 {
 	std::string result(str);

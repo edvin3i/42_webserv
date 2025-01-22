@@ -78,6 +78,7 @@ private:
 	void _delete_dir();
 	void _handle_file(const std::string& filename);
 	void _handle_dir();
+	void _handle_text_plain();
 	bool _check_auto_index();
 	void _handle_auto_index();
 	void _upload_file(const std::string&);

@@ -582,8 +582,29 @@ void Response::_handle_post()
 	{
 		_handle_form();
 	}
+	else if (content_type == "plain/text")
+	{
+		_handle_text_plain();
+	}
 	else
 		throw (STATUS_UNSUPPORTED_MEDIA_TYPE);
+}
+
+void Response::_handle_text_plain()
+{
+	body.addContent("<!DOCTOTYPE html>");
+	body.addContent("<html>");
+	body.addContent("<title>Text from a POST</title>");
+	body.addContent("</head>");
+	body.addContent("<body>");
+	body.addContent("<h1>Text from a Post</h1>");
+	body.addContent("<p>"+ _request.getBody().getContent() + "</p>");
+	body.addContent("</body>");
+	body.addContent("</html>");
+	start_line = StatusLine(STATUS_OK);
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(body.getContent().length()))));
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
+	body.setContentLength(body.getContent().length());
 }
 
 int Response::_hex_char_to_int(char c)

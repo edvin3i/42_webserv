@@ -206,6 +206,9 @@ void Response::_setEnvironmentVariables(const std::string& script_filename)
 	_env.setEnv("PATH_INFO", _extra_path);
 	_env.setEnv("SERVER_PROTOCOL", "HTTP/1.1");
 	_env.setEnv("GATEWAY_INTERFACE", "CGI/1.1");
+	_env.setEnv("SERVER_NAME", "localhost");
+	_env.setEnv("SERVER_PORT", Utils::NumberToString(_conf.port));
+	_env.setEnv("SERVER_SOFTWARE", "Webserv/1.0");
 
 	const std::string& query =_request.getStartLine().getUri().getQuery().c_str();
 

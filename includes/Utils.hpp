@@ -21,6 +21,7 @@ public:
 	static std::string to_lowercase(const std::string& str);
 	template <class InputIt, class UnaryPred> static bool all_of(InputIt first, InputIt last, UnaryPred p);
 	template <class InputIt, class UnaryPred> static InputIt find_if_not(InputIt first, InputIt last, UnaryPred q);
+	template <class T> static std::string NumberToString(T Number);
 private:
 	Utils();
 	~Utils();
@@ -41,6 +42,14 @@ template <class InputIt, class UnaryPred>
 bool Utils::all_of(InputIt first, InputIt last, UnaryPred p)
 {
 	return (Utils::find_if_not(first, last, p) == last);
+}
+
+template <class T>
+std::string Utils::NumberToString(T n)
+{
+	std::ostringstream ss;
+	ss << n;
+	return (ss.str());
 }
 
 #endif

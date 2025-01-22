@@ -1,7 +1,7 @@
 #include "../../includes/http/BodyPart.hpp"
 
 BodyPart::BodyPart(const std::string& body)
-: _body(), _headers()
+: _headers(), _body()
 {
 	_parse_body(body);
 }
@@ -9,7 +9,7 @@ BodyPart::BodyPart(const std::string& body)
 BodyPart::~BodyPart() {}
 
 BodyPart::BodyPart(const BodyPart& other)
-: _body(other._body), _headers(other._headers)
+: _headers(other._headers), _body(other._body)
 {}
 
 BodyPart& BodyPart::operator=(const BodyPart& other)

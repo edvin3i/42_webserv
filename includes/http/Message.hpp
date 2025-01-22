@@ -4,15 +4,25 @@
 #include <string>
 #include <map>
 #include <vector>
+#include "../../includes/http/RequestLine.hpp"
+#include "../../includes/http/StatusLine.hpp"
 #include "FieldValue.hpp"
 #include "Headers.hpp"
+#include "Body.hpp"
 
-template<class StartLine> struct Message
+class Body;
+
+template<class StartLine> class Message
 {
+public:
+	Message();
+	~Message();
+	Message(const Message&);
+	Message& operator=(const Message&);
+public:
 	StartLine start_line;
 	Headers headers;
-	std::string content;
-	size_t content_length;
+	Body body;
 };
 
 #endif

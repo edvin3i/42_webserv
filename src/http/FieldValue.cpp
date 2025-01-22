@@ -179,59 +179,13 @@ void FieldValue::_parse_parameters(const std::string& str)
 			default:
 				if (_parse_state == STATE_PARAM_NAME)
 					name.push_back(str[i]);
-				else if (_parse_state = STATE_PARAM_VALUE)
+				else if (_parse_state == STATE_PARAM_VALUE)
 					value.push_back(str[i]);
 				i += 1;
 		}
 	}
 	_parameters[name] = value;
 }
-
-// FieldValue::FieldValue(const std::string& str)
-// : _value(), _parameters()
-// {
-// 	std::string name, value;
-// 	enum parse_state _parse_state = STATE_PARAM_NAME;
-// 	size_t i = 0;
-// 	while (i < str.length())
-// 	{
-// 		switch (str[i])
-// 		{
-// 			case ' ': case '\t':
-// 				while (i < str.length() && Utils::is_whitespace(str[i]))
-// 					i += 1;
-// 				if (name.empty() && value.empty())
-// 					continue ;
-// 				else if ((str[i] == ';' || i == str.length()) && !name.empty() && !value.empty())
-// 					continue ;
-// 				else
-// 					throw (STATUS_BAD_REQUEST);
-// 				break ;
-// 			case ';':
-// 				if (_parse_state == STATE_PARAM_NAME || name.empty() || value.empty())
-// 					throw (STATUS_BAD_REQUEST);
-// 				_parameters[name] = value;
-// 				name.clear();
-// 				value.clear();
-// 				_parse_state = STATE_PARAM_NAME;
-// 				i += 1;
-// 				break ;
-// 			case '=':
-// 				if (_parse_state == STATE_PARAM_VALUE || name.empty())
-// 					throw (STATUS_BAD_REQUEST);
-// 				_parse_state = STATE_PARAM_VALUE;
-// 				i += 1;
-// 				break ;
-// 			default:
-// 				if (_parse_state == STATE_PARAM_NAME)
-// 					name.push_back(str[i]);
-// 				else if (_parse_state = STATE_PARAM_VALUE)
-// 					value.push_back(str[i]);
-// 				i += 1;
-// 		}
-// 	}
-// 	_parameters[name] = value;
-// }
 
 FieldValue::~FieldValue()
 {}

@@ -14,7 +14,7 @@
 #define ERR_WRNG_NUM_ARGS "wrong number of args!"
 
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv, char **env) {
 
 	/*
 	* Zero step: init signal handler
@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
 	catch (std::exception &e) {
 		std::cerr << BG_BRIGHT_RED << BRIGHT_WHITE << e.what() << RESET << std::endl;
 		delete &logger;
-		exit(EXIT_FAILURE);
+		return (EXIT_FAILURE);
 	}
 
 	// conf_parser.printConfig();
@@ -72,19 +72,27 @@ int main(int argc, char **argv) {
 	 * Fourth: Start Master Server with main loop
 	 */
 	std::vector<ServerConfig> configs = conf_parser.getConfig();
-	MasterServer masterServer(logger, configs);
 
 	try {
+		MasterServer masterServer(logger, configs, env);
 		masterServer.run();
 	}
-	catch (std::exception &e) {
+	catch (const Response::ChildProcessException& e)
+	{
+		return (EXIT_FAILURE);
+	}
+	catch (const std::exception &e) {
 		std::cerr << BG_BRIGHT_RED << BRIGHT_WHITE << e.what() << RESET << std::endl;
 		delete &logger;
-		exit(EXIT_FAILURE);
+		return (EXIT_FAILURE);
+	}
+	catch (...)
+	{
+		return (EXIT_FAILURE);
 	}
 
 	delete &logger;
-	return (0);
+	return (EXIT_SUCCESS);
 }
 
 

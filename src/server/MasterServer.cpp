@@ -3,55 +3,65 @@
 
 const int TIMEOUT = 32;
 
-MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & configs)
-						: _logger(logger),
-						  _configs(configs) {
+MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & configs, char **env)
+						: _logger(logger), _configs(configs), _servers(), _env(env), _fds(), _serversMap(), _clientsMap() {
 
-	std::ostringstream oss;
-	oss << "MasterServer constructor called!\t";
-	oss << "Size of configs: " << _configs.size() << "\n";
-	MimeType::init_mime_type();
-	_logger.writeToLog(DEBUG, oss.str());
+	try
+	{
+		std::ostringstream oss;
+		oss << "MasterServer constructor called!\t";
+		oss << "Size of configs: " << _configs.size() << "\n";
+		MimeType::init_mime_type();
+		_logger.writeToLog(DEBUG, oss.str());
 
-	_fds.reserve(_configs.size());
-	_servers.reserve(_configs.size());
+		_fds.reserve(_configs.size());
+		_servers.reserve(_configs.size());
 
-	// Creating new TcpServer instances in the 'for' loop
-	for (size_t i = 0; i < _configs.size(); ++i) {
-		_servers.push_back(
-				new TcpServer(
-						logger,
-						_configs[i])
-						);
+		// Creating new TcpServer instances in the 'for' loop
+		for (size_t i = 0; i < _configs.size(); ++i) {
+			TcpServer *new_server = new TcpServer(logger, _configs[i]);
+			_servers.push_back(new_server);
 
-		_servers.back()->startServer();
+			_servers.back()->startServer();
 
-		std::ostringstream ss;
-		ss << "Created server number: " << i;
-		_logger.writeToLog(DEBUG, ss.str());
+			std::ostringstream ss;
+			ss << "Created server number: " << i;
+			_logger.writeToLog(DEBUG, ss.str());
 
-		// Creating new pollfd element and setup it
-		pollfd server_fd;
-		server_fd.fd = _servers.back()->getSrvSocket();
-		server_fd.events = POLLIN;
-		server_fd.revents = 0;
+			// Creating new pollfd element and setup it
+			pollfd server_fd;
+			server_fd.fd = _servers.back()->getSrvSocket();
+			server_fd.events = POLLIN;
+			server_fd.revents = 0;
 
-		// Adding the new element to list of pollfds
-		_fds.push_back(server_fd);
+			// Adding the new element to list of pollfds
+			_fds.push_back(server_fd);
 
-		// Adding new server instance to the map of servers
-		_serversMap[server_fd.fd] = _servers.back();
+			// Adding new server instance to the map of servers
+			_serversMap[server_fd.fd] = _servers.back();
 
-		// Set the server to listen mode
-		_servers.back()->startListen();
+			// Set the server to listen mode
+			_servers.back()->startListen();
+		}
+
+		std::ostringstream os;
+		os << "Size of _fds = " << _fds.size();
+		_logger.writeToLog(DEBUG, os.str());
 	}
-
-	std::ostringstream os;
-	os << "Size of _fds = " << _fds.size();
-	_logger.writeToLog(DEBUG, os.str());
+	catch (const std::exception& e)
+	{
+		_free();
+		throw (std::runtime_error(e.what()));
+	}
 }
 
-MasterServer::~MasterServer() {
+MasterServer::~MasterServer()
+{
+	_free();
+}
+
+void MasterServer::_free()
+{
 	for (size_t i = 0; i < _servers.size(); ++i) {
 		delete _servers[i];
 	}
@@ -91,9 +101,8 @@ void MasterServer::run() {
 						_clientsMap[new_socket] = new ClientConnection(
 																_logger,
 																client_fd.fd,
-																_serversMap[_fds[i].fd]->getConfig()
-																);
-
+																_serversMap[_fds[i].fd]->getConfig(),
+																_env);
 
 					}
 				}
@@ -118,7 +127,11 @@ void MasterServer::run() {
 						if (revents & POLLOUT) {
 
 							client->setRequest();
-							client->select_location();
+							if (!client->getRequest()->error())
+							{
+								client->select_server_config(_configs);
+								client->select_location();
+							}
 							client->buildResponse();
 
 							// continue sending data until all data is sent

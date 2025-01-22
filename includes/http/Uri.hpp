@@ -31,6 +31,7 @@ private:
 	std::string _authority;
 	std::string _path;
 	std::string _query;
+	static const size_t _max_uri_length;
 };
 
 #endif

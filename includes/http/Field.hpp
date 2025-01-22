@@ -10,7 +10,6 @@ public:
 	Field();
 	Field(const std::string& str);
 	Field(const std::string& name, const std::vector<FieldValue>& values);
-	Field(const std::string&, const FieldValue&);
 	~Field();
 	Field(const Field& other);
 	Field& operator=(const Field& other);

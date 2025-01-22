@@ -33,13 +33,14 @@ Field& Field::operator=(const Field& other)
 
 void Field::_parse_field(const std::string &str)
 {
-	std::string field_value, field_value_trim;
+	std::string field_name, field_value, field_value_trim;
 	size_t colon_pos;
 
 	if (str.length() > _max_field_length)
 		throw (STATUS_BAD_REQUEST);
 	colon_pos = str.find(':');
-	first = str.substr(0, colon_pos);
+	field_name = str.substr(0, colon_pos);
+	first = Utils::to_lowercase(field_name);
 	if (first.empty() || Utils::all_of(first.begin(), first.end(), Utils::is_whitespace))
 		throw (STATUS_BAD_REQUEST);
 	field_value = str.substr(colon_pos + 1);

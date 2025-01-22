@@ -1,19 +1,4 @@
--3. Request Line -> A server that receives a request-target onger than any URI it wishes to parse MUST respond with a 414
--3.2 A server MUST respond with a 400 status code to any HTTP/1.1 request message that lacks a Host header field
--3.3 Reconstructing the Target URI (maybe after the parsing)
--5.1 Field Line Parsing -> Parse content of every field line (not necessary)
--5.2 Handle obsolete line folding
--6.1 -> A server or client that receives an HTTP/1.0 message containing a Transfer-Encoding field MUST treat the message
--6.3 -> 5. If a message is received with an invalid Content-Length then the message must treat as an unrecoverable error and respond with a 400 ...
--6.3 -> 6. If the sender closes the connection the server must consider the message to be incomplete and close the connection
 -8. -> Check if the zero-sized chunk has been received or if the message body received is equal to the content-length
 
-RFC 9110, 5.6.5 Comments
-RFC 9110, 5.6.6 Parameters
-
-RFC 9110, 5.6.4 quoted-pair ?
-
 handle bad stringstream input
-maybe http/1.0 request should be supported
 
-Peut on savoir si on recoit une connection securise

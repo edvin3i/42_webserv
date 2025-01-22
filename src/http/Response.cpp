@@ -9,7 +9,7 @@ const size_t Response::_cgi_buffer_size = 1024;
 Response::Response(Logger & logger, const ServerConfig & conf, const LocationConfig  *location, const Request & request, Env env)
 : Message<StatusLine>(), _logger(logger), _request(request), _conf(conf), _location(location),
   _str_content(), _resource_path(), _resource_type(), _has_index_file(false),
-  _index_file(), _env(env), _extra_path()
+  _index_file(), _extra_path(), _env(env)
 {
 	if (_request.error())
 	{
@@ -18,6 +18,7 @@ Response::Response(Logger & logger, const ServerConfig & conf, const LocationCon
 	}
 	try
 	{
+		_check_body_size();
 		if (_check_redirect())
 		{
 			_handle_redirect();
@@ -42,6 +43,8 @@ Response::Response(Logger & logger, const ServerConfig & conf, const LocationCon
 			case METHOD_DELETE:
 				_handle_delete();
 				break ;
+			default:
+				throw (STATUS_INTERNAL_ERR);
 		}
 	}
 	catch (enum e_status_code status_code)
@@ -85,11 +88,6 @@ void Response::_check_resource()
 	std::string resource_path;
 	const std::string& uri_path = _request.getStartLine().getUri().getPath();
 
-	if (_request.getStartLine().getMethod().toString() == "POST")
-	{
-		if (!_location || _location->upload_dir.empty())
-			throw (STATUS_INTERNAL_ERR);
-	}
 	if (_location && !_location->path.empty())
 	{
 		if (!_location->root.empty())
@@ -418,8 +416,6 @@ void Response::_handle_file(const std::string& filepath)
 {
 	std::ifstream file(filepath.c_str(), std::ios::binary);
 	std::stringstream file_content;
-	// std::string file_length_str;
-	// std::string file_extension;
 
 	if (!file.is_open())
 		throw (STATUS_INTERNAL_ERR);
@@ -435,9 +431,6 @@ void Response::_handle_file(const std::string& filepath)
 	start_line = StatusLine(STATUS_OK);
 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(file_content.str().length()))));
 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(_filename_to_mime_type(filepath))));
-
-  // 	headers.insert(Field(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(size_t_to_str(file_size))));
-  // 	headers.insert(Field(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(_filename_to_mime_type(filename))));
 	body.setContent(file_content.str());
 	body.setContentLength(file_size);
 }
@@ -482,32 +475,6 @@ void Response::_check_index_file()
 	}
 	closedir(dir);
 }
-
-// bool Response::_is_dir_has_index_file()
-// {
-// 	DIR *dir = opendir(_resource_path.c_str());
-// 	struct dirent *file;
-// 	bool index_found = false;
-// 	std::string index_file;
-
-// 	if (_location && !_location->index.empty())
-// 		index_file = _location->index;
-// 	else
-// 		index_file = _conf.index;
-
-// 	if (!dir)
-// 		return (false);
-// 	while ((file = readdir(dir)))
-// 	{
-// 		if (strcmp(file->d_name, index_file.c_str()) == 0)
-// 		{
-// 			index_found = true;
-// 			break ;
-// 		}
-// 	}
-// 	closedir(dir);
-// 	return (index_found);
-// }
 
 bool Response::_check_auto_index()
 {
@@ -559,7 +526,7 @@ void Response::_check_body_size() {
 
 void Response::_handle_multipart_datas()
 {
-	const std::vector<BodyPart>& multipart = _request.getMultipart();
+	const std::vector<BodyPart>& multipart = _request.getBody().getMultipart();
 
 	if (multipart.empty())
 		throw (STATUS_BAD_REQUEST);
@@ -596,11 +563,6 @@ void Response::_handle_multipart_data(const BodyPart& body_part, size_t& count)
 
 void Response::_handle_post()
 {
-	if (!_location)
-		throw (STATUS_NOT_FOUND);
-	if (_location->upload_dir.empty())
-		throw (STATUS_INTERNAL_ERR);
-
 	const Headers& request_headers = _request.getHeaders();
 	Headers::const_iterator request_content_type_it = request_headers.find(Headers::getTypeStr(HEADER_CONTENT_TYPE));
 
@@ -608,9 +570,105 @@ void Response::_handle_post()
 		throw (STATUS_BAD_REQUEST);
 	const std::string content_type = request_content_type_it->second.getValue();
 
-	if (content_type != "multipart/form-data")
+	if (content_type == "multipart/form-data")
+	{
+		if (!_location)
+			throw (STATUS_NOT_FOUND);
+		if (_location->upload_dir.empty())
+			throw (STATUS_INTERNAL_ERR);
+		_handle_multipart_datas();
+	}
+	else if (content_type == "application/x-www-form-urlencoded")
+	{
+		_handle_form();
+	}
+	else
 		throw (STATUS_UNSUPPORTED_MEDIA_TYPE);
-	_handle_multipart_datas();
+}
+
+int Response::_hex_char_to_int(char c)
+{
+	if (c >= '0' && c <= '9')
+		return (c - '0');
+	else if (c >= 'a' && c <= 'f')
+		return (c - 'a' + 10);
+	else if (c >= 'A' && c <= 'F')
+		return (c - 'A' + 10);
+	throw (std::invalid_argument("Invalid hex character"));
+}
+
+std::string Response::url_decode_twice(const std::string& str)
+{
+	return (url_decode(url_decode(str)));
+}
+
+std::string Response::url_decode(const std::string& str)
+{
+	std::string res;
+
+	for (size_t i = 0; i < str.length(); ++i)
+	{
+		if (str[i] == '%' && (i + 2) < str.length() &&
+		std::isxdigit(static_cast<unsigned char>(str[i + 1])) &&
+		std::isxdigit(static_cast<unsigned char>(str[i + 2])))
+		{
+			int first = _hex_char_to_int(str[i + 1]);
+			int second = _hex_char_to_int(str[i + 2]);
+			char decoded_char = static_cast<char>((first << 4) | second);
+			res.push_back(decoded_char);
+			i += 2;
+		}
+		else if (str[i] == '+')
+		{
+			res.push_back(' ');
+		}
+		else
+		{
+			res.push_back(str[i]);
+		}
+	}
+	return (res);
+}
+
+void Response::_handle_form()
+{
+	std::vector<std::pair<std::string, std::string> > db;
+	std::istringstream ss(_request.getBody().getContent());
+	std::string pair;
+
+	try
+	{
+		while (std::getline(ss, pair, '&'))
+		{
+			size_t pos_equal = pair.find('=');
+			if (pos_equal == std::string::npos)
+				throw (std::runtime_error("Missing ="));
+
+			std::string key = url_decode_twice(pair.substr(0, pos_equal));
+			std::string value = url_decode_twice(pair.substr(pos_equal + 1));
+
+			db.push_back(std::make_pair(key, value));
+		}
+	}
+	catch (const std::exception& e)
+	{
+		throw (STATUS_BAD_REQUEST);
+	}
+
+	body.addContent("<!DOCTOTYPE html>");
+	body.addContent("<html>");
+	body.addContent("<title>Form result</title>");
+	body.addContent("</head>");
+	body.addContent("<body>");
+	body.addContent("<h1>Form result</h1>");
+	for (size_t i = 0; i < db.size(); ++i)
+		body.addContent("<p>"+ db[i].first + " = " + db[i].second + "</p>");
+	body.addContent("</body>");
+	body.addContent("</html>");
+	start_line = StatusLine(STATUS_OK);
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(body.getContent().length()))));
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
+	body.setContentLength(body.getContent().length());
 }
 
 void Response::_upload_file(const std::string& file_path)
@@ -622,7 +680,7 @@ void Response::_upload_file(const std::string& file_path)
 
 	if (!file.is_open())
 		throw (STATUS_NOT_FOUND);
-	file << _request.getMultipart()[0].getBody();
+	file << _request.getBody().getMultipart()[0].getBody();
 	file.close();
 }
 
@@ -635,8 +693,6 @@ void Response::_handle_delete()
 			break ;
 		case RT_DIR:
 		{
-			const std::string& uri = _request.getStartLine().getUri().getPath();
-
 			_delete_dir();
 			break ;
 		}
@@ -667,39 +723,6 @@ void Response::_delete_file()
 
 void Response::_handle_default_error(enum e_status_code status_code)
 {
-	// std::ifstream file(_default_error_page_path.c_str(), std::ios::binary);
-	// const std::string status_tag = "[STATUS]";
-	// std::string line;
-
-	// if (!file.is_open())
-	// 	throw (std::runtime_error("default error file error"));
-	// while (getline(file, line))
-	// {
-	// 	while (true)
-	// 	{
-	// 		size_t pos = line.find(status_tag);
-	// 		if (pos != std::string::npos)
-	// 		{
-	// 			size_t parameter_pos = pos + status_tag.length();
-	// 			char parameter = line[parameter_pos];
-
-	// 			switch (parameter)
-	// 			{
-	// 				case 'C':
-	// 					line.replace(pos, status_tag.length() + 1, Utils::size_t_to_str(status_code));
-	// 					break;
-	// 				case 'M':
-	// 					line.replace(pos, status_tag.length() + 1, StatusLine::_status_code_message[status_code]);
-	// 					break;
-	// 				default:
-	// 					throw (std::runtime_error("default error file compromised"));
-	// 			}
-	// 		}
-	// 		else
-	// 			break;
-	// 	}
-	// 	content.append(line);
-	// }
 	std::stringstream ss;
 
 	ss << "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>";
@@ -741,17 +764,6 @@ void Response::_handle_error(enum e_status_code status_code)
 		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(body.getContentLength()))));
 		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
 	}
-// 	switch (status_code)
-// 	{
-// 		// case STATUS_MOVED:
-// 		// 	headers.insert(SingleField(Headers::getTypeStr(HEADER_LOCATION), FieldValue(_resource_path + "/")));
-// 		// 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue("0")));
-// 		// 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
-// 		// 	break ;
-// 		// default:
-// 			headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(content_length))));
-// 			headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
-// 	}
 }
 
 std::string Response::toHtml() const
@@ -791,25 +803,10 @@ const Request& Response::getRequest() const
 	return (_request);
 }
 
-// void Response::content_append(const char *str, size_t n)
-// {
-// 	body.addContent(str, n);
-// }
-
-// void Response::content_length_add(size_t n)
-// {
-// 	content_length += n;
-// }
-
 void Response::headers_insert(const SingleField& field)
 {
 	headers.insert(field);
 }
-
-// size_t Response::getContentLength() const
-// {
-// 	return (content_length);
-// }
 
 void Response::setStatusLine(const StatusLine& status_line)
 {

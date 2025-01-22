@@ -20,7 +20,7 @@ public:
 	const std::string& getContent() const;
 	size_t getContentLength() const;
 	bool is_mutlipart() const;
-	const std::vector<BodyPart>& getMutltipart() const;
+	const std::vector<BodyPart>& getMultipart() const;
 	void setContent(const std::string& content);
 	void setContentLength(size_t n);
 	void addContent(const std::string& str);

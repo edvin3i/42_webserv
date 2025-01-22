@@ -1,15 +1,15 @@
 #include "../../includes/http/Body.hpp"
 
 Body::Body()
-: _content(), _content_length(0), _is_multipart(false), _multipart(), _is_content_length(false), _is_chunked(false)
+: _is_content_length(false), _is_chunked(false), _content(), _content_length(0), _is_multipart(false), _multipart()
 {}
 
 Body::Body(const std::string& str)
-: _content(str), _content_length(str.length()), _is_multipart(false), _multipart(), _is_content_length(true), _is_chunked(false)
+: _is_content_length(true), _is_chunked(false), _content(str), _content_length(str.length()), _is_multipart(false), _multipart()
 {}
 
 Body::Body(const std::string& str, const Headers& headers)
-: _content(), _content_length(0), _is_multipart(false), _multipart(), _is_content_length(false), _is_chunked(false)
+: _is_content_length(false), _is_chunked(false), _content(), _content_length(0), _is_multipart(false), _multipart()
 {
 	_parse_body(str, headers);
 	_handle_multipart(headers);
@@ -40,12 +40,6 @@ Body& Body::operator=(const Body& other)
 	return (*this);
 }
 
-static void _read_size_t(const std::string & str, size_t & n)
-{
-	std::stringstream sstream(str);
-	sstream >> n;
-}
-
 void Body::_setContentLength(const Headers& headers)
 {
 	std::pair<Headers::const_iterator, Headers::const_iterator> content_length_it = headers.equal_range(Headers::getTypeStr(HEADER_CONTENT_LENGTH));
@@ -53,22 +47,23 @@ void Body::_setContentLength(const Headers& headers)
 
 	switch (nb_content_length)
 	{
-		case '0':
+		case 0:
 			_content_length = 0;
 			_is_content_length = false;
 			break;
-		case '1':
-			_read_size_t(headers.find(Headers::getTypeStr(HEADER_CONTENT_LENGTH))->second.getValue(), _content_length);
+		case 1:
+			_content_length = Utils::stoul(headers.find(Headers::getTypeStr(HEADER_CONTENT_LENGTH))->second.getValue());
 			_is_content_length = true;
 			break ;
 		default:
 			size_t tmp;
 			Headers::const_iterator it = content_length_it.first;
-				_read_size_t(it->second.getValue(), _content_length);
+
+			_content_length = Utils::stoul(it->second.getValue());
 			it++;
 			while (it != content_length_it.second)
 			{
-				_read_size_t(it->second.getValue(), tmp);
+				tmp = Utils::stoul(it->second.getValue());
 				if (tmp != _content_length)
 					throw (STATUS_LENGTH_REQUIRED);
 				it++;
@@ -85,10 +80,10 @@ void Body::_check_chunked(const Headers& headers)
 
 	switch (nb_encoding)
 	{
-		case '0':
+		case 0:
 			_is_chunked = false;
 			break ;
-		case '1':
+		case 1:
 			if (transfer_encoding_it->second.getValue() == "chunked")
 				_is_chunked = true;
 			else
@@ -104,15 +99,25 @@ void Body::_parse_body(const std::string& str, const Headers& headers)
 {
 	if (str.empty())
 		return ;
-	_setContentLength(headers);
+	try
+	{
+		_setContentLength(headers);
+	}
+	catch (const std::exception& e)
+	{
+		throw (STATUS_BAD_REQUEST);
+	}
 	_check_chunked(headers);
 
-	if (_is_chunked && _is_content_length)
-		throw (STATUS_BAD_REQUEST);
-	if (_is_content_length)
-		_content = str.substr(0, _content_length);
-	else if (_is_chunked)
+	if (_is_chunked)
 		_decode_chunked(str);
+	else if (_is_content_length)
+	{
+		_content = str.substr(0, _content_length);
+		if (_content.length() < _content_length)
+			throw (STATUS_BAD_REQUEST);
+	}
+
 }
 
 void Body::_decode_chunked(const std::string& str)
@@ -122,6 +127,8 @@ void Body::_decode_chunked(const std::string& str)
 	std::istringstream sstream(str);
 
 	sstream >> std::hex >> chunk_size;
+	if (!sstream)
+		throw (STATUS_BAD_REQUEST);
 	sstream.ignore(1, '\r');
 	sstream.ignore(1, '\n');
 	while (chunk_size > 0)
@@ -135,6 +142,8 @@ void Body::_decode_chunked(const std::string& str)
 		delete[] chunk_data;
 		length += chunk_size;
 		sstream >> std::hex >> chunk_size;
+		if (!sstream)
+			throw (STATUS_BAD_REQUEST);
 		sstream.ignore(1, '\r');
 		sstream.ignore(1, '\n');
 	}
@@ -153,7 +162,6 @@ void Body::_skip_newline(const std::string& str, size_t& i)
 void Body::_handle_multipart(const Headers& headers)
 {
 	size_t nb_content_type = headers.count(Headers::getTypeStr(HEADER_CONTENT_TYPE));
-	static size_t test = 0;
 
 	if (nb_content_type == 0)
 	{
@@ -223,7 +231,7 @@ bool Body::is_mutlipart() const
 	return (_is_multipart);
 }
 
-const std::vector<BodyPart>& Body::getMutltipart() const
+const std::vector<BodyPart>& Body::getMultipart() const
 {
 	return (_multipart);
 }

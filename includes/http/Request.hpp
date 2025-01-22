@@ -23,10 +23,8 @@ public:
 	Request &operator=(const Request & other);
 
 	void print() const;
-	// std::pair<Headers::iterator, Headers::iterator> getFieldValue(const std::string&);
 	bool error() const;
 	enum e_status_code getErrorCode() const;
-	const std::vector<BodyPart>& getMultipart() const;
 	const RequestLine& getStartLine() const;
 	const Headers& getHeaders() const;
 	const Body& getBody() const;
@@ -38,17 +36,12 @@ private:
 	Request();
 	enum e_status_code _error_code;
 	bool _error;
-	std::vector<BodyPart> _multipart;
 	std::string _host;
 	int _port;
 
 	void _parse(const std::string&);
 	void _check_headers();
-	// void _parse_body(const std::string & str);
 	void _split_request(const std::string& str, std::string & request_line, std::vector<std::string> & headers_line, std::string & body);
-	// void _decode_chunked(const std::string & str);
-	// void _handle_multipart();
-	// void _skip_newline(size_t& i);
 
 };
 

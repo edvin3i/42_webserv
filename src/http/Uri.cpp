@@ -1,11 +1,15 @@
 #include "../../includes/http/Uri.hpp"
 
+const size_t Uri::_max_uri_length = 2048;
+
 Uri::Uri()
 : _scheme(), _authority(), _path(), _query()
 {}
 
 Uri::Uri(const std::string& str)
 {
+	if (str.length() > _max_uri_length)
+		throw (STATUS_URI_TOO_LONG);
 	_parse_uri(str);
 }
 

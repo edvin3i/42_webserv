@@ -9,7 +9,6 @@
 # include <sys/wait.h>
 #include <cstdlib>
 
-// #include "ErrorPages.hpp"
 #include "Message.hpp"
 #include "StatusLine.hpp"
 #include "Utils.hpp"
@@ -79,7 +78,6 @@ private:
 	void _delete_dir();
 	void _handle_file(const std::string& filename);
 	void _handle_dir();
-	// bool _is_dir_has_index_file();
 	bool _check_auto_index();
 	void _handle_auto_index();
 	void _upload_file(const std::string&);
@@ -88,6 +86,10 @@ private:
 	void _check_method_allowed();
 	void _handle_multipart_datas();
 	void _handle_multipart_data(const BodyPart&, size_t&);
+	void _handle_form();
+	static int _hex_char_to_int(char c);
+	static std::string url_decode(const std::string& str);
+	static std::string url_decode_twice(const std::string& str);
 	void _handle_redirect();
 	void _execute_cgi();
 	void _check_cgi_extension();

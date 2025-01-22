@@ -24,6 +24,7 @@ void LocationConfig::printLocConfig() const {
 	std::ostringstream ss;
 	ss << "\n===================== LOCATION =======================\n";
 	ss << "Path: " << path << "\n";
+	ss << "Exact match: " << std::boolalpha << exact_match << "\n";
 	ss << "Autoindex: " << autoindex << "\n";
 	ss << "Root Directory: " << root << "\n";
 	ss << "Index Filename: " << index << "\n";

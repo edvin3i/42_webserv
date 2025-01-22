@@ -186,11 +186,19 @@ void ClientConnection::select_location()
 	_logger.writeToLog(DEBUG, ss.str());
 
 
-
 	if (locations.empty()) {
 		_currentLocationConfig = NULL;
 		_logger.writeToLog(DEBUG, "No locations found in server config");
 		return;
+	}
+
+	for (std::map<std::string, LocationConfig>::const_iterator it = locations.begin(); it != locations.end(); ++it)
+	{
+		if (it->second.exact_match && it->first == _request->getStartLine().getUri().getPath())
+		{
+			_currentLocationConfig = const_cast<LocationConfig*>(&(it->second));
+			return ;
+		}
 	}
 
 	// First check if this is a root path request
@@ -209,7 +217,8 @@ void ClientConnection::select_location()
 	{
 		if (it->first == "/")
 			continue;
-
+		if (it->second.exact_match)
+			continue;
 
 		depth = matching_prefix_depth(it->first, _request->getStartLine().getUri().getPath());
 		ss.str("");

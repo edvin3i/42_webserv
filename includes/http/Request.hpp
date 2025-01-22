@@ -29,8 +29,7 @@ public:
 	const std::vector<BodyPart>& getMultipart() const;
 	const RequestLine& getStartLine() const;
 	const Headers& getHeaders() const;
-	const std::string& getContent() const;
-	size_t getContentLength() const;
+	const Body& getBody() const;
 	std::string getHost() const;
 	int getPort() const;
 
@@ -45,11 +44,11 @@ private:
 
 	void _parse(const std::string&);
 	void _check_headers();
-	void _parse_body(const std::string & str);
+	// void _parse_body(const std::string & str);
 	void _split_request(const std::string& str, std::string & request_line, std::vector<std::string> & headers_line, std::string & body);
-	void _decode_chunked(const std::string & str);
-	void _handle_multipart();
-	void _skip_newline(size_t& i);
+	// void _decode_chunked(const std::string & str);
+	// void _handle_multipart();
+	// void _skip_newline(size_t& i);
 
 };
 

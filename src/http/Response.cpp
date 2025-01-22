@@ -7,7 +7,7 @@ const std::string Response::_default_error_page_path = "www/website/error_pages/
 const size_t Response::_cgi_buffer_size = 1024;
 
 Response::Response(Logger & logger, const ServerConfig & conf, const LocationConfig  *location, const Request & request, Env env)
-: _logger(logger), _request(request), _conf(conf), _location(location),
+: Message<StatusLine>(), _logger(logger), _request(request), _conf(conf), _location(location),
   _str_content(), _resource_path(), _resource_type(), _has_index_file(false),
   _index_file(), _env(env)
 {
@@ -63,7 +63,7 @@ void Response::_handle_redirect()
 	start_line = StatusLine(STATUS_MOVED);
 	headers.insert(SingleField(Headers::getTypeStr(HEADER_LOCATION), FieldValue(_location->return_url)));
 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue("0")));
-	content_length = 0;
+	body.setContentLength(0);
 }
 
 void Response::_check_method_allowed()
@@ -223,16 +223,16 @@ void Response::_buildCgiResponse(const std::string& cgi_output)
 
 	if (content_length_it != cgi_headers.end())
 	{
-		content_length = Utils::stoul(content_length_it->second.getValue());
+		body.setContentLength(Utils::stoul(content_length_it->second.getValue()));
 		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(content_length_it->second.getValue())));
 	}
 	else
 	{
-		content_length = cgi_content.length();
-		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(content_length))));
+		body.setContentLength(cgi_content.length());
+		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(body.getContentLength()))));
 	}
 	start_line = StatusLine(STATUS_OK);
-	content = cgi_content.substr(0, content_length);
+	body.setContent(cgi_content.substr(0, body.getContentLength()));
 }
 
 void Response::_parse_cgi(const std::string& cgi_output, std::string& cgi_content, Headers& cgi_headers)
@@ -284,9 +284,10 @@ bool Response::_check_cgi_path() const
 
 void Response::_sendCgi(int fd)
 {
-	if (!_request.getContent().empty())
+	const std::string& request_content = _request.getBody().getContent();
+	if (!request_content.empty())
 	{
-		ssize_t written = write(fd, _request.getContent().c_str(), _request.getContent().length());
+		ssize_t written = write(fd, request_content.c_str(), request_content.length());
 		if (written < 0)
 		{
 			close (fd);
@@ -427,8 +428,8 @@ void Response::_handle_file(const std::string& filepath)
 
   // 	headers.insert(Field(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(size_t_to_str(file_size))));
   // 	headers.insert(Field(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(_filename_to_mime_type(filename))));
-	content = file_content.str();
-	content_length = file_size;
+	body.setContent(file_content.str());
+	body.setContentLength(file_size);
 }
 
 void Response::_handle_dir()
@@ -510,36 +511,36 @@ void Response::_handle_auto_index()
 
 	if (!dir)
 		throw (STATUS_INTERNAL_ERR);
-	content.append(_html_auto_index);
+	body.addContent(_html_auto_index);
 	while ((file = readdir(dir)))
 	{
 		std::string filename(file->d_name);
 		if (filename != "." && filename != "..") {
-			content.append("<li><a href=\"");
-			content.append(_request.getStartLine().getUri().getPath());
+			body.addContent("<li><a href=\"");
+			body.addContent(_request.getStartLine().getUri().getPath());
 			const std::string& path = _request.getStartLine().getUri().getPath();
 			if (!path.empty() && path[path.length() - 1] != '/')
-				content.append("/");
-			content.append(filename);
-			content.append("\">");
-			content.append(filename);
-			content.append("</a></li>");
+				body.addContent("/");
+			body.addContent(filename);
+			body.addContent("\">");
+			body.addContent(filename);
+			body.addContent("</a></li>");
 		}
 	}
-	content.append("</ul></body></html>");
+	body.addContent("</ul></body></html>");
 	closedir(dir);
 
 	start_line = StatusLine(STATUS_OK);
-	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(content.length()))));
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(body.getContent().length()))));
 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
-	content_length = content.length();
+	body.setContentLength(body.getContent().length());
 }
 
 void Response::_check_body_size() {
 	// if request has body
-	if (_request.getContentLength() > 0) {
+	if (_request.getBody().getContentLength() > 0) {
 		// compare with server_config limit
-		if (_conf.client_max_body_size > 0 && _request.getContentLength() > _conf.client_max_body_size) {
+		if (_conf.client_max_body_size > 0 && _request.getBody().getContentLength() > _conf.client_max_body_size) {
 			_logger.writeToLog(ERROR, "Request body size exceeds client_max_body_size limit");
 			throw (STATUS_TOO_LARGE);
 		}
@@ -604,7 +605,7 @@ void Response::_handle_post()
 
 void Response::_upload_file(const std::string& file_path)
 {
-	if (_request.getContentLength() == 0)
+	if (_request.getBody().getContentLength() == 0)
 		throw (STATUS_LENGTH_REQUIRED);
 
 	std::ofstream file(file_path.c_str());
@@ -699,8 +700,7 @@ void Response::_handle_default_error(enum e_status_code status_code)
 	ss << StatusLine::_status_code_message[status_code];
 	ss << "</p></body></html>";
 	start_line = StatusLine(status_code);
-	content = ss.str();
-	content_length = content.length();
+	body = Body(ss.str());
 }
 
 void Response::_handle_error(enum e_status_code status_code)
@@ -722,13 +722,13 @@ void Response::_handle_error(enum e_status_code status_code)
 		}
 		file_content << file.rdbuf();
 		start_line = StatusLine(status_code);
-		content = file_content.str();
-		content_length = file_content.str().length();
+		body.setContent(file_content.str());
+		body.setContentLength(file_content.str().length());
 	}
 	else
 	{
 		_handle_default_error(status_code);
-		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(content_length))));
+		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(body.getContentLength()))));
 		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
 	}
 // 	switch (status_code)
@@ -752,8 +752,8 @@ std::string Response::toHtml() const
 	for (Headers::const_iterator it = headers.begin(); it != headers.end(); ++it)
 		ss << it->first << ": " << it->second.getValue() << "\r\n";
 	ss << "\r\n";
-	if (content_length > 0)
-		ss << content;
+	if (body.getContentLength() > 0)
+		ss << body.getContent();
 	return (ss.str());
 }
 
@@ -781,25 +781,25 @@ const Request& Response::getRequest() const
 	return (_request);
 }
 
-void Response::content_append(const char *str, size_t n)
-{
-	content.append(str, n);
-}
+// void Response::content_append(const char *str, size_t n)
+// {
+// 	body.addContent(str, n);
+// }
 
-void Response::content_length_add(size_t n)
-{
-	content_length += n;
-}
+// void Response::content_length_add(size_t n)
+// {
+// 	content_length += n;
+// }
 
 void Response::headers_insert(const SingleField& field)
 {
 	headers.insert(field);
 }
 
-size_t Response::getContentLength() const
-{
-	return (content_length);
-}
+// size_t Response::getContentLength() const
+// {
+// 	return (content_length);
+// }
 
 void Response::setStatusLine(const StatusLine& status_line)
 {

@@ -8,6 +8,9 @@
 #include "../../includes/http/StatusLine.hpp"
 #include "FieldValue.hpp"
 #include "Headers.hpp"
+#include "Body.hpp"
+
+class Body;
 
 template<class StartLine> class Message
 {
@@ -19,8 +22,7 @@ public:
 public:
 	StartLine start_line;
 	Headers headers;
-	std::string content;
-	size_t content_length;
+	Body body;
 };
 
 #endif

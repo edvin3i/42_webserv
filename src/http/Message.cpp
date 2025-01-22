@@ -5,7 +5,7 @@ template class Message<StatusLine>;
 
 template <class StartLine>
 Message<StartLine>::Message()
-: start_line(), headers(), content(), content_length(0)
+: start_line(), headers(), body()
 {}
 
 template <class StartLine>
@@ -14,7 +14,7 @@ Message<StartLine>::~Message()
 
 template <class StartLine>
 Message<StartLine>::Message(const Message& other)
-: start_line(other.start_line), headers(other.headers), content(other.content), content_length(other.content_length)
+: start_line(other.start_line), headers(other.headers), body(other.body)
 {}
 
 template <class StartLine>
@@ -24,8 +24,7 @@ Message<StartLine>& Message<StartLine>::operator=(const Message& other)
 	{
 		start_line = other.start_line;
 		headers = other.headers;
-		content = other.content;
-		content_length = other.content_length;
+		body = other.body;
 	}
 	return (*this);
 }

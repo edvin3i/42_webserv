@@ -2,7 +2,8 @@
 #define BODYPART_HPP
 
 #include <string>
-#include "Message.hpp"
+#include "Headers.hpp"
+
 
 class BodyPart
 {

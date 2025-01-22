@@ -40,10 +40,10 @@ public:
 	std::string toString() const;
 	const std::string& getResourcePath() const;
 	const Request& getRequest() const;
-	void content_append(const char *str, size_t n);
-	void content_length_add(size_t n);
+	// void content_append(const char *str, size_t n);
+	// void content_length_add(size_t n);
 	void headers_insert(const SingleField&);
-	size_t getContentLength() const;
+	// size_t getContentLength() const;
 	void setStatusLine(const StatusLine&);
 
 public:

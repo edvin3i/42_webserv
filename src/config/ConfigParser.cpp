@@ -105,20 +105,22 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 			LocationConfig location;
 			std::string path;
 			std::vector<std::string > tokens = _tokenize(_current_line);
-			if (tokens.size() == 3 && tokens[1] == "=")
+
+			if (tokens.size() < 2)
+			{
+				std::ostringstream ss;
+				ss << ERR_CONF_WRNG_SYNTAX << "location  on the line number " << _line_number;
+				_handleError(ss.str());
+			}
+			if (tokens.size() > 2 && tokens[1] == "=")
 			{
 				location.exact_match = true;
 				path = tokens[2];
 			}
-			else if (tokens.size() == 2)
+			else
 			{
 				location.exact_match = false;
 				path = tokens[1];
-			}
-			else {
-				std::ostringstream ss;
-				ss << ERR_CONF_WRNG_SYNTAX << "location  on the line number " << _line_number;
-				_handleError(ss.str());
 			}
 
 			location.path = path;

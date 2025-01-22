@@ -8,6 +8,7 @@
 #include <unistd.h>
 # include <sys/wait.h>
 #include <cstdlib>
+#include <sys/time.h>
 
 #include "Message.hpp"
 #include "StatusLine.hpp"

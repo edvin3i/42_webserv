@@ -25,6 +25,8 @@ void StatusLine::_init_status_code_message()
 	_status_code_message[STATUS_UNSUPPORTED_MEDIA_TYPE] = "Unsupported Media Type";
 	_status_code_message[STATUS_INTERNAL_ERR] = "Internal Server Error";
 	_status_code_message[STATUS_NOT_IMPLEMENTED] = "Not Implemented";
+	_status_code_message[STATUS_BAD_GATEWAY] = "Bad Gateway";
+	_status_code_message[STATUS_GATEWAY_TIMEOUT] = "Gateway Timeout";
 	_status_code_message[STATUS_VERSION_NOT_SUPPORTED] = "HTTP Version Not Supported";
 	_is_status_code_message_init = true;
 }

@@ -359,25 +359,61 @@ void Response::_execute_cgi()
 			_sendCgi(fd[1]);
 		close(fd[1]);
 
-		int status;
-		waitpid(pid, &status, 0);
-		if (WIFEXITED(status))
+		const int TIMEOUT_MS = 10000;
+		struct timeval start_time, current_time;
+		gettimeofday(&start_time, NULL);
+
+		try
 		{
-			int exit_code = WEXITSTATUS(status);
-			if (exit_code != 0)
-				throw (STATUS_INTERNAL_ERR);
+			while (true)
+			{
+				int status;
+				pid_t result = waitpid(pid, &status, WNOHANG);
+				if (result > 0)
+				{
+					if (WIFEXITED(status))
+					{
+						int exit_code = WEXITSTATUS(status);
+						if (exit_code != 0)
+							throw (STATUS_BAD_GATEWAY);
+					}
+					else if (WIFSIGNALED(status))
+					{
+						throw (STATUS_BAD_GATEWAY);
+					}
+					std::string cgi_output;
+					_readCgi(fd[0], cgi_output);
+					close(fd[0]);
+					_buildCgiResponse(cgi_output);
+					Env::freeArray(env);
+					return ;
+				}
+				else if (result < 0)
+				{
+					std::cerr << "Error : waitpid\n";
+					throw (STATUS_INTERNAL_ERR);
+				}
+
+				gettimeofday(&current_time, NULL);
+				long elapsed_time = (current_time.tv_sec - start_time.tv_sec) * 1000
+									+ (current_time.tv_usec - start_time.tv_usec) / 1000;
+
+				if (elapsed_time > TIMEOUT_MS)
+				{
+					std::cerr << "Timeout occured for CGI script\n";
+					kill(pid, SIGKILL);
+					throw (STATUS_GATEWAY_TIMEOUT);
+				}
+
+			}
 		}
-		else if (WIFSIGNALED(status))
-			throw (STATUS_INTERNAL_ERR);
-
-		std::string cgi_output;
-
-		_readCgi(fd[0], cgi_output);
-		close(fd[0]);
-
-		_buildCgiResponse(cgi_output);
+		catch (e_status_code status_code)
+		{
+			close(fd[0]);
+			Env::freeArray(env);
+			throw (status_code);
+		}
 	}
-	Env::freeArray(env);
 }
 
 void Response::_handle_get()

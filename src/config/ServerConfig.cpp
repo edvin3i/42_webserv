@@ -11,15 +11,15 @@ ServerConfig::~ServerConfig() {
 
 void ServerConfig::_init() {
 	host = "127.0.0.1";
-	port = 8080;
-	root = "www";
+	port = 8000;
+	root = "www/website";
 	index = "index.html";
 	client_max_body_size = 512 * 1024;
-	error_pages[400] = "www/error_pages/400.html";
-	error_pages[403] = "www/error_pages/403.html";
-	error_pages[404] = "www/error_pages/404.html";
-	error_pages[500] = "www/error_pages/500.html";
-	error_pages[501] = "www/error_pages/501.html";
+	// error_pages[400] = "www/error_pages/400.html";
+	// error_pages[403] = "www/error_pages/403.html";
+	// error_pages[404] = "www/error_pages/404.html";
+	// error_pages[500] = "www/error_pages/500.html";
+	// error_pages[501] = "www/error_pages/501.html";
 }
 
 void ServerConfig::print_server_config() const{

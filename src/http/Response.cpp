@@ -808,8 +808,8 @@ std::string Response::toString() const
 	for (Headers::const_iterator it = headers.begin(); it != headers.end(); ++it)
 		ss << it->first << ": " << it->second.getValue() << "\\r\\n" << '\n';
 	ss << "\\r\\n" << '\n';
-	// if (content_length > 0)
-		// ss << content;
+	if (body.getContentLength() > 0)
+		ss << body.getContent().substr(0, 1000);
 	return (ss.str());
 }
 

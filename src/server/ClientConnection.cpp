@@ -12,7 +12,8 @@ ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerCo
 										_currentClientBodySize(0),
 										_currentLocationConfig(NULL),
 										_request(NULL),
-										_env(env)
+										_env(env),
+										_keep_alive(true)
 									{
 
 }
@@ -25,7 +26,7 @@ ClientConnection::~ClientConnection() {
 void ClientConnection::buildResponse() {
 
 	_response = new Response(_logger, *_currentServerConfig, _currentLocationConfig, *_request, _env);
-
+	_keep_alive = _response->keep_alive();
 	std::stringstream ss;
 	ss << "RESPONSE:"<< '\n' << _response->toString();
 	_logger.writeToLog(DEBUG, ss.str());
@@ -39,7 +40,9 @@ void ClientConnection::buildResponse() {
 
     _logger.writeToLog(DEBUG, "Response ready!");
 	delete _response;
+	_response = NULL;
 	delete _request;
+	_request = NULL;
 }
 
 
@@ -261,4 +264,9 @@ void ClientConnection::setRequest()
 const Request* ClientConnection::getRequest() const
 {
 	return (_request);
+}
+
+bool ClientConnection::keep_alive() const
+{
+	return (_keep_alive);
 }

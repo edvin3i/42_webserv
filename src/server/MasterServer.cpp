@@ -139,7 +139,7 @@ void MasterServer::run() {
 								client->writeData();
 							}
 
-							if (client->getState() != WRITING) {
+							if (client->getState() != WRITING || !client->keep_alive()) {
 								client->setState(CLOSING);
 							}
 							_fds[i].events = POLLIN; // set POLLIN

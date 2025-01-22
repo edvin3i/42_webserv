@@ -43,6 +43,7 @@ public:
 	const Request& getRequest() const;
 	void headers_insert(const SingleField&);
 	void setStatusLine(const StatusLine&);
+	bool keep_alive() const;
 
 public:
 	class ChildProcessException : public std::exception
@@ -65,6 +66,7 @@ private:
 	static const size_t _cgi_buffer_size;
 	std::string _extra_path;
 	Env _env;
+	bool _keep_alive;
 
 	Response();
 	Response(const Response & other);
@@ -103,6 +105,7 @@ private:
 	void _buildCgiResponse(const std::string&);
 	bool _check_redirect() const;
 	void _check_index_file();
+	void _setConnectionHeader();
 
 	static const std::string _html_auto_index;
 	static const std::string _default_error_page_path;

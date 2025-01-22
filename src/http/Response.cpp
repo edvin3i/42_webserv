@@ -9,7 +9,7 @@ const size_t Response::_cgi_buffer_size = 1024;
 Response::Response(Logger & logger, const ServerConfig & conf, const LocationConfig  *location, const Request & request, Env env)
 : Message<StatusLine>(), _logger(logger), _request(request), _conf(conf), _location(location),
   _str_content(), _resource_path(), _resource_type(), _has_index_file(false),
-  _index_file(), _env(env)
+  _index_file(), _env(env), _extra_path()
 {
 	if (_request.error())
 	{
@@ -25,7 +25,8 @@ Response::Response(Logger & logger, const ServerConfig & conf, const LocationCon
 		}
 		_check_method_allowed();
 		_check_resource();
-		if (_check_cgi_extension())
+		_check_cgi_extension();
+		if (_resource_type == RT_CGI_SCRIPT)
 		{
 			_execute_cgi();
 			return ;
@@ -77,18 +78,9 @@ void Response::_check_method_allowed()
 	}
 }
 
-
-void Response::_check_location()
-{
-	// else if (redirection)
-	// {
-	// 	redirection ?
-	// }
-
-}
-
 void Response::_check_resource()
 {
+	bool is_cgi_script = false;
 	struct stat file_stat;
 	std::string resource_path;
 	const std::string& uri_path = _request.getStartLine().getUri().getPath();
@@ -112,6 +104,20 @@ void Response::_check_resource()
 		_resource_path.append(_conf.root);
 		_resource_path.append(uri_path);
 	}
+	if (_location && !_location->cgi_extension.empty())
+	{
+		size_t cgi_extension_pos = _resource_path.find("." + _location->cgi_extension);
+		bool is_extension_found = cgi_extension_pos != std::string::npos;
+		bool is_prev_not_slash = (cgi_extension_pos != 0) && (_resource_path[cgi_extension_pos - 1] != '/');
+		bool is_next_slash = (cgi_extension_pos != (_resource_path.length() - 1)) && (_resource_path[cgi_extension_pos + 1 + _location->cgi_extension.length()] == '/');
+
+		if (is_extension_found && is_prev_not_slash && is_next_slash)
+		{
+			_extra_path = _resource_path.substr(cgi_extension_pos + 1 + _location->cgi_extension.length());
+			_resource_path = _resource_path.substr(0, cgi_extension_pos + 1 + _location->cgi_extension.length());
+			is_cgi_script = true;
+		}
+	}
 	if (stat(_resource_path.c_str(), &file_stat) < 0)
 	{
 		throw (STATUS_NOT_FOUND);
@@ -125,7 +131,15 @@ void Response::_check_resource()
 			_resource_path.push_back('/');
 		_check_index_file();
 	}
-	else {
+	else if (is_cgi_script)
+	{
+		std::ostringstream ss; ss << "Resource is a cgi script" << std::endl;
+		_logger.writeToLog(DEBUG, ss.str());
+		ss.str("");
+		_resource_type = RT_CGI_SCRIPT;
+	}
+	else
+	{
 		std::ostringstream ss; ss << "Resource is a file" << std::endl;
 		_logger.writeToLog(DEBUG, ss.str());
 		ss.str("");
@@ -133,18 +147,21 @@ void Response::_check_resource()
 	}
 }
 
-bool Response::_check_cgi_extension() const
+void Response::_check_cgi_extension()
 {
 	std::string filepath;
 
 	switch (_resource_type)
 	{
+		case RT_CGI_SCRIPT:
+			filepath = _resource_path;
+			return ;
 		case RT_FILE:
 			filepath = _resource_path;
 			break ;
 		case RT_DIR:
 			if (!_has_index_file)
-				return (false);
+				return ;
 			filepath = _resource_path + _index_file;
 			break ;
 		default:
@@ -152,15 +169,15 @@ bool Response::_check_cgi_extension() const
 	}
 
 	if (!_location || _location->cgi_extension.empty())
-		return (false);
+		return ;
 
 	size_t dot_pos = filepath.find_last_of('.');
 
 	if (dot_pos == std::string::npos || (dot_pos == filepath.length() - 1))
-		return (false);
+		return ;
 	if (filepath.substr(dot_pos + 1) != _location->cgi_extension)
-		return (false);
-	return (true);
+		return ;
+	_resource_type = RT_CGI_SCRIPT;
 }
 
 void Response::_setEnvironmentVariables(const std::string& script_filename)
@@ -184,20 +201,10 @@ void Response::_setEnvironmentVariables(const std::string& script_filename)
 		_env.setEnv("CONTENT_LENGTH", content_length_it->second.getValue());
 	else
 		_env.setEnv("CONTENT_LENGTH", "");
-	// std::string filepath;
-
-	// // if (_resource_path[0] != '/')
-	// // 	filepath.append("/");
-	// filepath.append(_resource_path);
-	// if (_resource_type == RT_DIR && _has_index_file)
-	// 	filepath.append(_index_file);
-
 
 	_env.setEnv("SCRIPT_FILENAME", script_filename);
-	_env.setEnv("PATH_INFO", "");
-
+	_env.setEnv("PATH_INFO", _extra_path);
 	_env.setEnv("SERVER_PROTOCOL", "HTTP/1.1");
-
 	_env.setEnv("GATEWAY_INTERFACE", "CGI/1.1");
 
 	const std::string& query =_request.getStartLine().getUri().getQuery().c_str();

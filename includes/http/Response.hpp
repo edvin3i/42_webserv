@@ -28,7 +28,8 @@
 enum e_resource_type
 {
 	RT_FILE,
-	RT_DIR
+	RT_DIR,
+	RT_CGI_SCRIPT,
 };
 
 class Response : protected Message<StatusLine>
@@ -40,10 +41,7 @@ public:
 	std::string toString() const;
 	const std::string& getResourcePath() const;
 	const Request& getRequest() const;
-	// void content_append(const char *str, size_t n);
-	// void content_length_add(size_t n);
 	void headers_insert(const SingleField&);
-	// size_t getContentLength() const;
 	void setStatusLine(const StatusLine&);
 
 public:
@@ -65,6 +63,7 @@ private:
 	bool _has_index_file;
 	std::string _index_file;
 	static const size_t _cgi_buffer_size;
+	std::string _extra_path;
 	Env _env;
 
 	Response();
@@ -91,7 +90,7 @@ private:
 	void _handle_multipart_data(const BodyPart&, size_t&);
 	void _handle_redirect();
 	void _execute_cgi();
-	bool _check_cgi_extension() const;
+	void _check_cgi_extension();
 	bool _check_cgi_path() const;
 	void _parse_cgi(const std::string&, std::string& cgi_content, Headers& cgi_headers);
 	void _setEnvironmentVariables(const std::string& script);

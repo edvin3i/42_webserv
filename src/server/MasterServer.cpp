@@ -129,7 +129,7 @@ void MasterServer::run() {
 							client->setRequest();
 							if (!client->getRequest()->error())
 							{
-								client->select_server_config(_configs);
+								// client->select_server_config(_configs);
 								client->select_location();
 							}
 							client->buildResponse();

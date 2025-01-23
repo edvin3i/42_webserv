@@ -44,7 +44,7 @@ public:
 
 	void setRequest();
 	void select_location();
-	void select_server_config(const std::vector<ServerConfig>&);
+	// void select_server_config(const std::vector<ServerConfig>&);
 	bool keep_alive() const;
 
 private:

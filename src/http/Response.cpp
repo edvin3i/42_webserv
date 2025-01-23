@@ -624,7 +624,7 @@ void Response::_handle_post()
 	{
 		_handle_form();
 	}
-	else if (content_type == "plain/text")
+	else if (content_type == "text/plain")
 	{
 		_handle_text_plain();
 	}

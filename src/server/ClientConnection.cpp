@@ -12,7 +12,8 @@ ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerCo
 										_currentClientBodySize(0),
 										_currentLocationConfig(NULL),
 										_request(NULL),
-										_env(env)
+										_env(env),
+										_keep_alive(true)
 									{
 
 }
@@ -25,7 +26,7 @@ ClientConnection::~ClientConnection() {
 void ClientConnection::buildResponse() {
 
 	_response = new Response(_logger, *_currentServerConfig, _currentLocationConfig, *_request, _env);
-
+	_keep_alive = _response->keep_alive();
 	std::stringstream ss;
 	ss << "RESPONSE:"<< '\n' << _response->toString();
 	_logger.writeToLog(DEBUG, ss.str());
@@ -39,7 +40,9 @@ void ClientConnection::buildResponse() {
 
     _logger.writeToLog(DEBUG, "Response ready!");
 	delete _response;
+	_response = NULL;
 	delete _request;
+	_request = NULL;
 }
 
 
@@ -140,35 +143,35 @@ static size_t matching_prefix_depth(const std::string& location_path, const std:
 	return (i);
 }
 
-static bool is_localhost(const std::string& str)
-{
-	return (str == "127.0.0.1" || str == "localhost");
-}
+// static bool is_localhost(const std::string& str)
+// {
+// 	return (str == "127.0.0.1" || str == "localhost");
+// }
 
-void ClientConnection::select_server_config(const std::vector<ServerConfig>& configs)
-{
-	const ServerConfig *config_ptr = NULL;
-	bool host_equal, port_equal;
+// void ClientConnection::select_server_config(const std::vector<ServerConfig>& configs)
+// {
+// 	const ServerConfig *config_ptr = NULL;
+// 	bool host_equal, port_equal;
 
-	for (size_t i = 0; i < configs.size(); ++i)
-	{
-		host_equal = false;
-		port_equal = false;
-		if (is_localhost(configs[i].host) && is_localhost(_request->getHost()))
-			host_equal = true;
-		else if (configs[i].host == _request->getHost())
-			host_equal = true;
-		if (configs[i].port == _request->getPort())
-			port_equal = true;
-		if (host_equal && port_equal)
-			config_ptr = &configs[i];
+// 	for (size_t i = 0; i < configs.size(); ++i)
+// 	{
+// 		host_equal = false;
+// 		port_equal = false;
+// 		if (is_localhost(configs[i].host) && is_localhost(_request->getHost()))
+// 			host_equal = true;
+// 		else if (configs[i].host == _request->getHost())
+// 			host_equal = true;
+// 		if (configs[i].port == _request->getPort())
+// 			port_equal = true;
+// 		if (host_equal && port_equal)
+// 			config_ptr = &configs[i];
 
-	}
-	if (config_ptr == NULL)
-		_currentServerConfig = &configs[0];
-	else
-		_currentServerConfig = config_ptr;
-}
+// 	}
+// 	if (config_ptr == NULL)
+// 		_currentServerConfig = &configs[0];
+// 	else
+// 		_currentServerConfig = config_ptr;
+// }
 
 void ClientConnection::select_location()
 {
@@ -186,11 +189,19 @@ void ClientConnection::select_location()
 	_logger.writeToLog(DEBUG, ss.str());
 
 
-
 	if (locations.empty()) {
 		_currentLocationConfig = NULL;
 		_logger.writeToLog(DEBUG, "No locations found in server config");
 		return;
+	}
+
+	for (std::map<std::string, LocationConfig>::const_iterator it = locations.begin(); it != locations.end(); ++it)
+	{
+		if (it->second.exact_match && it->first == _request->getStartLine().getUri().getPath())
+		{
+			_currentLocationConfig = const_cast<LocationConfig*>(&(it->second));
+			return ;
+		}
 	}
 
 	// First check if this is a root path request
@@ -209,7 +220,8 @@ void ClientConnection::select_location()
 	{
 		if (it->first == "/")
 			continue;
-
+		if (it->second.exact_match)
+			continue;
 
 		depth = matching_prefix_depth(it->first, _request->getStartLine().getUri().getPath());
 		ss.str("");
@@ -252,4 +264,9 @@ void ClientConnection::setRequest()
 const Request* ClientConnection::getRequest() const
 {
 	return (_request);
+}
+
+bool ClientConnection::keep_alive() const
+{
+	return (_keep_alive);
 }

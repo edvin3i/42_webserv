@@ -15,6 +15,7 @@ void Headers::_init()
 	_type_to_str[HEADER_HOST] = "host";
 	_type_to_str[HEADER_CONTENT_DISPOSITION] = "content-disposition";
 	_type_to_str[HEADER_TRANSFER_ENCODING] = "transfer-encoding";
+	_type_to_str[HEADER_CONNECTION] = "connection";
 }
 
 std::string Headers::getTypeStr(HeaderType type)

@@ -44,7 +44,8 @@ public:
 
 	void setRequest();
 	void select_location();
-	void select_server_config(const std::vector<ServerConfig>&);
+	// void select_server_config(const std::vector<ServerConfig>&);
+	bool keep_alive() const;
 
 private:
 	Logger &_logger;
@@ -58,6 +59,7 @@ private:
 	Request *_request;
 	Response *_response;
 	Env &_env;
+	bool _keep_alive;
 
 
 	std::string _readBuffer;

@@ -19,6 +19,7 @@ public:
 
 	void printLocConfig() const;
 
+	bool exact_match;
 	std::string path;
 	std::vector<std::string> methods;
 	std::string root;

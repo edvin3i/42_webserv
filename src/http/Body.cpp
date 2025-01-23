@@ -42,7 +42,7 @@ Body& Body::operator=(const Body& other)
 
 void Body::_setContentLength(const Headers& headers)
 {
-	std::pair<Headers::const_iterator, Headers::const_iterator> content_length_it = headers.equal_range(Headers::getTypeStr(HEADER_CONTENT_LENGTH));
+	Headers::const_iterator content_length_it = headers.find(Headers::getTypeStr(HEADER_CONTENT_LENGTH));
 	size_t nb_content_length = headers.count(Headers::getTypeStr(HEADER_CONTENT_LENGTH));
 
 	switch (nb_content_length)
@@ -52,25 +52,20 @@ void Body::_setContentLength(const Headers& headers)
 			_is_content_length = false;
 			break;
 		case 1:
-			_content_length = Utils::stoul(headers.find(Headers::getTypeStr(HEADER_CONTENT_LENGTH))->second.getValue());
+			_content_length = Utils::stoul(content_length_it->second.getValue());
 			_is_content_length = true;
 			break ;
 		default:
-			size_t tmp;
-			Headers::const_iterator it = content_length_it.first;
-
-			_content_length = Utils::stoul(it->second.getValue());
-			it++;
-			while (it != content_length_it.second)
-			{
-				tmp = Utils::stoul(it->second.getValue());
-				if (tmp != _content_length)
-					throw (STATUS_LENGTH_REQUIRED);
-				it++;
-			}
-			_is_content_length = true;
-			break ;
+			throw (STATUS_BAD_REQUEST);
 		}
+}
+
+void Body::_checkContentLength(const std::string& content)
+{
+	if (_content_length == 0 && content.length() != 0)
+		throw (STATUS_LENGTH_REQUIRED);
+	if (_content_length != 0 && _content_length != content.length())
+		throw (STATUS_BAD_REQUEST);
 }
 
 void Body::_check_chunked(const Headers& headers)
@@ -97,8 +92,6 @@ void Body::_check_chunked(const Headers& headers)
 
 void Body::_parse_body(const std::string& str, const Headers& headers)
 {
-	if (str.empty())
-		return ;
 	try
 	{
 		_setContentLength(headers);
@@ -107,15 +100,15 @@ void Body::_parse_body(const std::string& str, const Headers& headers)
 	{
 		throw (STATUS_BAD_REQUEST);
 	}
+	if (str.empty())
+		return ;
 	_check_chunked(headers);
 
 	if (_is_chunked)
 		_decode_chunked(str);
 	else if (_is_content_length)
 	{
-		_content = str.substr(0, _content_length);
-		if (_content.length() < _content_length)
-			throw (STATUS_BAD_REQUEST);
+		_content = str;
 	}
 
 }

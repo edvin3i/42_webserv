@@ -1,0 +1,21 @@
++ Empty headers, Empty body
+curl -H 'Host:' -H 'User-Agent:' -H 'Accept:' -v http://localhost:8230
+
++ test POST text/plain
+
+curl -X POST -H "Content-Type: text/plain" --data "..." http://localhost:8000/
+
++ test CGI POST
+curl -X POST -d "key1=value1&key2=value2" http://localhost:8080/cgi/test_post.php_
+
++ + + Siege
+
++ -b, --benchmark
+    BENCHMARK, runs the test with NO DELAY for throughput benchmarking. By default each simulated user is invoked with at least a one second delay. This option removes that delay. It is not recommended that you use this option while load testing. 
+
++ -t NUMm, --time=NUMm
+    TIME, allows you to run the test for a selected period of time. The format is "NUMm", where NUM is a time unit and the "m" modifier is either S, M, or H for seconds, minutes and hours. To run siege for an hour, you could select any one of the following combinations: -t3600S, -t60M, -t1H. The modifier is not case sensitive, but it does require no space between the number and itself. 
+
++ netstat -anp | grep 8000 (-a : all, -n : n : adress numeric format, -p : show program name), TIME_WAIT -> the socket is waiting after close to handle packets still in the network
+
++ memory leak -> htop, top

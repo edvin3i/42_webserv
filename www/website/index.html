@@ -124,7 +124,7 @@
                     <!-- Large file download for chunked transfer testing -->
                     <a href="/files/large.pdf" class="download-item group">
                         <div class="file-icon bg-purple-100 text-purple-500">
-                            <i class="fas fa-file-archive text-xl"></i>
+                            <i class="fas fa-file-pdf text-xl"></i>
                         </div>
                         <div class="file-info">
                             <div class="font-medium text-gray-700">Large File</div>
@@ -145,7 +145,7 @@
                     View Directory Contents
                 </a>
                 <!-- <h2 class="text-xl font-semibold mb-4 text-indigo-600">Redirection Test</h2> -->
-                <a href="/redirect/index.html" class="block w-full text-center bg-pink-500 text-white py-2 px-4 rounded hover:bg-pink-600">
+                <a href="/redirect/" class="block w-full text-center bg-pink-500 text-white py-2 px-4 rounded hover:bg-pink-600">
                     Test Redirect
                 </a>
                 </div>
@@ -198,7 +198,6 @@
                     body = null;
                 }
 
-                // Отображаем детали запроса перед его отправкой
                 document.getElementById('reqMethod').textContent = method;
                 document.getElementById('reqUrl').textContent = url;
                 document.getElementById('reqHeaders').textContent = JSON.stringify({
@@ -243,7 +242,6 @@
             const formData = new FormData();
             formData.append('file', file);
 
-            // Отображаем детали запроса загрузки файла
             document.getElementById('reqMethod').textContent = 'POST';
             document.getElementById('reqUrl').textContent = '/upload';
             document.getElementById('reqHeaders').textContent = 'Content-Type: multipart/form-data';

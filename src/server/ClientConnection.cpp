@@ -28,9 +28,9 @@ void ClientConnection::buildResponse() {
 	_response = new Response(_logger, *_currentServerConfig, _currentLocationConfig, *_request, _env);
 	_keep_alive = _response->keep_alive();
 	std::stringstream ss;
-	ss << "RESPONSE:"<< '\n' << _response->toString();
-	_logger.writeToLog(DEBUG, ss.str());
-	ss.str("");
+	// ss << "RESPONSE:"<< '\n' << _response->toString();
+	// _logger.writeToLog(DEBUG, ss.str());
+	// ss.str("");
 
 	std::string response_html = _response->toHtml();
 	_writeBuffer.clear();

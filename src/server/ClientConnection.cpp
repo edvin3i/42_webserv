@@ -39,10 +39,14 @@ void ClientConnection::buildResponse() {
 	_writeOffset = 0;
 
     _logger.writeToLog(DEBUG, "Response ready!");
-	delete _response;
-	_response = NULL;
-	delete _request;
-	_request = NULL;
+	if (_response) {
+		delete _response;
+		_response = NULL;
+	}
+	if (_request) {
+		delete _request;
+		_request = NULL;
+	}
 }
 
 

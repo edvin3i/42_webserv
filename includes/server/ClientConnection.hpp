@@ -15,7 +15,7 @@
 #include "../Env.hpp"
 
 
-const int BUFFER_SIZE = 8192;
+const int BUFFER_SIZE = 1000000;
 
 
 class Logger;

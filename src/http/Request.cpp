@@ -82,7 +82,7 @@ void Request::_parse(const std::string & str)
 	if (body.is_chunked())
 	{
 		Headers::iterator transfer_encoding_it = headers.find(Headers::getTypeStr(HEADER_TRANSFER_ENCODING));
-
+		
 		transfer_encoding_it->second.setValue("");
 		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), Utils::size_t_to_str(body.getContentLength())));
 	}

@@ -34,6 +34,6 @@ const std::string& MimeType::get_mime_type(const std::string& extension)
 	}
 	catch (...)
 	{
-		return (default_mime_type);
+		throw (STATUS_UNSUPPORTED_MEDIA_TYPE);
 	}
 }

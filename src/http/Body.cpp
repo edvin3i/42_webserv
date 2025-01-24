@@ -100,6 +100,7 @@ void Body::_parse_body(const std::string& str, const Headers& headers)
 	{
 		throw (STATUS_BAD_REQUEST);
 	}
+	_checkContentLength(str);
 	if (str.empty())
 		return ;
 	_check_chunked(headers);

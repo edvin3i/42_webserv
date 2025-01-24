@@ -53,7 +53,6 @@ void ClientConnection::readData() {
     while ((bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0)) > 0) {
         _readBuffer.insert(_readBuffer.end(), buffer, buffer + bytesReceived);
 
-
         std::memset(buffer, 0, BUFFER_SIZE);
 
     }

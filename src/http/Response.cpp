@@ -466,6 +466,7 @@ void Response::_handle_file(const std::string& filepath)
 {
 	std::ifstream file(filepath.c_str(), std::ios::binary);
 	std::stringstream file_content;
+	const std::string &mime_type = _filename_to_mime_type(filepath);
 
 	if (!file.is_open())
 		throw (STATUS_INTERNAL_ERR);
@@ -480,7 +481,7 @@ void Response::_handle_file(const std::string& filepath)
 
 	start_line = StatusLine(STATUS_OK);
 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(file_content.str().length()))));
-	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(_filename_to_mime_type(filepath))));
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(mime_type)));
 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONNECTION), FieldValue("close")));
 	body.setContent(file_content.str());
 	body.setContentLength(file_size);
@@ -622,7 +623,7 @@ void Response::_handle_post()
 	Headers::const_iterator request_content_type_it = request_headers.find(Headers::getTypeStr(HEADER_CONTENT_TYPE));
 
 	if (request_content_type_it == request_headers.end())
-		throw (STATUS_BAD_REQUEST);
+		throw (STATUS_UNSUPPORTED_MEDIA_TYPE);
 	const std::string content_type = request_content_type_it->second.getValue();
 
 	if (content_type == "multipart/form-data")
@@ -630,7 +631,7 @@ void Response::_handle_post()
 		if (!_location)
 			throw (STATUS_NOT_FOUND);
 		if (_location->upload_dir.empty())
-			throw (STATUS_INTERNAL_ERR);
+			throw (STATUS_BAD_REQUEST);
 		_handle_multipart_datas();
 	}
 	else if (content_type == "application/x-www-form-urlencoded")

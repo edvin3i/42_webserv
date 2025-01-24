@@ -86,7 +86,7 @@ void ClientConnection::writeData() {
 
 	ssize_t bytesSent = send(_clientSocketFD,
 	                         &_writeBuffer[_writeOffset],
-	                         bytesToSend, 0);
+	                         bytesToSend, MSG_NOSIGNAL);
 
 	if (bytesSent < 0) {
 		if (errno == EAGAIN || errno == EWOULDBLOCK) {

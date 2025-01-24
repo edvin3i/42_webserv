@@ -27,6 +27,7 @@ public:
 
 private:
 	void _setContentLength(const Headers& headers);
+	void _checkContentLength(const std::string&);
 	void _check_chunked(const Headers& headers);
 	void _parse_body(const std::string& str, const Headers& headers);
 	void _decode_chunked(const std::string& str);

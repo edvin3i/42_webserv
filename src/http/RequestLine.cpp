@@ -23,7 +23,7 @@ void RequestLine::_parse_method(const std::string& str)
 	}
 	catch (const std::exception& e)
 	{
-		throw (STATUS_BAD_REQUEST);
+		throw (STATUS_NOT_IMPLEMENTED);
 	}
 }
 

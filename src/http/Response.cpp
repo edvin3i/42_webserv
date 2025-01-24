@@ -67,7 +67,7 @@ void Response::_handle_redirect()
 	start_line = StatusLine(STATUS_MOVED);
 	headers.insert(SingleField(Headers::getTypeStr(HEADER_LOCATION), FieldValue(_location->return_url)));
 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue("0")));
-	_setConnectionHeader();
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONNECTION), FieldValue("close")));
 	body.setContentLength(0);
 }
 
@@ -89,12 +89,23 @@ void Response::_check_resource()
 	std::string resource_path;
 	const std::string& uri_path = _request.getStartLine().getUri().getPath();
 
-	if (_location && !_location->path.empty())
+	if (_location && !_location->root.empty())
 	{
-		if (!_location->root.empty())
-			_resource_path.append(_location->root);
-		else
-			_resource_path.append(_conf.root);
+		_resource_path.append(_conf.root);
+		_resource_path.append(_location->root);
+		struct stat file_stat;
+		int res_stat = stat(_resource_path.c_str(), &file_stat);
+		if (res_stat < 0)
+			throw (STATUS_NOT_FOUND);
+		if (!S_ISREG(file_stat.st_mode))
+		{
+			_resource_path.append("/");
+			_resource_path.append(uri_path.substr(_location->path.length()));
+		}
+	}
+	else if (_location)
+	{
+		_resource_path.append(_conf.root);
 		_resource_path.append(_location->path);
 		_resource_path.append(uri_path.substr(_location->path.length()));
 	}
@@ -240,7 +251,7 @@ void Response::_buildCgiResponse(const std::string& cgi_output)
 		body.setContentLength(cgi_content.length());
 		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(body.getContentLength()))));
 	}
-	_setConnectionHeader();
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONNECTION), FieldValue("close")));
 	start_line = StatusLine(STATUS_OK);
 	body.setContent(cgi_content.substr(0, body.getContentLength()));
 }
@@ -470,7 +481,7 @@ void Response::_handle_file(const std::string& filepath)
 	start_line = StatusLine(STATUS_OK);
 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(file_content.str().length()))));
 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(_filename_to_mime_type(filepath))));
-	_setConnectionHeader();
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONNECTION), FieldValue("close")));
 	body.setContent(file_content.str());
 	body.setContentLength(file_size);
 }
@@ -550,7 +561,7 @@ void Response::_handle_auto_index()
 	start_line = StatusLine(STATUS_OK);
 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(body.getContent().length()))));
 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
-	_setConnectionHeader();
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONNECTION), FieldValue("close")));
 	body.setContentLength(body.getContent().length());
 }
 
@@ -581,7 +592,7 @@ void Response::_handle_multipart_datas()
 		throw (STATUS_INTERNAL_ERR);
 	start_line = StatusLine(STATUS_CREATED);
 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue("0")));
-	_setConnectionHeader();
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONNECTION), FieldValue("close")));
 }
 
 void Response::_handle_multipart_data(const BodyPart& body_part, size_t& count)
@@ -624,7 +635,7 @@ void Response::_handle_post()
 	{
 		_handle_form();
 	}
-	else if (content_type == "plain/text")
+	else if (content_type == "text/plain")
 	{
 		_handle_text_plain();
 	}
@@ -646,7 +657,7 @@ void Response::_handle_text_plain()
 	start_line = StatusLine(STATUS_OK);
 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(body.getContent().length()))));
 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
-	_setConnectionHeader();
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONNECTION), FieldValue("close")));
 	body.setContentLength(body.getContent().length());
 }
 
@@ -732,7 +743,7 @@ void Response::_handle_form()
 	start_line = StatusLine(STATUS_OK);
 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(body.getContent().length()))));
 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
-	_setConnectionHeader();
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONNECTION), FieldValue("close")));
 	body.setContentLength(body.getContent().length());
 }
 
@@ -775,7 +786,7 @@ void Response::_delete_dir()
 		throw (STATUS_INTERNAL_ERR);
 	start_line = StatusLine(STATUS_NO_CONTENT);
 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue("0")));
-	_setConnectionHeader();
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONNECTION), FieldValue("close")));
 }
 
 void Response::_delete_file()
@@ -784,8 +795,7 @@ void Response::_delete_file()
 		throw (STATUS_INTERNAL_ERR);
 	start_line = StatusLine(STATUS_NO_CONTENT);
 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue("0")));
-	_setConnectionHeader();
-
+	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONNECTION), FieldValue("close")));
 }
 
 void Response::_handle_default_error(enum e_status_code status_code)
@@ -830,7 +840,7 @@ void Response::_handle_error(enum e_status_code status_code)
 		_handle_default_error(status_code);
 		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), FieldValue(Utils::size_t_to_str(body.getContentLength()))));
 		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_TYPE), FieldValue(MimeType::get_mime_type("html"))));
-		_setConnectionHeader();
+		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONNECTION), FieldValue("close")));
 	}
 }
 
@@ -889,23 +899,24 @@ const char *Response::ChildProcessException::what() const throw ()
 Response::ChildProcessException::~ChildProcessException() throw()
 {}
 
-void Response::_setConnectionHeader()
-{
-	const Headers& request_headers = _request.getHeaders();
-	Headers::const_iterator connection_it = request_headers.find(Headers::getTypeStr(HEADER_CONNECTION));
-	std::string state;
+// void Response::_setConnectionHeader()
+// {
+// 	const Headers& request_headers = _request.getHeaders();
+// 	Headers::const_iterator connection_it = request_headers.find(Headers::getTypeStr(HEADER_CONNECTION));
+// 	std::string state;
 
-	if (connection_it == request_headers.end() || connection_it->second.getValue() == "close")
-	{
-		state = "close";
-		_keep_alive = false;
-	}
-	else
-	{
-		state  = "keep-alive";
-	}
-	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONNECTION), FieldValue(state)));
-}
+
+// 	if (connection_it == request_headers.end() || connection_it->second.getValue() == "close")
+// 	{
+// 		state = "close";
+// 		_keep_alive = false;
+// 	}
+// 	else
+// 	{
+// 		state  = "keep-alive";
+// 	}
+// 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONNECTION), FieldValue(state)));
+// }
 
 
 bool Response::keep_alive() const

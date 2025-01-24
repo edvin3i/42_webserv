@@ -39,10 +39,14 @@ void ClientConnection::buildResponse() {
 	_writeOffset = 0;
 
     _logger.writeToLog(DEBUG, "Response ready!");
-	delete _response;
-	_response = NULL;
-	delete _request;
-	_request = NULL;
+	if (_response) {
+		delete _response;
+		_response = NULL;
+	}
+	if (_request) {
+		delete _request;
+		_request = NULL;
+	}
 }
 
 
@@ -52,7 +56,6 @@ void ClientConnection::readData() {
 
     while ((bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0)) > 0) {
         _readBuffer.insert(_readBuffer.end(), buffer, buffer + bytesReceived);
-
 
         std::memset(buffer, 0, BUFFER_SIZE);
 
@@ -64,10 +67,10 @@ void ClientConnection::readData() {
         return;
     }
 
-	std::stringstream ss;
-	ss << "BUFFER Content:\n" << _readBuffer;
-	_logger.writeToLog(DEBUG, ss.str());
-	ss.str("");
+	// std::stringstream ss;
+	// ss << "BUFFER Content:\n" << _readBuffer;
+	// _logger.writeToLog(DEBUG, ss.str());
+	// ss.str("");
 }
 
 
@@ -86,6 +89,10 @@ void ClientConnection::writeData() {
 	                         bytesToSend, 0);
 
 	if (bytesSent < 0) {
+		if (errno == EAGAIN || errno == EWOULDBLOCK) {
+			_logger.writeToLog(DEBUG, "socket not ready, try send next time...");
+			return;
+		}
 		_logger.writeToLog(ERROR, "can not send the data to socket");
 		_connectionState = CLOSING;
 		return;

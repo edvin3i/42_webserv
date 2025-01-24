@@ -19,7 +19,7 @@
 
 
 ConfigParser::ConfigParser(Logger & logger) : _logger(logger) {
-
+(void)_logger;
 }
 
 

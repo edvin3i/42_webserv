@@ -1,7 +1,7 @@
 #include "../../includes/http/Request.hpp"
 
 Request::Request(Logger & logger, const std::string & str)
-: Message<RequestLine>(), _logger(logger), _error_code(STATUS_OK), _error(false), _host(), _port(0)
+: Message<RequestLine>(), _logger(logger), _error_code(STATUS_OK), _error(false)
 {
 	try
 	{
@@ -22,7 +22,7 @@ Request::Request(Logger & logger, const std::string & str)
 Request::~Request() {}
 
 Request::Request(const Request & other)
-: Message<RequestLine>(other), _logger(other._logger), _error_code(other._error_code), _error(other._error), _host(other._host), _port(other._port)
+: Message<RequestLine>(other), _logger(other._logger), _error_code(other._error_code), _error(other._error)
 {}
 
 Request& Request::operator=(const Request & other)
@@ -32,8 +32,6 @@ Request& Request::operator=(const Request & other)
 		Message<RequestLine>::operator=(other);
 		_error = other._error;
 		_error_code = other._error_code;
-		_host = other._host;
-		_port = other._port;
 	}
 	return (*this);
 }
@@ -103,20 +101,20 @@ void Request::_check_headers()
 	std::string host_field_value = host_it->second.getValue();
 	std::string port_str;
 
-	size_t colon_pos = host_field_value.find(':');
+	// size_t colon_pos = host_field_value.find(':');
 
-	if (colon_pos != host_field_value.length() && host_field_value.find(':', colon_pos + 1) != std::string::npos)
-		throw (STATUS_BAD_REQUEST);
-	_host = host_field_value.substr(0, colon_pos);
-	try
-	{
-		port_str = host_field_value.substr(colon_pos + 1);
-		_port = Utils::stoi(port_str);
-	}
-	catch (const std::exception& e)
-	{
-		throw (STATUS_BAD_REQUEST);
-	}
+	// if (colon_pos != host_field_value.length() && host_field_value.find(':', colon_pos + 1) != std::string::npos)
+	// 	throw (STATUS_BAD_REQUEST);
+	// _host = host_field_value.substr(0, colon_pos);
+	// try
+	// {
+	// 	port_str = host_field_value.substr(colon_pos + 1);
+	// 	_port = Utils::stoi(port_str);
+	// }
+	// catch (const std::exception& e)
+	// {
+	// 	throw (STATUS_BAD_REQUEST);
+	// }
 
 }
 
@@ -176,12 +174,12 @@ const Body& Request::getBody() const
 	return (body);
 }
 
-std::string Request::getHost() const
-{
-	return (_host);
-}
+// std::string Request::getHost() const
+// {
+// 	return (_host);
+// }
 
-int Request::getPort() const
-{
-	return (_port);
-}
+// int Request::getPort() const
+// {
+// 	return (_port);
+// }

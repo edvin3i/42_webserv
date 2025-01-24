@@ -3,6 +3,7 @@
 
 #include <string>
 #include <map>
+#include "StatusCode.hpp"
 
 class MimeType
 {

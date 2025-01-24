@@ -340,7 +340,11 @@ void Response::_execute_cgi()
 	_setEnvironmentVariables(script_file);
 	char **env = _env.toArray();
 
-	pipe(fd);
+	if (pipe(fd) < 0)
+	{
+		Env::freeArray(env);
+		throw (STATUS_INTERNAL_ERR);
+	}
 	int pid = fork();
 	if (pid < 0){
 		std::cerr << "Error: fork" << std::endl;

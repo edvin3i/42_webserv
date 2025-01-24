@@ -361,7 +361,7 @@ void Response::_execute_cgi()
 			Env::freeArray(env);
 			throw (ChildProcessException());
 		}
-		const char *arg[] = {script_file.c_str(), NULL};
+		const char *arg[] = {_location->cgi_path.c_str(), _extra_path.c_str(), NULL};
 		execve(_location->cgi_path.c_str(), const_cast<char *const *>(arg), env);
 		std::cerr << "Error: execve" << std::endl;
 		Env::freeArray(env);

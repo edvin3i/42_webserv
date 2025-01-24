@@ -89,12 +89,23 @@ void Response::_check_resource()
 	std::string resource_path;
 	const std::string& uri_path = _request.getStartLine().getUri().getPath();
 
-	if (_location && !_location->path.empty())
+	if (_location && !_location->root.empty())
 	{
-		if (!_location->root.empty())
-			_resource_path.append(_location->root);
-		else
-			_resource_path.append(_conf.root);
+		_resource_path.append(_conf.root);
+		_resource_path.append(_location->root);
+		struct stat file_stat;
+		int res_stat = stat(_resource_path.c_str(), &file_stat);
+		if (res_stat < 0)
+			throw (STATUS_NOT_FOUND);
+		if (!S_ISREG(file_stat.st_mode))
+		{
+			_resource_path.append("/");
+			_resource_path.append(uri_path.substr(_location->path.length()));
+		}
+	}
+	else if (_location)
+	{
+		_resource_path.append(_conf.root);
 		_resource_path.append(_location->path);
 		_resource_path.append(uri_path.substr(_location->path.length()));
 	}

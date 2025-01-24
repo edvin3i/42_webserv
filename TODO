@@ -1,0 +1,4 @@
+- Your program has to take a configuration file as argument, or use a default path
+Is the server non-blocking ?
+- Checking the value of errno is strictly forbidden after a read or a write operation.
+- For the curl command : curl -v -F "file=@42.png" http://localhost:8000/upload, recv dont read the content part

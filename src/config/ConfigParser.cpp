@@ -428,6 +428,6 @@ std::vector<ServerConfig> ConfigParser::getConfig() {
 
 void ConfigParser::_handleError(const std::string & err_message) {
 	std::string err_msg = err_message;
-	_logger.writeToLog(ERROR, err_msg);
+	// _logger.writeToLog(ERROR, err_msg);
 	throw std::runtime_error(err_msg);
 }

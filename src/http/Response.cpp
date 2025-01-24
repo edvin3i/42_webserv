@@ -134,7 +134,7 @@ void Response::_check_resource()
 	}
 	else if (S_ISDIR(file_stat.st_mode)) {
 		std::ostringstream ss; ss << "Resource is a directory" << std::endl;
-		_logger.writeToLog(DEBUG, ss.str());
+		// _logger.writeToLog(DEBUG, ss.str());
 		ss.str("");
 		_resource_type = RT_DIR;
 		if (_resource_path[_resource_path.length() - 1] != '/')
@@ -144,14 +144,14 @@ void Response::_check_resource()
 	else if (is_cgi_script)
 	{
 		std::ostringstream ss; ss << "Resource is a cgi script" << std::endl;
-		_logger.writeToLog(DEBUG, ss.str());
+		// _logger.writeToLog(DEBUG, ss.str());
 		ss.str("");
 		_resource_type = RT_CGI_SCRIPT;
 	}
 	else
 	{
 		std::ostringstream ss; ss << "Resource is a file" << std::endl;
-		_logger.writeToLog(DEBUG, ss.str());
+		// _logger.writeToLog(DEBUG, ss.str());
 		ss.str("");
 		_resource_type = RT_FILE;
 	}
@@ -521,7 +521,7 @@ void Response::_check_index_file()
 		return ;
 	while ((file = readdir(dir)))
 	{
-		if (strcmp(file->d_name, index_file.c_str()) == 0)
+		if (std::strcmp(file->d_name, index_file.c_str()) == 0)
 		{
 			_index_file = index_file;
 			_has_index_file = true;

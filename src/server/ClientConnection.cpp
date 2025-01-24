@@ -51,14 +51,15 @@ void ClientConnection::buildResponse() {
 
 
 void ClientConnection::readData() {
-	char buffer[BUFFER_SIZE] = {0};
+	char buffer[BUFFER_SIZE];
+
+	std::memset(buffer, 0, BUFFER_SIZE);
 	ssize_t bytesReceived; //= recv(_clientSocketFD, buffer, BUFFER_SIZE, 0);
 
     while ((bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0)) > 0) {
         _readBuffer.insert(_readBuffer.end(), buffer, buffer + bytesReceived);
 
         std::memset(buffer, 0, BUFFER_SIZE);
-
     }
 
 	// Add EAGAIN and EWOULDBLOCK checking
@@ -67,10 +68,10 @@ void ClientConnection::readData() {
         return;
     }
 
-	// std::stringstream ss;
-	// ss << "BUFFER Content:\n" << _readBuffer;
-	// _logger.writeToLog(DEBUG, ss.str());
-	// ss.str("");
+	std::stringstream ss;
+	ss << "BUFFER Content:\n" << _readBuffer << "BUFFER Length:\n" << _readBuffer.length();
+	_logger.writeToLog(DEBUG, ss.str());
+	ss.str("");
 }
 
 

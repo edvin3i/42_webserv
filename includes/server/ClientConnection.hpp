@@ -54,7 +54,7 @@ private:
 	ConnectionState _connectionState;
 	std::string _responseMessage;
 	size_t _writeOffset;
-	size_t _currentClientBodySize;
+	// size_t _currentClientBodySize;
 	LocationConfig *_currentLocationConfig;
 	Request *_request;
 	Response *_response;

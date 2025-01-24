@@ -9,7 +9,7 @@ ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerCo
 										_currentServerConfig(&config),
 										_connectionState(READING),
 										_writeOffset(0),
-										_currentClientBodySize(0),
+										// _currentClientBodySize(0),
 										_currentLocationConfig(NULL),
 										_request(NULL),
 										_env(env),

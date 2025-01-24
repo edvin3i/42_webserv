@@ -126,23 +126,26 @@ void MasterServer::run() {
 					case WRITING:
 						if (revents & POLLOUT) {
 
-							client->setRequest();
-							if (!client->getRequest()->error())
-							{
+							if (!client->getRequest()) {
+								client->setRequest();
+								if (!client->getRequest()->error()) {
 								// client->select_server_config(_configs);
-								client->select_location();
-							}
-							client->buildResponse();
-
-							// continue sending data until all data is sent
-							while (client->isReadyToWrite()) {
-								client->writeData();
+									client->select_location();
+								}
+								client->buildResponse();
 							}
 
-							if (client->getState() != WRITING || !client->keep_alive()) {
-								client->setState(CLOSING);
+							client->writeData();
+							
+							if (!client->isReadyToWrite()) {
+								if (client->keep_alive()) {
+									client->setState(READING);
+									_fds[i].events = POLLIN;
+								}
+								else {
+									client->setState(CLOSING);
+								}
 							}
-							_fds[i].events = POLLIN; // set POLLIN
 						}
 						if (revents & (POLLERR | POLLHUP)) {
 							client->setState(CLOSING);

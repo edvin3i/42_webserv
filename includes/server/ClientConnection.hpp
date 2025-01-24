@@ -15,7 +15,7 @@
 #include "../Env.hpp"
 
 
-const int BUFFER_SIZE = 8192;
+const int BUFFER_SIZE = 131072;
 
 
 class Logger;
@@ -60,6 +60,7 @@ private:
 	Response *_response;
 	Env &_env;
 	bool _keep_alive;
+	bool _responseSent;
 
 
 	std::string _readBuffer;

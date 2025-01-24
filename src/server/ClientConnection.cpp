@@ -13,7 +13,10 @@ ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerCo
 										_currentLocationConfig(NULL),
 										_request(NULL),
 										_env(env),
-										_keep_alive(true)
+										_keep_alive(true),
+										_totalBytesSent(0),
+										_currentBytesSent(0),
+										_responseSent(false)
 									{
 
 }
@@ -73,7 +76,8 @@ void ClientConnection::readData() {
 
 void ClientConnection::writeData() {
 	if (_writeOffset >= _writeBuffer.size()) {
-		_connectionState = CLOSING;
+		// _connectionState = CLOSING;
+		_responseSent = true;
 		return;
 	}
 
@@ -86,6 +90,11 @@ void ClientConnection::writeData() {
 	                         bytesToSend, 0);
 
 	if (bytesSent < 0) {
+
+		if (errno == EAGAIN || errno == EWOULDBLOCK) { // try again later if buffer is full
+			return;
+		}
+		
 		_logger.writeToLog(ERROR, "can not send the data to socket");
 		_connectionState = CLOSING;
 		return;
@@ -104,8 +113,8 @@ void ClientConnection::writeData() {
 		ss.clear();
 		ss << "===== All data sent to the client! =====";
 		_logger.writeToLog(DEBUG, ss.str());
-
-		_connectionState = CLOSING;
+		// _connectionState = CLOSING;
+		_responseSent = true;
 	}
 }
 
@@ -123,7 +132,8 @@ ConnectionState ClientConnection::getState() const {
 bool ClientConnection::isReadyToWrite() {
 	return !_writeBuffer.empty() \
 			&& _writeOffset < _writeBuffer.size() \
-			&& _connectionState == WRITING;
+			&& _connectionState == WRITING
+			&& !_responseSent;
 }
 
 static size_t matching_prefix_depth(const std::string& location_path, const std::string& uri)

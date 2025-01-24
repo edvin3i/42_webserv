@@ -15,7 +15,7 @@
 #include "../Env.hpp"
 
 
-const int BUFFER_SIZE = 1000000;
+const int BUFFER_SIZE = 8192;
 
 
 class Logger;
@@ -29,7 +29,7 @@ enum ConnectionState {
 
 class ClientConnection {
 public:
-	ClientConnection(Logger & logger, int socketFD, const ServerConfig & config, Env& env);
+	ClientConnection(Logger & logger, int socketFD, const ServerConfig & config, Env & env);
 	~ClientConnection();
 
 	ConnectionState getState() const;
@@ -52,7 +52,7 @@ private:
 	int _clientSocketFD;
 	const ServerConfig *_currentServerConfig;
 	ConnectionState _connectionState;
-	std::string _responseMessage; // needs to replace to _responceBuffer
+	std::string _responseMessage;
 	size_t _writeOffset;
 	size_t _currentClientBodySize;
 	LocationConfig *_currentLocationConfig;

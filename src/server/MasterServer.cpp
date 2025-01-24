@@ -48,9 +48,10 @@ MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & co
 		os << "Size of _fds = " << _fds.size();
 		_logger.writeToLog(DEBUG, os.str());
 	}
-	catch (const std::exception& e)
+	catch (const std::exception &e)
 	{
 		_free();
+		_logger.writeToLog(ERROR, e.what());
 		throw (std::runtime_error(e.what()));
 	}
 }
@@ -94,7 +95,7 @@ void MasterServer::run() {
 
 						pollfd client_fd;
 						client_fd.fd = new_socket;
-						client_fd.events = POLLIN | POLLOUT; // add POLLOUT check
+						client_fd.events = POLLIN | POLLOUT;
 						client_fd.revents = 0;
 
 						_fds.push_back(client_fd);
@@ -127,9 +128,7 @@ void MasterServer::run() {
 						if (revents & POLLOUT) {
 
 							client->setRequest();
-							if (!client->getRequest()->error())
-							{
-								// client->select_server_config(_configs);
+							if (!client->getRequest()->error()) {
 								client->select_location();
 							}
 							client->buildResponse();

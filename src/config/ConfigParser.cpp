@@ -18,7 +18,7 @@
 #define PORT_MAX 65535
 
 
-ConfigParser::ConfigParser(Logger &logger) : _logger(logger) {
+ConfigParser::ConfigParser(Logger & logger) : _logger(logger) {
 
 }
 
@@ -109,7 +109,7 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 			if (tokens.size() < 2)
 			{
 				std::ostringstream ss;
-				ss << ERR_CONF_WRNG_SYNTAX << "location  on the line number " << _line_number;
+				ss << ERR_CONF_WRNG_SYNTAX << "location on the line number " << _line_number;
 				_handleError(ss.str());
 			}
 			if (tokens.size() > 2 && tokens[1] == "=")
@@ -141,7 +141,7 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 			}
 
 			_parseLocationBlock(location);
-			_logger.writeToLog(DEBUG, "PARSE SERVER BLOCK CALLED");
+			// _logger.writeToLog(DEBUG, "PARSE SERVER BLOCK CALLED");
 			server.locations[path] = location;
 		}
 		else {

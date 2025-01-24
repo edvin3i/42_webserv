@@ -605,13 +605,15 @@ void Response::_handle_multipart_data(const BodyPart& body_part, size_t& count)
 
 	const Parameters& parameters = content_disposition_it->second.getParameters();
 	Parameters::const_iterator filename_it = parameters.find("filename");
+	std::string filename;
 
-	if (filename_it != parameters.end() && !filename_it->second.empty())
-	{
-		const std::string file_path = _location->upload_dir + "/" + filename_it->second;
-		_upload_file(file_path);
-		count += 1;
-	}
+	if (filename_it == parameters.end() || filename_it->second.empty())
+		filename = "missing_filename";
+	else
+		filename = filename_it->second;
+	const std::string file_path = _location->upload_dir + "/" + filename_it->second;
+	_upload_file(file_path);
+	count += 1;
 }
 
 void Response::_handle_post()

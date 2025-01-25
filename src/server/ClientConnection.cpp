@@ -56,14 +56,14 @@ void ClientConnection::readData() {
 	std::memset(buffer, 0, BUFFER_SIZE);
 	ssize_t bytesReceived; //= recv(_clientSocketFD, buffer, BUFFER_SIZE, 0);
 
-    while ((bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0)) > 0) {
+    while ((bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, MSG_DONTWAIT)) > 0) {
         _readBuffer.insert(_readBuffer.end(), buffer, buffer + bytesReceived);
 
         std::memset(buffer, 0, BUFFER_SIZE);
     }
 
 	// Add EAGAIN and EWOULDBLOCK checking
-    if (bytesReceived == 0 || (bytesReceived < 0 && errno != EAGAIN && errno != EWOULDBLOCK)) {
+    if (bytesReceived == 0) {
         _connectionState = CLOSING;
         return;
     }

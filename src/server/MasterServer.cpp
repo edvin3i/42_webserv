@@ -115,10 +115,14 @@ void MasterServer::run() {
 				switch (client->getState()) {
 					case READING:
 						if (revents & POLLIN) {
-							client->initRequest();
-							client->readData();
-							_fds[i].events = POLLOUT;
-							client->setState(WRITING);
+							if (client->getRequest() == NULL)
+								client->initRequest();
+							ssize_t bytes = client->readData();
+							if (client->getRequest()->error() || (bytes < 0) || (client->getReadState() == READ_FINISH))
+							{
+								_fds[i].events = POLLOUT;
+								client->setState(WRITING);
+							}
 						}
 						if (revents & (POLLERR | POLLHUP)) {
 							client->setState(CLOSING);

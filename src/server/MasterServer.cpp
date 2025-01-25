@@ -78,7 +78,6 @@ void MasterServer::run() {
 	while(!g_sig) {
 		int polling = poll(_fds.data(), _fds.size(), TIMEOUT);
 		if (polling < 0) {
-			if (errno == EINTR) {continue;} // added checking of errno for "interrupted by signal"
 			// _logger.writeToLog(ERROR, "poll() return -1!");
 			break;
 		}

@@ -59,16 +59,17 @@ public:
 	bool keep_alive() const;
 	void initRequest();
 	bool isParsingFinish() const;
-	void _handle_request_line();
-	void _handle_headers();
-	void _handle_content();
-	void _handle_chunked_content();
-	void _handle_finish();
+	void setTimeout(bool);
 
 private:
 	void _setRequestLineHeaders(const std::string& str);
 	void _checkContentLength();
 	void _checkChunked();
+	void _handle_request_line();
+	void _handle_headers();
+	void _handle_content();
+	void _handle_chunked_content();
+	void _handle_finish();
 	// void _readRequestLineHeaders(std::string& readBuffer, std::string& content_begin);
 	// void _readContent(std::string& readBuffer, size_t content_length);
 	// void _readChunkedContent(std::string& readBuffer);
@@ -95,6 +96,7 @@ private:
 
 	std::string _readBuffer;
 	std::vector<char> _writeBuffer;
+	bool _timeout;
 
 
 	int count;

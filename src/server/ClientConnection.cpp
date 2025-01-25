@@ -17,6 +17,7 @@ ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerCo
 										_is_chunked(false),
 										_is_content_length(false),
 										_content_length(0),
+										_timeout(false),
 										count(0)
 									{
 
@@ -308,26 +309,33 @@ ssize_t ClientConnection::readData(short revents)
 		size_t dynamic_buffer_size = _content_length - _readBuffer.length();
 
 		dynamic_buffer = new char[dynamic_buffer_size];
-		bytesReceived = recv(_clientSocketFD, dynamic_buffer, dynamic_buffer_size, 0);
+		bytesReceived = recv(_clientSocketFD, dynamic_buffer, dynamic_buffer_size, MSG_DONTWAIT);
 		if (bytesReceived > 0)
 			_readBuffer.append(dynamic_buffer, dynamic_buffer + bytesReceived);
+		delete[] dynamic_buffer;
 	}
 	else
 	{
 		std::memset(buffer, 0, BUFFER_SIZE);
-		bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0);
+		bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, MSG_DONTWAIT);
 		if (bytesReceived > 0)
 			_readBuffer.append(buffer, buffer + bytesReceived);
 
 	}
 	if (bytesReceived == 0)
 		return (bytesReceived);
-	if (bytesReceived < 0)
+	if (bytesReceived < 0 && _timeout)
 	{
-		std::cerr << "ERREUR, _readBuffer.length()" << _readBuffer.length() << "count: " << count << '\n';
-		std::cerr << "errno: " << errno << " " << std::strerror(errno) << "\n\n";
+		std::cerr << "tieout and bytesreceived < 0\n";
+		std::cerr << "errno: " << errno << '\n';
 		_request->setError(STATUS_INTERNAL_ERR);
 	}
+	// if (bytesReceived < 0)
+	// {
+	// 	std::cerr << "ERREUR, _readBuffer.length()" << _readBuffer.length() << "count: " << count << '\n';
+	// 	std::cerr << "errno: " << errno << " " << std::strerror(errno) << "\n\n";
+	// 	_request->setError(STATUS_INTERNAL_ERR);
+	// }
 	switch (_read_state)
 	{
 		case READ_REQUEST_LINE:
@@ -459,7 +467,7 @@ void ClientConnection::writeData() {
 
 	ssize_t bytesSent = send(_clientSocketFD,
 	                         &_writeBuffer[_writeOffset],
-	                         bytesToSend, MSG_NOSIGNAL);
+	                         bytesToSend, MSG_NOSIGNAL | MSG_DONTWAIT);
 
 	if (bytesSent < 0) {
 		if (errno == EAGAIN || errno == EWOULDBLOCK) {
@@ -659,4 +667,9 @@ bool ClientConnection::keep_alive() const
 bool ClientConnection::isParsingFinish() const
 {
 	return (_read_state == READ_FINISH);
+}
+
+void ClientConnection::setTimeout(bool timeout)
+{
+	_timeout = timeout;
 }

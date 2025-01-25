@@ -79,7 +79,7 @@ void MasterServer::run() {
 	while(!g_sig) {
 		int polling = poll(_fds.data(), _fds.size(), TIMEOUT);
 		if (polling < 0) {
-			if (errno == EINTR) {continue;} // added checking of errno for "interrupted by signal"
+			// if (errno == EINTR) {continue;} // added checking of errno for "interrupted by signal"
 			// _logger.writeToLog(ERROR, "poll() return -1!");
 			break;
 		}
@@ -95,7 +95,7 @@ void MasterServer::run() {
 				if (revents & POLLIN) {
 					int new_socket = server->acceptConnection();
 					if (new_socket >= 0) {
-						fcntl(new_socket, F_SETFL, O_NONBLOCK);
+						// fcntl(new_socket, F_SETFL, O_NONBLOCK);
 
 						pollfd client_fd;
 						client_fd.fd = new_socket;

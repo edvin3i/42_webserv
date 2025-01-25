@@ -108,63 +108,6 @@ void ClientConnection::_checkContentLength()
 		}
 }
 
-// void ClientConnection::_readRequestLineHeaders(std::string& readBuffer, std::string& content_begin)
-// {
-// 	char buffer[BUFFER_SIZE + 1];
-// 	ssize_t bytesReceived;
-
-// 	std::memset(buffer, 0, BUFFER_SIZE);
-// 	while ((bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0)) > 0)
-// 	{
-// 		char *pos_delimiter = std::strstr(buffer, "\r\n\r\n");
-// 		if (pos_delimiter != NULL)
-// 		{
-// 			readBuffer.insert(readBuffer.end(), buffer, pos_delimiter);
-// 			content_begin.insert(content_begin.end(), pos_delimiter + 4, buffer + bytesReceived);
-// 			return ;
-// 		}
-// 		else
-// 		{
-//         	readBuffer.insert(readBuffer.end(), buffer, buffer + bytesReceived);
-// 		}
-//         std::memset(buffer, 0, BUFFER_SIZE);
-// 	}
-// 	if (bytesReceived == 0)
-// 	{
-// 		_request->setError(STATUS_BAD_REQUEST);
-// 		_connectionState = CLOSING;
-// 	}
-// 	else if (bytesReceived < 0)
-// 	{
-// 		_request->setError(STATUS_INTERNAL_ERR);
-// 		_connectionState = CLOSING;
-// 	}
-// }
-
-// void ClientConnection::_readContent(std::string& readBuffer, size_t content_length)
-// {
-// 	char buffer[BUFFER_SIZE + 1];
-// 	ssize_t bytesReceived;
-// 	size_t totalBytesReceived = readBuffer.length();
-
-// 	std::memset(buffer, 0, BUFFER_SIZE);
-// 	while ((totalBytesReceived < content_length) && ((bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0)) > 0))
-// 	{
-// 		readBuffer.insert(readBuffer.end(), buffer, buffer + bytesReceived);
-// 		totalBytesReceived += bytesReceived;
-// 		std::memset(buffer, 0, BUFFER_SIZE);
-// 	}
-// 	if (totalBytesReceived != content_length)
-// 	{
-// 		std::cerr << "ICI\n";
-// 		_request->setError(STATUS_BAD_REQUEST);
-// 	}
-// 	if (bytesReceived < 0)
-// 	{
-// 		_request->setError(STATUS_INTERNAL_ERR);
-// 	}
-// }
-
 void ClientConnection::_checkChunked()
 {
 	size_t nb_encoding = _request->getHeaders().count(Headers::getTypeStr(HEADER_TRANSFER_ENCODING));

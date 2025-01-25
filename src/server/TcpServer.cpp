@@ -127,7 +127,7 @@ void TcpServer::_resolveHostName(const std::string &hostname,
 }
 
 int TcpServer::_setupSocket() {
-	_socket = socket(AF_INET, SOCK_STREAM, 0);
+	_socket = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
 
 	// set socket to SO_REUSEADDR for more fast restart without TIME_WAIT
 	struct timeval timeout;
@@ -136,8 +136,8 @@ int TcpServer::_setupSocket() {
 	timeout.tv_usec = 0;
 	setsockopt(_socket, SOL_SOCKET, SO_REUSEADDR, &timeout, sizeof(timeout));
 
-	int flags = fcntl(_socket, F_GETFL, 0);
-	fcntl(_socket, F_SETFL, flags | O_NONBLOCK);
+	// int flags = fcntl(_socket, F_GETFL, 0);
+	// fcntl(_socket, F_SETFL, flags | O_NONBLOCK);
 
 	// _logger.writeToLog(INFO, "Server started");
 

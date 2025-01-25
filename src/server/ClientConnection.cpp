@@ -1,6 +1,5 @@
 #include "../../includes/server/ClientConnection.hpp"
 #include "../../includes/http/Request.hpp"
-
 #include <iterator>
 
 ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerConfig & config, Env& env)
@@ -17,7 +16,8 @@ ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerCo
 										_read_state(READ_REQUEST_LINE),
 										_is_chunked(false),
 										_is_content_length(false),
-										_content_length(0)
+										_content_length(0),
+										count(0)
 									{
 
 }
@@ -209,104 +209,140 @@ void ClientConnection::_checkChunked()
 // 		_request->setError(STATUS_INTERNAL_ERR);
 // 	}
 // }
-
-ssize_t ClientConnection::readData()
+void ClientConnection::_handle_request_line()
 {
-	char buffer[BUFFER_SIZE + 1];
+	size_t pos_delimiter = _readBuffer.find("\r\n");
+	if (pos_delimiter != std::string::npos)
+	{
+		_request->setRequestLine(_readBuffer.substr(0, pos_delimiter));
+		_readBuffer.erase(0, pos_delimiter + 2);
+		_read_state = READ_HEADERS;
+		_handle_headers();
+	}
+}
+
+void ClientConnection::_handle_headers()
+{
+	size_t pos_delimiter = _readBuffer.find("\r\n\r\n");
+	
+	if (pos_delimiter != std::string::npos)
+	{
+		std::string field_str;
+		std::vector<std::string> fields;
+
+		field_str = _readBuffer.substr(0, pos_delimiter);
+		if (!field_str.empty() && Utils::is_whitespace(field_str[0]))
+		{
+			_request->setError(STATUS_BAD_REQUEST);
+			return ;
+		}
+		fields = Utils::split(field_str, "\r\n");
+		_request->setHeaders(fields);
+		_readBuffer.erase(0, pos_delimiter + 4);
+		_checkChunked();
+		if (_is_chunked)
+		{
+			_read_state = READ_CONTENT_CHUNKED;
+			_handle_chunked_content();
+			return ;
+		}
+		_checkContentLength();
+		if (_is_content_length)
+		{
+			_read_state = READ_CONTENT;
+			_handle_content();
+			return ;
+		}
+		if ((!_is_chunked || !_is_content_length) && !_readBuffer.empty())
+		{
+			_request->setError(STATUS_BAD_REQUEST);
+		}
+		_read_state = READ_FINISH;
+		_handle_finish();
+	}
+}
+void ClientConnection::_handle_content()
+{
+	if (_readBuffer.length() > _content_length)
+	{
+		_request->setError(STATUS_BAD_REQUEST);
+		return ;
+	}
+	if (_readBuffer.length() == _content_length)
+	{
+		_request->setBody(_readBuffer.substr(0, _content_length), _content_length, false);
+		_readBuffer.erase();
+		_read_state = READ_FINISH;
+		_handle_finish();
+	}
+}
+void ClientConnection::_handle_chunked_content()
+{
+	size_t pos_delimiter = _readBuffer.find("\r\n\r\n");
+
+	if (pos_delimiter != std::string::npos)
+	{
+		_request->setBody(_readBuffer.substr(0, pos_delimiter + 4), 0, true);
+		_readBuffer.erase(0, pos_delimiter + 4);
+		_read_state = READ_FINISH;
+		_handle_finish();
+	}
+}
+
+void ClientConnection::_handle_finish()
+{
+	if (!_readBuffer.empty())
+		_request->setError(STATUS_BAD_REQUEST);
+}
+
+ssize_t ClientConnection::readData(short revents)
+{
+	char buffer[BUFFER_SIZE];
 	ssize_t bytesReceived;
 
-	std::memset(buffer, 0, BUFFER_SIZE + 1);
+	(void)revents;
+	std::memset(buffer, 0, BUFFER_SIZE);
 	bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0);
-	_readBuffer.append(buffer, buffer + bytesReceived);
-
+	if (bytesReceived > 0)
+		_readBuffer.append(buffer, buffer + bytesReceived);
+	if (bytesReceived == 0)
+		return (bytesReceived);
+	if (bytesReceived < 0)
+	{
+		std::cerr << "ERREUR, _readBuffer.length()" << _readBuffer.length() << "count: " << count << '\n';
+		_request->setError(STATUS_INTERNAL_ERR);
+	}
 	switch (_read_state)
 	{
 		case READ_REQUEST_LINE:
 		{
-			size_t pos_delimiter = _readBuffer.find("\r\n");
-			if (pos_delimiter != std::string::npos)
-			{
-				_request->setRequestLine(_readBuffer.substr(0, pos_delimiter));
-				_readBuffer.erase(0, pos_delimiter + 2);
-				_read_state = READ_HEADERS;
-			}
+			_handle_request_line();
 			break ;
 		}
 		case READ_HEADERS:
 		{
-			size_t pos_delimiter = _readBuffer.find("\r\n\r\n");
-			if (pos_delimiter != std::string::npos)
-			{
-				std::string field_str;
-				std::vector<std::string> fields;
-
-				field_str = _readBuffer.substr(0, pos_delimiter);
-				if (!field_str.empty() && Utils::is_whitespace(field_str[0]))
-				{
-					_request->setError(STATUS_BAD_REQUEST);
-					break ;
-				}
-				fields = Utils::split(field_str, "\r\n");
-				_request->setHeaders(fields);
-				_readBuffer.erase(0, pos_delimiter + 4);
-				_checkChunked();
-				if (_is_chunked)
-				{
-					_read_state = READ_CONTENT_CHUNKED;
-					break ;
-				}
-				_checkContentLength();
-				if (_is_content_length)
-				{
-					_read_state = READ_CONTENT;
-					break ;
-				}
-				if ((!_is_chunked || !_is_content_length) && !_readBuffer.empty())
-				{
-					_request->setError(STATUS_BAD_REQUEST);
-				}
-				_read_state = READ_FINISH;
-			}
+			_handle_headers();
 			break ;
 		}
 		case READ_CONTENT:
 		{
-			if (_readBuffer.length() > _content_length)
-			{
-				_request->setError(STATUS_BAD_REQUEST);
-				break ;
-			}
-			if (_readBuffer.length() == _content_length)
-			{
-				_request->setBody(_readBuffer.substr(0, _content_length), _content_length, false);
-				_read_state = READ_FINISH;
-			}
+			_handle_content();
 			break ;
 		}
 		case READ_CONTENT_CHUNKED:
 		{
-			size_t pos_delimiter = _readBuffer.find("\r\n\r\n");
-
-			if (pos_delimiter != std::string::npos)
-			{
-				_request->setBody(_readBuffer.substr(0, pos_delimiter + 4), 0, true);
-				_readBuffer.erase(0, pos_delimiter + 4);
-				if (!_readBuffer.empty())
-				{
-					_request->setError(STATUS_BAD_REQUEST);
-					break ;
-				}
-				_read_state = READ_FINISH;
-			}
+			_handle_chunked_content();
 			break ;
 		}
 		case READ_FINISH:
 		{
-			if (bytesReceived != 0)
-				_request->setError(STATUS_BAD_REQUEST);
+			// if (bytesReceived != 0)
+			// 	_request->setError(STATUS_BAD_REQUEST);
+			_handle_finish();
 			break ;
 		}
 	}
+	count += 1;
 	return (bytesReceived);
 }
 
@@ -604,7 +640,7 @@ bool ClientConnection::keep_alive() const
 	return (_keep_alive);
 }
 
-ReadingState ClientConnection::getReadState() const
+bool ClientConnection::isParsingFinish() const
 {
-	return (_read_state);
+	return (_read_state == READ_FINISH);
 }

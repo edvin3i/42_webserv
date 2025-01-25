@@ -1,7 +1,7 @@
 #include "../../includes/server/MasterServer.hpp"
 
 
-const int TIMEOUT = 32;
+const int TIMEOUT = 10000;
 
 MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & configs, char **env)
 						: _logger(logger), _configs(configs), _servers(), _env(env), _fds(), _serversMap(), _clientsMap() {
@@ -114,11 +114,12 @@ void MasterServer::run() {
 
 				switch (client->getState()) {
 					case READING:
-						if (revents & POLLIN) {
+						if ((revents & POLLIN) || !client->isParsingFinish()) {
 							if (client->getRequest() == NULL)
 								client->initRequest();
-							ssize_t bytes = client->readData();
-							if (client->getRequest()->error() || (bytes < 0) || (client->getReadState() == READ_FINISH))
+							ssize_t bytes = client->readData(revents);
+							(void)bytes;
+							if (client->getRequest()->error() || client->isParsingFinish())
 							{
 								_fds[i].events = POLLOUT;
 								client->setState(WRITING);

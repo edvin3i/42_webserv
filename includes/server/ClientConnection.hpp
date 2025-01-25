@@ -8,6 +8,7 @@
 #include <iostream>
 #include <sys/socket.h>
 #include <algorithm>
+#include <sys/poll.h>
 #include "../logger/Logger.hpp"
 #include "../config/ServerConfig.hpp"
 #include "../http/Response.hpp"
@@ -46,7 +47,7 @@ public:
 
 	bool isReadyToWrite();
 
-	ssize_t readData();
+	ssize_t readData(short revents);
 	void writeData();
 	void buildResponse();
 	const Request* getRequest() const;
@@ -56,7 +57,12 @@ public:
 	// void select_server_config(const std::vector<ServerConfig>&);
 	bool keep_alive() const;
 	void initRequest();
-	ReadingState getReadState() const;
+	bool isParsingFinish() const;
+	void _handle_request_line();
+	void _handle_headers();
+	void _handle_content();
+	void _handle_chunked_content();
+	void _handle_finish();
 
 private:
 	void _setRequestLineHeaders(const std::string& str);
@@ -80,6 +86,7 @@ private:
 	Env &_env;
 	bool _keep_alive;
 	ReadingState _read_state;
+
 	bool _is_chunked;
 	bool _is_content_length;
 	size_t _content_length;
@@ -89,6 +96,7 @@ private:
 	std::vector<char> _writeBuffer;
 
 
+	int count;
 };
 
 

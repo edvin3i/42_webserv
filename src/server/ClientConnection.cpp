@@ -24,7 +24,7 @@ ClientConnection::~ClientConnection() {
 
 
 void ClientConnection::buildResponse() {
-
+	_writeBuffer.clear();
 	_response = new Response(_logger, *_currentServerConfig, _currentLocationConfig, *_request, _env);
 	_keep_alive = _response->keep_alive();
 	std::stringstream ss;
@@ -33,7 +33,7 @@ void ClientConnection::buildResponse() {
 	// ss.str("");
 
 	std::string response_html = _response->toHtml();
-	_writeBuffer.clear();
+	//_writeBuffer.clear();
 	_writeBuffer.resize(response_html.size());
 	std::copy(response_html.begin(), response_html.end(), _writeBuffer.begin());
 	_writeOffset = 0;
@@ -52,26 +52,18 @@ void ClientConnection::buildResponse() {
 
 void ClientConnection::readData() {
 	char buffer[BUFFER_SIZE];
-
 	std::memset(buffer, 0, BUFFER_SIZE);
-	ssize_t bytesReceived; //= recv(_clientSocketFD, buffer, BUFFER_SIZE, 0);
-
-    while ((bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0)) > 0) {
-        _readBuffer.insert(_readBuffer.end(), buffer, buffer + bytesReceived);
-
-        std::memset(buffer, 0, BUFFER_SIZE);
-    }
-
-	// Add EAGAIN and EWOULDBLOCK checking
-    if (bytesReceived == 0 || (bytesReceived < 0 && errno != EAGAIN && errno != EWOULDBLOCK)) {
-        _connectionState = CLOSING;
-        return;
-    }
-
-	std::stringstream ss;
-	ss << "BUFFER Content:\n" << _readBuffer << "BUFFER Length:\n" << _readBuffer.length();
-	_logger.writeToLog(DEBUG, ss.str());
-	ss.str("");
+	
+	
+	ssize_t bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0);
+	
+	if (bytesReceived > 0) {
+		_readBuffer.insert(_readBuffer.end(), buffer, buffer + bytesReceived);
+	}
+	else {
+		_connectionState = CLOSING;
+		return;
+	}
 }
 
 
@@ -81,38 +73,22 @@ void ClientConnection::writeData() {
 		return;
 	}
 
-	// send data by portions size of BUFFER_SIZE
 	size_t remainingBytes = _writeBuffer.size() - _writeOffset;
 	size_t bytesToSend = std::min(remainingBytes, static_cast<size_t>(BUFFER_SIZE));
 
 	ssize_t bytesSent = send(_clientSocketFD,
-	                         &_writeBuffer[_writeOffset],
-	                         bytesToSend, MSG_NOSIGNAL);
+							&_writeBuffer[_writeOffset],
+							bytesToSend,
+							MSG_DONTWAIT | MSG_NOSIGNAL);
 
-	if (bytesSent < 0) {
-		if (errno == EAGAIN || errno == EWOULDBLOCK) {
-			_logger.writeToLog(DEBUG, "socket not ready, try send next time...");
-			return;
-		}
-		_logger.writeToLog(ERROR, "can not send the data to socket");
+	if (bytesSent <= 0) {
 		_connectionState = CLOSING;
 		return;
 	}
 
 	_writeOffset += bytesSent;
 
-	std::ostringstream ss;
-	ss << "===== Sent: " << bytesSent << " bytes to client. =====";
-	_logger.writeToLog(DEBUG, ss.str());
-
-	// continue sending data until all data is sent
 	if (_writeOffset >= _writeBuffer.size()) {
-
-		ss.str("");
-		ss.clear();
-		ss << "===== All data sent to the client! =====";
-		_logger.writeToLog(DEBUG, ss.str());
-
 		_connectionState = CLOSING;
 	}
 }

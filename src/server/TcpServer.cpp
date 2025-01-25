@@ -130,8 +130,11 @@ int TcpServer::_setupSocket() {
 	_socket = socket(AF_INET, SOCK_STREAM, 0);
 
 	// set socket to SO_REUSEADDR for more fast restart without TIME_WAIT
-	int state = 1;
-	setsockopt(_socket, SOL_SOCKET, SO_REUSEADDR, &state, sizeof(state));
+	struct timeval timeout;
+
+	timeout.tv_sec = 10;
+	timeout.tv_usec = 0;
+	setsockopt(_socket, SOL_SOCKET, SO_REUSEADDR, &timeout, sizeof(timeout));
 
 	int flags = fcntl(_socket, F_GETFL, 0);
 	fcntl(_socket, F_SETFL, flags | O_NONBLOCK);

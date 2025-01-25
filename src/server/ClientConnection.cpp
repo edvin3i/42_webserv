@@ -301,15 +301,31 @@ ssize_t ClientConnection::readData(short revents)
 	ssize_t bytesReceived;
 
 	(void)revents;
-	std::memset(buffer, 0, BUFFER_SIZE);
-	bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0);
-	if (bytesReceived > 0)
-		_readBuffer.append(buffer, buffer + bytesReceived);
+	
+	if (_read_state == READ_CONTENT)
+	{
+		char *dynamic_buffer = NULL;
+		size_t dynamic_buffer_size = _content_length - _readBuffer.length();
+
+		dynamic_buffer = new char[dynamic_buffer_size];
+		bytesReceived = recv(_clientSocketFD, dynamic_buffer, dynamic_buffer_size, 0);
+		if (bytesReceived > 0)
+			_readBuffer.append(dynamic_buffer, dynamic_buffer + bytesReceived);
+	}
+	else
+	{
+		std::memset(buffer, 0, BUFFER_SIZE);
+		bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0);
+		if (bytesReceived > 0)
+			_readBuffer.append(buffer, buffer + bytesReceived);
+
+	}
 	if (bytesReceived == 0)
 		return (bytesReceived);
 	if (bytesReceived < 0)
 	{
 		std::cerr << "ERREUR, _readBuffer.length()" << _readBuffer.length() << "count: " << count << '\n';
+		std::cerr << "errno: " << errno << " " << std::strerror(errno) << "\n\n";
 		_request->setError(STATUS_INTERNAL_ERR);
 	}
 	switch (_read_state)

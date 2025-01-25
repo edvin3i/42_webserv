@@ -1,7 +1,7 @@
 #include "../../includes/server/MasterServer.hpp"
 
 
-const int TIMEOUT = 10000;
+const int TIMEOUT = 32;
 
 MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & configs, char **env)
 						: _logger(logger), _configs(configs), _servers(), _env(env), _fds(), _serversMap(), _clientsMap() {

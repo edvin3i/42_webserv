@@ -2,6 +2,7 @@
 #define CLIENTCONNECTION_HPP
 
 #include <string>
+#include <cstring>
 #include <vector>
 #include <map>
 #include <unistd.h>
@@ -16,7 +17,7 @@
 #include "../Env.hpp"
 
 
-const int BUFFER_SIZE = 8192;
+const int BUFFER_SIZE = 8192 * 64;
 
 
 class Logger;

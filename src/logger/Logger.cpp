@@ -112,6 +112,7 @@ void Logger::_writeToFile(const std::string & message) {
 
 void Logger::_writeToConsole(const std::string & message) {
 	std::cout << message;
+	// (void) message;
 }
 
 

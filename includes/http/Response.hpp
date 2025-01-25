@@ -2,6 +2,7 @@
 #define RESPONSE_HPP
 
 #include <string>
+#include <csignal>
 #include <sys/stat.h>
 #include <dirent.h>
 #include <algorithm>

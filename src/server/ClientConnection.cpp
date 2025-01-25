@@ -49,30 +49,262 @@ void ClientConnection::buildResponse() {
 	}
 }
 
+void ClientConnection::_setRequestLineHeaders(const std::string& str)
+{
+	std::string request_line;
+	std::string fields_str;
+	std::vector<std::string> fields;
+	size_t pos_delimiter;
+	size_t pos_fields;
 
-void ClientConnection::readData() {
-	char buffer[BUFFER_SIZE];
+	pos_delimiter = str.find("\r\n");
+	if (pos_delimiter == std::string::npos)
+	{
+		_request->setError(STATUS_BAD_REQUEST);
+		return ;
+	}
+	request_line = str.substr(0, pos_delimiter);
+	_request->setRequestLine(request_line);
+	pos_fields = pos_delimiter + 2;
+	if (pos_fields >= str.length() || Utils::is_whitespace(str[pos_fields]))
+	{
+		_request->setError(STATUS_BAD_REQUEST);
+		return ;
+	}
+	fields_str = str.substr(pos_fields);
+	fields = Utils::split(fields_str, "\r\n");
+	_request->setHeaders(fields);
+}
+
+void ClientConnection::_checkContentLength(size_t& content_length, bool& is_content_length)
+{
+	size_t nb_content_length = _request->getHeaders().count(Headers::getTypeStr(HEADER_CONTENT_LENGTH));
+
+	switch (nb_content_length)
+	{
+		case 0:
+			content_length = 0;
+			is_content_length = false;
+			break;
+		case 1:
+			try
+			{
+				Headers::const_iterator content_length_it = _request->getHeaders().find(Headers::getTypeStr(HEADER_CONTENT_LENGTH));
+				content_length = Utils::stoul(content_length_it->second.getValue());
+				is_content_length = true;
+			}
+			catch (const std::exception& e)
+			{
+				_request->setError(STATUS_BAD_REQUEST);
+			}
+			break ;
+		default:
+			_request->setError(STATUS_BAD_REQUEST);
+		}
+}
+
+void ClientConnection::_readRequestLineHeaders(std::string& readBuffer, std::string& content_begin)
+{
+	char buffer[BUFFER_SIZE + 1];
+	ssize_t bytesReceived;
 
 	std::memset(buffer, 0, BUFFER_SIZE);
-	ssize_t bytesReceived; //= recv(_clientSocketFD, buffer, BUFFER_SIZE, 0);
-
-    while ((bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0)) > 0) {
-        _readBuffer.insert(_readBuffer.end(), buffer, buffer + bytesReceived);
-
+	while ((bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0)) > 0)
+	{
+		char *pos_delimiter = std::strstr(buffer, "\r\n\r\n");
+		if (pos_delimiter != NULL)
+		{
+			readBuffer.insert(readBuffer.end(), buffer, pos_delimiter);
+			content_begin.insert(content_begin.end(), pos_delimiter + 4, buffer + bytesReceived);
+			return ;
+		}
+		else
+		{
+        	readBuffer.insert(readBuffer.end(), buffer, buffer + bytesReceived);
+		}
         std::memset(buffer, 0, BUFFER_SIZE);
-    }
-
-	// Add EAGAIN and EWOULDBLOCK checking
-    if (bytesReceived == 0 || (bytesReceived < 0 && errno != EAGAIN && errno != EWOULDBLOCK)) {
-        _connectionState = CLOSING;
-        return;
-    }
-
-	std::stringstream ss;
-	ss << "BUFFER Content:\n" << _readBuffer << "BUFFER Length:\n" << _readBuffer.length();
-	_logger.writeToLog(DEBUG, ss.str());
-	ss.str("");
+	}
+	if (bytesReceived == 0)
+	{
+		_request->setError(STATUS_BAD_REQUEST);
+		_connectionState = CLOSING;
+	}
+	else if (bytesReceived < 0)
+	{
+		_request->setError(STATUS_INTERNAL_ERR);
+		_connectionState = CLOSING;
+	}
 }
+
+void ClientConnection::_readContent(std::string& readBuffer, size_t content_length)
+{
+	char buffer[BUFFER_SIZE + 1];
+	ssize_t bytesReceived;
+	size_t totalBytesReceived = readBuffer.length();
+
+	std::memset(buffer, 0, BUFFER_SIZE);
+	while ((totalBytesReceived < content_length) && ((bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0)) > 0))
+	{
+		readBuffer.insert(readBuffer.end(), buffer, buffer + bytesReceived);
+		totalBytesReceived += bytesReceived;
+		std::memset(buffer, 0, BUFFER_SIZE);
+	}
+	if (totalBytesReceived != content_length)
+	{
+		std::cerr << "ICI\n";
+		_request->setError(STATUS_BAD_REQUEST);
+	}
+	if (bytesReceived < 0)
+	{
+		_request->setError(STATUS_INTERNAL_ERR);
+	}
+}
+
+void ClientConnection::_checkChunked(bool& is_chunked)
+{
+	size_t nb_encoding = _request->getHeaders().count(Headers::getTypeStr(HEADER_TRANSFER_ENCODING));
+
+	switch (nb_encoding)
+	{
+		case 0:
+			is_chunked = false;
+			break ;
+		case 1:
+		{
+			Headers::const_iterator transfer_encoding_it = _request->getHeaders().find(Headers::getTypeStr(HEADER_TRANSFER_ENCODING));
+			if (transfer_encoding_it->second.getValue() == "chunked")
+				is_chunked = true;
+			else
+				_request->setError(STATUS_NOT_IMPLEMENTED);
+			break ;
+		}
+		default:
+			_request->setError(STATUS_NOT_IMPLEMENTED);
+	}
+}
+
+void ClientConnection::_readChunkedContent(std::string& readBuffer)
+{
+	char buffer[BUFFER_SIZE + 1];
+	ssize_t bytesReceived;
+
+	std::memset(buffer, 0, BUFFER_SIZE);
+	while (((bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0)) > 0))
+	{
+		readBuffer.insert(readBuffer.end(), buffer, buffer + bytesReceived);
+		if (std::strcmp(buffer + bytesReceived - 4, "\r\n\r\n") == 0)
+			return ;
+		std::memset(buffer, 0, BUFFER_SIZE);
+	}
+	if (bytesReceived == 0)
+	{
+		_request->setError(STATUS_BAD_REQUEST);
+	}
+	else if (bytesReceived < 0)
+	{
+		_request->setError(STATUS_INTERNAL_ERR);
+	}
+}
+
+void ClientConnection::readData()
+{
+	char buffer[BUFFER_SIZE + 1];
+	ssize_t bytesReceived;
+	ReadingState state = READ_REQUEST_LINE_HEADERS;
+
+	bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0);
+	std::memset(buffer, 0, BUFFER_SIZE);
+
+	switch (state)
+	{
+		
+	}
+
+}
+
+void ClientConnection::readData()
+{
+	std::string readBuffer, content_begin;
+	size_t content_length = 0;
+	bool is_content_length = false;
+	bool is_chunked = false;
+	_readRequestLineHeaders(readBuffer, content_begin);
+	_setRequestLineHeaders(readBuffer);
+	if (_request->error())
+	{
+		_connectionState = CLOSING;
+		return ;
+	}
+	readBuffer.clear();
+	readBuffer.append(content_begin);
+	_checkChunked(is_chunked);
+	if (_request->error())
+	{
+		_connectionState = CLOSING;
+		return ;
+	}
+	if (is_chunked)
+		_readChunkedContent(readBuffer);
+	else
+	{
+		_checkContentLength(content_length, is_content_length);
+		if (_request->error())
+		{
+			_connectionState = CLOSING;
+			return ;
+		}
+		if (is_content_length)
+			_readContent(readBuffer, content_length);
+	}
+	if (is_chunked || is_content_length)
+		_request->setBody(readBuffer, content_length, is_chunked);
+	_connectionState = CLOSING;
+}
+
+// void ClientConnection::readData() {
+// 	char buffer[BUFFER_SIZE + 1];
+// 	size_t content_length = 0;
+// 	std::memset(buffer, 0, BUFFER_SIZE + 1);
+// 	ssize_t bytesReceived; //= recv(_clientSocketFD, buffer, BUFFER_SIZE, 0);
+// 	bool delimiter_found = false;
+
+//     while ((bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0)) > 0)
+// 	{
+// 		char *pos_delimiter = std::strstr(buffer, "\r\n\r\n");
+// 		if (!delimiter_found && pos_delimiter != NULL)
+// 		{
+// 			delimiter_found = true;
+// 			_readBuffer.insert(_readBuffer.end(), buffer, buffer + (pos_delimiter - buffer + 2));
+// 			_setRequestLineHeaders(_readBuffer);
+// 			if (_request->error())
+// 				return ;
+// 			content_length = _getContentLength();
+// 			if (_request->error())
+// 				return ;
+// 			_readBuffer.clear();
+// 			_readBuffer.insert(_readBuffer.end(), buffer + (pos_delimiter - buffer + 2), buffer + bytesReceived);
+// 		}
+// 		else
+// 		{
+//         	_readBuffer.insert(_readBuffer.end(), buffer, buffer + bytesReceived);
+// 		}
+//         std::memset(buffer, 0, BUFFER_SIZE);
+//     }
+// 	if (bytesReceived == 0)
+// 	{
+
+// 	}
+// 	// Add EAGAIN and EWOULDBLOCK checking
+//     if ((bytesReceived < 0 && errno != EAGAIN && errno != EWOULDBLOCK)) {
+//         _connectionState = CLOSING;
+//         return;
+//     }
+
+// 	std::stringstream ss;
+// 	ss << "BUFFER Content:\n" << _readBuffer << "BUFFER Length:\n" << _readBuffer.length();
+// 	_logger.writeToLog(DEBUG, ss.str());
+// 	ss.str("");
+// }
 
 
 void ClientConnection::writeData() {
@@ -264,9 +496,14 @@ void ClientConnection::select_location()
 	}
 }
 
-void ClientConnection::setRequest()
+// void ClientConnection::setRequest()
+// {
+// 	_request = new Request(_logger, _readBuffer);
+// }
+
+void ClientConnection::initRequest()
 {
-	_request = new Request(_logger, _readBuffer);
+	_request = new Request(_logger);
 }
 
 const Request* ClientConnection::getRequest() const

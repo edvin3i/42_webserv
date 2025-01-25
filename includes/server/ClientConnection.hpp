@@ -27,6 +27,13 @@ enum ConnectionState {
 	CLOSING
 };
 
+enum ReadingState
+{
+	READ_REQUEST_LINE_HEADERS,
+	READ_CONTENT,
+	READ_CONTENT_CHUNKED,
+};
+
 class ClientConnection {
 public:
 	ClientConnection(Logger & logger, int socketFD, const ServerConfig & config, Env & env);
@@ -46,6 +53,15 @@ public:
 	void select_location();
 	// void select_server_config(const std::vector<ServerConfig>&);
 	bool keep_alive() const;
+	void initRequest();
+
+private:
+	void _setRequestLineHeaders(const std::string& str);
+	void _checkContentLength(size_t&, bool&);
+	void _checkChunked(bool&);
+	void _readRequestLineHeaders(std::string& readBuffer, std::string& content_begin);
+	void _readContent(std::string& readBuffer, size_t content_length);
+	void _readChunkedContent(std::string& readBuffer);
 
 private:
 	Logger &_logger;

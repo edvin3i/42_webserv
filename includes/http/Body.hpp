@@ -12,6 +12,7 @@ class Body
 public:
 	Body();
 	Body(const std::string& str);
+	Body(const std::string& content, size_t content_length, const Headers& headers, bool is_chunked);
 	Body(const std::string& str, const Headers& headers);
 	~Body();
 	Body(const Body&);
@@ -35,8 +36,6 @@ private:
 	static void _skip_newline(const std::string& str, size_t& i);
 
 private:
-	bool _is_content_length;
-	bool _is_chunked;
 	std::string _content;
 	size_t _content_length;
 	bool _is_multipart;

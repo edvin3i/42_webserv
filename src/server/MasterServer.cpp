@@ -115,6 +115,7 @@ void MasterServer::run() {
 				switch (client->getState()) {
 					case READING:
 						if (revents & POLLIN) {
+							client->initRequest();
 							client->readData();
 							_fds[i].events = POLLOUT;
 							client->setState(WRITING);
@@ -127,7 +128,7 @@ void MasterServer::run() {
 					case WRITING:
 						if (revents & POLLOUT) {
 
-							client->setRequest();
+							// client->setRequest();
 							if (!client->getRequest()->error()) {
 								client->select_location();
 							}

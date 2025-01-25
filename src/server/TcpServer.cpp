@@ -127,14 +127,14 @@ void TcpServer::_resolveHostName(const std::string &hostname,
 }
 
 int TcpServer::_setupSocket() {
-	_socket = socket(AF_INET, SOCK_STREAM, 0);
+	_socket = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
 
 	// set socket to SO_REUSEADDR for more fast restart without TIME_WAIT
 	int state = 1;
 	setsockopt(_socket, SOL_SOCKET, SO_REUSEADDR, &state, sizeof(state));
 
-	int flags = fcntl(_socket, F_GETFL, 0);
-	fcntl(_socket, F_SETFL, flags | O_NONBLOCK);
+	// int flags = fcntl(_socket, F_GETFL, 0);
+	// fcntl(_socket, F_SETFL, flags | O_NONBLOCK);
 
 	// _logger.writeToLog(INFO, "Server started");
 

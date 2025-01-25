@@ -1,7 +1,7 @@
 #include "../../includes/server/MasterServer.hpp"
 
 
-const int TIMEOUT = 32;
+const int TIMEOUT = 1000;
 
 MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & configs, char **env)
 						: _logger(logger), _configs(configs), _servers(), _env(env), _fds(), _serversMap(), _clientsMap() {
@@ -75,6 +75,7 @@ void MasterServer::_free()
 }
 
 void MasterServer::run() {
+	bool timeout = false;
 	while(!g_sig) {
 		int polling = poll(_fds.data(), _fds.size(), TIMEOUT);
 		if (polling < 0) {
@@ -82,7 +83,10 @@ void MasterServer::run() {
 			// _logger.writeToLog(ERROR, "poll() return -1!");
 			break;
 		}
-
+		if (polling == 0)
+		{
+			timeout = true;
+		}
 		for (size_t i = 0; i < _fds.size(); ++i) {
 			if (_serversMap.find(_fds[i].fd) != _serversMap.end()) {
 				TcpServer *server = _serversMap[_fds[i].fd];
@@ -112,12 +116,22 @@ void MasterServer::run() {
 				ClientConnection *client = _clientsMap[_fds[i].fd];
 				short revents = _fds[i].revents;
 
+				if (timeout)
+				{
+					client->setTimeout(true);
+				}
 				switch (client->getState()) {
 					case READING:
-						if (revents & POLLIN) {
-							client->readData();
-							_fds[i].events = POLLOUT;
-							client->setState(WRITING);
+						if ((revents & POLLIN) || !client->isParsingFinish()) {
+							if (client->getRequest() == NULL)
+								client->initRequest();
+							ssize_t bytes = client->readData(revents);
+							(void)bytes;
+							if (client->getRequest()->error() || client->isParsingFinish())
+							{
+								_fds[i].events = POLLOUT;
+								client->setState(WRITING);
+							}
 						}
 						if (revents & (POLLERR | POLLHUP)) {
 							client->setState(CLOSING);
@@ -127,7 +141,7 @@ void MasterServer::run() {
 					case WRITING:
 						if (revents & POLLOUT) {
 
-							client->setRequest();
+							// client->setRequest();
 							if (!client->getRequest()->error()) {
 								client->select_location();
 							}
@@ -158,6 +172,7 @@ void MasterServer::run() {
 				}
 			}
 		}
+		timeout = false;
 	}
 	stop();
 }

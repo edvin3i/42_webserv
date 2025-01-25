@@ -1,23 +1,27 @@
 #include "../../includes/http/Request.hpp"
 
-Request::Request(Logger & logger, const std::string & str)
+Request::Request(Logger& logger)
 : Message<RequestLine>(), _logger(logger), _error_code(STATUS_OK), _error(false)
-{
-	try
-	{
-		_parse(str);
-	}
-	catch (enum e_status_code error_code)
-	{
-		_error = true;
-		_error_code = error_code;
-	}
-	catch (...)
-	{
-		_error = true;
-		_error_code = STATUS_BAD_REQUEST;
-	}
-}
+{}
+
+// Request::Request(Logger & logger, const std::string & str)
+// : Message<RequestLine>(), _logger(logger), _error_code(STATUS_OK), _error(false)
+// {
+// 	try
+// 	{
+// 		_parse(str);
+// 	}
+// 	catch (enum e_status_code error_code)
+// 	{
+// 		_error = true;
+// 		_error_code = error_code;
+// 	}
+// 	catch (...)
+// 	{
+// 		_error = true;
+// 		_error_code = STATUS_BAD_REQUEST;
+// 	}
+// }
 
 Request::~Request() {}
 
@@ -67,28 +71,28 @@ void Request::_split_request(const std::string& str, std::string & request_line,
 	}
 }
 
-void Request::_parse(const std::string & str)
-{
-	std::string request_line, body_str;
-	std::vector<std::string> fields;
+// void Request::_parse(const std::string & str)
+// {
+// 	std::string request_line, body_str;
+// 	std::vector<std::string> fields;
 
-	_split_request(str, request_line, fields, body_str);
-	start_line = RequestLine(request_line);
-	headers = Headers(fields);
-	_check_headers();
-	body = Body(body_str, headers);
-	if (body.is_chunked())
-	{
-		Headers::iterator transfer_encoding_it = headers.find(Headers::getTypeStr(HEADER_TRANSFER_ENCODING));
+// 	_split_request(str, request_line, fields, body_str);
+// 	start_line = RequestLine(request_line);
+// 	headers = Headers(fields);
+// 	_check_headers();
+// 	body = Body(body_str, headers);
+// 	if (body.is_chunked())
+// 	{
+// 		Headers::iterator transfer_encoding_it = headers.find(Headers::getTypeStr(HEADER_TRANSFER_ENCODING));
 
-		transfer_encoding_it->second.setValue("");
-		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), Utils::size_t_to_str(body.getContentLength())));
-	}
-}
+// 		transfer_encoding_it->second.setValue("");
+// 		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), Utils::size_t_to_str(body.getContentLength())));
+// 	}
+// }
 
 void Request::_check_headers()
 {
-	 	if (headers.count(Headers::getTypeStr(HEADER_HOST)) != 1)
+	if (headers.count(Headers::getTypeStr(HEADER_HOST)) != 1)
 		throw (STATUS_BAD_REQUEST);
 	const std::string& authority = start_line.getUri().getAuthority();
 	if (!authority.empty())
@@ -97,9 +101,9 @@ void Request::_check_headers()
 		host_it->second = authority;
 	}
 
-	Headers::iterator host_it = headers.find(Headers::getTypeStr(HEADER_HOST));
-	std::string host_field_value = host_it->second.getValue();
-	std::string port_str;
+	// Headers::iterator host_it = headers.find(Headers::getTypeStr(HEADER_HOST));
+	// std::string host_field_value = host_it->second.getValue();
+	// std::string port_str;
 
 	// size_t colon_pos = host_field_value.find(':');
 
@@ -174,12 +178,57 @@ const Body& Request::getBody() const
 	return (body);
 }
 
-// std::string Request::getHost() const
-// {
-// 	return (_host);
-// }
+void Request::setRequestLine(const std::string& str)
+{
+	try
+	{
+		start_line = RequestLine(str);
+	}
+	catch (enum e_status_code code)
+	{
+		setError(code);
+	}
+	catch (...)
+	{
+		setError(STATUS_BAD_REQUEST);
+	}
+}
 
-// int Request::getPort() const
-// {
-// 	return (_port);
-// }
+void Request::setHeaders(const std::vector<std::string>& fields)
+{
+	try
+	{
+		headers = Headers(fields);
+		_check_headers();
+	}
+	catch (enum e_status_code code)
+	{
+		setError(code);
+	}
+	catch (...)
+	{
+		setError(STATUS_BAD_REQUEST);
+	}
+}
+
+void Request::setBody(const std::string& str, size_t content_length, bool is_chunked)
+{
+	try
+	{
+		body = Body(str, content_length, headers, is_chunked);
+	}
+	catch (enum e_status_code code)
+	{
+		setError(code);
+	}
+	catch (...)
+	{
+		setError(STATUS_BAD_REQUEST);
+	}
+}
+
+void Request::setError(enum e_status_code code)
+{
+	_error = true;
+	_error_code = code;
+}

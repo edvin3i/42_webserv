@@ -34,7 +34,7 @@ MOBJS		=	$(addprefix $(OBJDIR), $(MFLS:.cpp=.o))
 #                            Compiler settings                              #
 #############################################################################
 
-CXX				=   c++
+CXX				=   g++
 CXXFLAGS		=   -std=c++98
 CXXFLAGS		+=	-Wall -Werror -Wextra
 CXXFLAGS		+=	-MMD -MP

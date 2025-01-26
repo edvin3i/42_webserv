@@ -153,6 +153,59 @@
                 </div>
             </div>
 
+            
+            <!-- Simple Form Card -->
+            <div class="bg-white rounded-lg shadow-lg p-6 method-card">
+                <h2 class="text-xl font-semibold mb-4 text-indigo-600">Simple Form for POST</h2>
+                <form id="simpleForm" class="space-y-4">
+                    <div>
+                        <label for="name" class="block text-gray-700 mb-2">Name:</label>
+                        <input type="text" id="name" name="name" required 
+                            class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label for="hobby" class="block text-gray-700 mb-2">Your hobby:</label>
+                        <input type="text" id="hobby" name="hobby" required 
+                            class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-500 text-white py-2 px-4 rounded hover:bg-indigo-600">
+                        Submit
+                    </button>
+                </form>
+                <div id="formResponse" class="mt-4 p-4 bg-gray-100 rounded-lg hidden">
+                    <!-- Form response will appear here -->
+                </div>
+            </div>
+
+             <!-- Calculator Card -->
+             <div class="bg-white rounded-lg shadow-lg p-6 method-card">
+                <h2 class="text-xl font-semibold mb-4 text-indigo-600">Calculator for CGI Test</h2>
+                <div id="calcResult" class="mb-4 p-4 bg-gray-100 rounded-lg text-center text-lg font-semibold">
+                    Result will appear here...
+                </div>
+                <form id="calculatorForm" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="num1" class="block text-gray-700 mb-2">Number 1:</label>
+                            <input type="number" id="num1" name="num1" required 
+                                class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label for="num2" class="block text-gray-700 mb-2">Number 2:</label>
+                            <input type="number" id="num2" name="num2" required 
+                                class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button type="button" onclick="calculate('+')" class="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600">+</button>
+                        <button type="button" onclick="calculate('-')" class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">-</button>
+                        <button type="button" onclick="calculate('*')" class="bg-yellow-500 text-white py-2 px-4 rounded hover:bg-yellow-600">×</button>
+                        <button type="button" onclick="calculate('/')" class="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600">÷</button>
+                    </div>
+                </form>
+            </div>
+
+            
             <!-- Request Details Card  -->
             <div class="bg-white rounded-lg shadow-lg p-6 method-card">
                 <h2 class="text-xl font-semibold mb-4 text-indigo-600">Last Request Details</h2>
@@ -171,13 +224,23 @@
                     </div>
                 </div>
             </div>
-
             <!-- Response Display Card -->
             <div class="bg-white rounded-lg shadow-lg p-6 method-card">
                 <h2 class="text-xl font-semibold mb-4 text-indigo-600">Response</h2>
                 <div id="response" class="bg-gray-100 p-4 rounded-lg min-h-[100px] whitespace-pre-wrap">
                     Response will appear here...
                 </div>
+            </div>
+
+            <!-- CGI GET Test Card -->
+            <div class="bg-white rounded-lg shadow-lg p-6 method-card">
+                <h2 class="text-xl font-semibold mb-4 text-indigo-600">CGI GET Test</h2>
+                <div id="cgiGetResult" class="mb-4 p-4 bg-gray-100 rounded-lg text-center text-lg font-semibold">
+                    CGI GET response will appear here...
+                </div>
+                <button onclick="testCgiGet()" class="w-full bg-blue-800 text-white py-2 px-4 rounded hover:bg-blue-900">
+                    Test CGI GET
+                </button>
             </div>
         </div>
     </div>
@@ -225,7 +288,34 @@
                 document.getElementById('response').textContent = `Error: ${error.message}`;
             }
         }
+        // CGI GET test function
+        async function testCgiGet() {
+            // Update request details
+            document.getElementById('reqMethod').textContent = 'GET';
+            document.getElementById('reqUrl').textContent = '/cgi/calc.php';
+            document.getElementById('reqHeaders').textContent = 'Accept: text/plain';
+            document.getElementById('reqBody').textContent = 'No body';
 
+            try {
+                const response = await fetch('/cgi/calc.php', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'text/plain'
+                    }
+                });
+
+                const text = await response.text();
+                
+                // Update CGI GET result
+                document.getElementById('cgiGetResult').textContent = text;
+
+                // Update response display
+                const responseDiv = document.getElementById('response');
+                responseDiv.textContent = `CGI GET Response:\nStatus: ${response.status}\nStatusText: ${response.statusText}\nResponse: ${text}`;
+            } catch (error) {
+                document.getElementById('response').textContent = `CGI GET Error: ${error.message}`;
+            }
+        }
         // File upload form handler
         document.getElementById('uploadForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -258,6 +348,90 @@
             } catch (error) {
                 document.getElementById('response').textContent = `Upload Error: ${error.message}`;
             }
+        });
+
+        // Calculator function
+        async function calculate(operator) {
+            const num1 = document.getElementById('num1').value;
+            const num2 = document.getElementById('num2').value;
+
+            if (!num1 || !num2) {
+                alert('Please enter both numbers');
+                return;
+            }
+
+            const formData = new URLSearchParams();
+            formData.append('num1', num1);
+            formData.append('num2', num2);
+            formData.append('operator', operator);
+
+            // Update request details
+            document.getElementById('reqMethod').textContent = 'POST';
+            document.getElementById('reqUrl').textContent = '/cgi/calc.php';
+            document.getElementById('reqHeaders').textContent = 'Content-Type: application/x-www-form-urlencoded';
+            document.getElementById('reqBody').textContent = formData.toString();
+
+            try {
+                const response = await fetch('/cgi/calc.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: formData
+                });
+
+                const text = await response.text();
+                
+                // Update calculator result
+                document.getElementById('calcResult').textContent = text;
+
+                // Update response display
+                const responseDiv = document.getElementById('response');
+                responseDiv.textContent = `Calculator Response:\nStatus: ${response.status}\nStatusText: ${response.statusText}\nResponse: ${text}`;
+            } catch (error) {
+                document.getElementById('response').textContent = `Calculator Error: ${error.message}`;
+            }
+        }
+
+        // Simple form handler
+        document.getElementById('simpleForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const name = formData.get('name');
+            const hobby = formData.get('hobby');
+
+            // Update request details
+            document.getElementById('reqMethod').textContent = 'POST';
+            document.getElementById('reqUrl').textContent = '/form';
+            document.getElementById('reqHeaders').textContent = 'Content-Type: application/x-www-form-urlencoded';
+            document.getElementById('reqBody').textContent = `name=${name}&hobby=${hobby}`;
+
+            // Update form response immediately (client-side only for now)
+            const formResponse = document.getElementById('formResponse');
+            formResponse.textContent = `Nice to meet you ${name}! ${hobby} is really interesting!`;
+            formResponse.classList.remove('hidden');
+
+            try {
+                const response = await fetch('.', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `name=${encodeURIComponent(name)}&hobby=${encodeURIComponent(hobby)}`
+                });
+
+                // Update response display
+                const responseDiv = document.getElementById('response');
+                responseDiv.textContent = `Form Submission Response:\nStatus: ${response.status}\nStatusText: ${response.statusText}`;
+                
+                const text = await response.text();
+                responseDiv.textContent += '\nResponse: ' + text;
+            } catch (error) {
+                document.getElementById('response').textContent = `Form Submission Error: ${error.message}`;
+            }
+
+            // Clear form
+            e.target.reset();
         });
     </script>
 </body>

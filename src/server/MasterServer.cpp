@@ -125,7 +125,7 @@ void MasterServer::run() {
 						if ((revents & POLLIN) || !client->isParsingFinish()) {
 							if (client->getRequest() == NULL)
 								client->initRequest();
-							ssize_t bytes = client->readData(revents);
+							ssize_t bytes = client->readData();
 							(void)bytes;
 							if (client->getRequest()->error() || client->isParsingFinish())
 							{

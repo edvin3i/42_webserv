@@ -48,12 +48,11 @@ public:
 
 	bool isReadyToWrite();
 
-	ssize_t readData(short revents);
+	ssize_t readData();
 	void writeData();
 	void buildResponse();
 	const Request* getRequest() const;
 
-	void setRequest();
 	void select_location();
 	bool keep_alive() const;
 	void initRequest();
@@ -69,6 +68,7 @@ private:
 	void _handle_content();
 	void _handle_chunked_content();
 	void _handle_finish();
+	void _checkHeaders();
 
 private:
 	Logger &_logger;

@@ -21,38 +21,6 @@ Request& Request::operator=(const Request & other)
 	return (*this);
 }
 
-void Request::_split_request(const std::string& str, std::string & request_line, std::vector<std::string> & header_lines, std::string & body)
-{
-	const std::string delimiter = "\r\n";
-	size_t pos_start = 0, pos_end;
-	std::string header_line;
-
-	pos_end = str.find(delimiter, pos_start);
-	if (pos_end == std::string::npos)
-		throw (STATUS_BAD_REQUEST);
-	request_line = str.substr(pos_start, pos_end - pos_start);
-	pos_start = pos_end + delimiter.length();
-	if (pos_start >= str.length())
-		throw (STATUS_BAD_REQUEST);
-	if (Utils::is_whitespace(str[pos_start]))
-		throw (STATUS_BAD_REQUEST); // reject message as invalid
-	while (1)
-	{
-		pos_end = str.find(delimiter, pos_start);
-		if (pos_end == std::string::npos)
-			throw (STATUS_BAD_REQUEST);
-		header_line = str.substr(pos_start, pos_end - pos_start);
-		if (header_line.empty())
-		{
-			body = str.substr(pos_end + 2);
-			break ;
-		}
-		header_lines.push_back(header_line);
-		pos_start = pos_end + delimiter.length();
-	}
-}
-
-
 void Request::_check_headers()
 {
 	if (headers.count(Headers::getTypeStr(HEADER_HOST)) != 1)

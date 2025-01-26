@@ -181,6 +181,8 @@ void ClientConnection::_handle_headers()
 		_handle_finish();
 	}
 }
+
+
 void ClientConnection::_handle_content()
 {
 	if (_readBuffer.length() > _content_length)
@@ -215,12 +217,10 @@ void ClientConnection::_handle_finish()
 		_request->setError(STATUS_BAD_REQUEST);
 }
 
-ssize_t ClientConnection::readData(short revents)
+ssize_t ClientConnection::readData()
 {
 	char buffer[BUFFER_SIZE];
 	ssize_t bytesReceived;
-
-	(void)revents;
 	
 	if (_read_state == READ_CONTENT)
 	{

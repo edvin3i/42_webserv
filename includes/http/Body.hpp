@@ -13,11 +13,9 @@ public:
 	Body();
 	Body(const std::string& str);
 	Body(const std::string& content, size_t content_length, const Headers& headers, bool is_chunked);
-	Body(const std::string& str, const Headers& headers);
 	~Body();
 	Body(const Body&);
 	Body& operator=(const Body&);
-	bool is_chunked() const;
 	const std::string& getContent() const;
 	size_t getContentLength() const;
 	bool is_mutlipart() const;
@@ -27,10 +25,7 @@ public:
 	void addContent(const std::string& str);
 
 private:
-	void _setContentLength(const Headers& headers);
 	void _checkContentLength(const std::string&);
-	void _check_chunked(const Headers& headers);
-	void _parse_body(const std::string& str, const Headers& headers);
 	void _decode_chunked(const std::string& str);
 	void _handle_multipart(const Headers& headers);
 	static void _skip_newline(const std::string& str, size_t& i);

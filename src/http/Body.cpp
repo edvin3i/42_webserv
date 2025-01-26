@@ -53,6 +53,7 @@ void Body::_decode_chunked(const std::string& str)
 	size_t length = 0, chunk_size;
 	char *chunk_data;
 	std::istringstream sstream(str);
+	std::string new_content;
 
 	sstream >> std::hex >> chunk_size;
 	if (!sstream)
@@ -66,7 +67,7 @@ void Body::_decode_chunked(const std::string& str)
 		chunk_data[chunk_size] = '\0';
 		sstream.ignore(1, '\r');
 		sstream.ignore(1, '\n');
-		_content.append(chunk_data);
+		new_content.append(chunk_data);
 		delete[] chunk_data;
 		length += chunk_size;
 		sstream >> std::hex >> chunk_size;
@@ -78,6 +79,7 @@ void Body::_decode_chunked(const std::string& str)
 	std::stringstream ss_content_length;
 	ss_content_length << length;
 	_content_length = length;
+	_content = new_content;
 }
 
 void Body::_skip_newline(const std::string& str, size_t& i)

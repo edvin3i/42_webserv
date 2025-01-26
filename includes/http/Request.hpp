@@ -32,15 +32,13 @@ public:
 	void setHeaders(const std::vector<std::string>& fields);
 	void setBody(const std::string& str, size_t content_length, bool is_chunked);
 	void setError(enum e_status_code code);
+	void _check_headers();
 
 private:
 	Logger &_logger;
 	Request();
 	enum e_status_code _error_code;
 	bool _error;
-
-	void _check_headers();
-	void _split_request(const std::string& str, std::string & request_line, std::vector<std::string> & headers_line, std::string & body);
 
 };
 

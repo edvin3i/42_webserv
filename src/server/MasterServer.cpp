@@ -137,7 +137,6 @@ void MasterServer::run() {
 					case WRITING:
 						if (revents & POLLOUT) {
 
-							// client->setRequest();
 							if (!client->getRequest()->error()) {
 								client->select_location();
 							}

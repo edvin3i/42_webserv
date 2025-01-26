@@ -141,13 +141,15 @@
             <div class="bg-white rounded-lg shadow-lg p-6 method-card">
                 <h2 class="text-xl font-semibold mb-4 text-indigo-600">Other Tests</h2>
                 <div class="space-y-4">
-                <a href="/directory_test" class="block w-full text-center bg-yellow-500 text-white py-2 px-4 rounded hover:bg-yellow-600">
-                    View Directory Contents
-                </a>
-                <!-- <h2 class="text-xl font-semibold mb-4 text-indigo-600">Redirection Test</h2> -->
-                <a href="/redirect/" class="block w-full text-center bg-pink-500 text-white py-2 px-4 rounded hover:bg-pink-600">
-                    Test Redirect
-                </a>
+                    <a href="/files/" class="block w-full text-center bg-yellow-500 text-white py-2 px-4 rounded hover:bg-yellow-600">
+                        View Directory Contents
+                    </a>
+                    <a href="/redirect/" class="block w-full text-center bg-pink-500 text-white py-2 px-4 rounded hover:bg-pink-600">
+                        Test Redirect
+                    </a>
+                    <a href="/nowhere/" class="block w-full text-center bg-red-800 text-white py-2 px-4 rounded hover:bg-red-900 font-medium">
+                        Custom Error Page
+                    </a>
                 </div>
             </div>
 
@@ -191,8 +193,12 @@
                     url = '/files/file_for_delete.txt';
                     body = null;
                 } else if (method === 'POST') {
-                    url = '/files/file_for_delete.txt';
-                    body = 'content=This file was created by POST for DELETE testing';
+                    const formData = new FormData();
+                    const blob = new Blob(['This file was created by POST for DELETE testing'], 
+                                       {type: 'text/plain'});
+                    formData.append('file', blob, 'file_for_delete.txt');
+                    url = '/files/';
+                    body = formData;
                 } else {
                     url = '/get_test.html';
                     body = null;
@@ -200,30 +206,21 @@
 
                 document.getElementById('reqMethod').textContent = method;
                 document.getElementById('reqUrl').textContent = url;
-                document.getElementById('reqHeaders').textContent = JSON.stringify({
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }, null, 2);
-                document.getElementById('reqBody').textContent = body || 'No body';
+                document.getElementById('reqHeaders').textContent = method === 'POST' ? 
+                    'Content-Type: multipart/form-data' : 'Content-Type: text/plain';
+                document.getElementById('reqBody').textContent = 
+                    method === 'POST' ? 'File: file_for_delete.txt' : (body || 'No body');
 
                 const response = await fetch(url, {
                     method: method,
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
                     body: body
                 });
 
                 const responseDiv = document.getElementById('response');
                 responseDiv.textContent = `${method} Response:\nStatus: ${response.status}\nStatusText: ${response.statusText}`;
 
-                // Handle different response types (JSON vs Text)
-                if (response.headers.get('content-type')?.includes('application/json')) {
-                    const data = await response.json();
-                    responseDiv.textContent += '\nData: ' + JSON.stringify(data, null, 2);
-                } else {
-                    const text = await response.text();
-                    responseDiv.textContent += '\nData: ' + text;
-                }
+                const text = await response.text();
+                responseDiv.textContent += '\nResponse: ' + text;
             } catch (error) {
                 document.getElementById('response').textContent = `Error: ${error.message}`;
             }
@@ -243,12 +240,12 @@
             formData.append('file', file);
 
             document.getElementById('reqMethod').textContent = 'POST';
-            document.getElementById('reqUrl').textContent = '/upload';
+            document.getElementById('reqUrl').textContent = '/upload/';
             document.getElementById('reqHeaders').textContent = 'Content-Type: multipart/form-data';
             document.getElementById('reqBody').textContent = `File: ${file.name} (${file.size} bytes)`;
 
             try {
-                const response = await fetch('/upload', {
+                const response = await fetch('/upload/', {
                     method: 'POST',
                     body: formData
                 });

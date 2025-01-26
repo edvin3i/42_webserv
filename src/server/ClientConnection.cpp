@@ -294,21 +294,20 @@ void ClientConnection::writeData() {
 	                         &_writeBuffer[_writeOffset],
 	                         bytesToSend, MSG_NOSIGNAL | MSG_DONTWAIT);
 
-	if (bytesSent < 0) {
-		_logger.writeToLog(ERROR, "can not send the data to socket");
+	if (bytesSent == -1) {
+		return;
+	}
+	else if (bytesSent == 0) {
 		_connectionState = CLOSING;
 		return;
 	}
 
 	_writeOffset += bytesSent;
 
-	std::ostringstream ss;
-	ss << "===== Sent: " << bytesSent << " bytes to client. =====";
-	_logger.writeToLog(DEBUG, ss.str());
-
 	// continue sending data until all data is sent
 	if (_writeOffset >= _writeBuffer.size()) {
 
+		std::ostringstream ss;
 		ss.str("");
 		ss.clear();
 		ss << "===== All data sent to the client! =====";

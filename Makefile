@@ -34,11 +34,11 @@ MOBJS		=	$(addprefix $(OBJDIR), $(MFLS:.cpp=.o))
 #                            Compiler settings                              #
 #############################################################################
 
-CXX				=   g++
+CXX				=   c++
 CXXFLAGS		=   -std=c++98
 CXXFLAGS		+=	-Wall -Werror -Wextra
 CXXFLAGS		+=	-MMD -MP
-CXXFLAGS		+=	-g3
+# CXXFLAGS		+=	-g3
 CXXFLAGS		+=  -I$(INCDIR)
 CXXFLAGS		+=	-fPIE
 

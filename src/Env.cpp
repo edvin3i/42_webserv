@@ -46,19 +46,28 @@ void Env::setEnv(const std::string& key, const std::string& value)
 
 char **Env::toArray() const
 {
-	char **env = new char*[size() + 1];
-
-	int index = 0;
-	for (std::map<std::string, std::string>::const_iterator it = begin(); it != end(); ++it)
+	char **env = NULL;
+	try
 	{
-		std::string str = it->first + "=" + it->second;
+		env = new char*[size() + 1];
+		std::memset(env, 0, sizeof(env) * size() + 1);
+		int index = 0;
+		for (std::map<std::string, std::string>::const_iterator it = begin(); it != end(); ++it)
+		{
+			std::string str = it->first + "=" + it->second;
 
-		env[index] = new char[str.length() + 1];
-		std::strcpy(env[index], str.c_str());
-		++index;
+			env[index] = new char[str.length() + 1];
+			std::strcpy(env[index], str.c_str());
+			++index;
+		}
+		env[index] = NULL;
+		return (env);
 	}
-	env[index] = NULL;
-	return (env);
+	catch (const std::bad_alloc& e)
+	{
+		freeArray(env);
+		throw;
+	}
 }
 
 void Env::freeArray(char **env)

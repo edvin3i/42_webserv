@@ -65,11 +65,11 @@ void Body::_decode_chunked(const std::string& str)
 		chunk_data = new char[chunk_size + 1];
 		sstream.read(chunk_data, chunk_size);
 		chunk_data[chunk_size] = '\0';
-		sstream.ignore(1, '\r');
-		sstream.ignore(1, '\n');
 		new_content.append(chunk_data);
 		delete[] chunk_data;
 		length += chunk_size;
+		sstream.ignore(1, '\r');
+		sstream.ignore(1, '\n');
 		sstream >> std::hex >> chunk_size;
 		if (!sstream)
 			throw (STATUS_BAD_REQUEST);

@@ -141,7 +141,6 @@ void ConfigParser::_parseServerBlock(ServerConfig & server) {
 			}
 
 			_parseLocationBlock(location);
-			// _logger.writeToLog(DEBUG, "PARSE SERVER BLOCK CALLED");
 			server.locations[path] = location;
 		}
 		else {

@@ -76,7 +76,7 @@ int TcpServer::acceptConnection() {
  			<< inet_ntoa(_socketAddress.sin_addr) \
  			<< "; PORT: " \
  			<< ntohs(_socketAddress.sin_port);
-		// _logger.writeToLog(ERROR, ss.str());
+		_logger.writeToLog(ERROR, ss.str());
 		return -1;
 	}
 
@@ -95,8 +95,8 @@ void TcpServer::startListen() {
  		<< inet_ntoa(_socketAddress.sin_addr) \
  		<< " PORT: " << ntohs(_socketAddress.sin_port) \
  		<< " ***\n\n";
-	// _logger.writeToLog(INFO, ss.str());
-	ss.flush();
+	_logger.writeToLog(INFO, ss.str());
+	ss.str("");
 
 }
 
@@ -136,10 +136,8 @@ int TcpServer::_setupSocket() {
 	timeout.tv_usec = 0;
 	setsockopt(_socket, SOL_SOCKET, SO_REUSEADDR, &timeout, sizeof(timeout));
 
-	// int flags = fcntl(_socket, F_GETFL, 0);
-	// fcntl(_socket, F_SETFL, flags | O_NONBLOCK);
-
-	// _logger.writeToLog(INFO, "Server started");
+	
+	_logger.writeToLog(INFO, "Server started");
 
 	if (_socket < 0 ) {
 		_handleError("Can not create socket!");
@@ -165,6 +163,6 @@ void TcpServer::_closeServer() {
 
 void TcpServer::_handleError(const std::string & err_message) {
 	std::string err_msg = err_message;
-	// _logger.writeToLog(ERROR, err_msg);
+	_logger.writeToLog(ERROR, err_msg);
 	throw std::runtime_error(err_msg);
 }

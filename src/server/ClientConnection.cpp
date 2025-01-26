@@ -8,22 +8,26 @@ ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerCo
 										_currentServerConfig(&config),
 										_connectionState(READING),
 										_writeOffset(0),
-										// _currentClientBodySize(0),
 										_currentLocationConfig(NULL),
 										_request(NULL),
+										_response(NULL),
 										_env(env),
 										_keep_alive(true),
 										_read_state(READ_REQUEST_LINE),
 										_is_chunked(false),
 										_is_content_length(false),
 										_content_length(0),
-										_timeout(false),
-										count(0)
+										_timeout(false)
+
 									{
 
 }
 
 ClientConnection::~ClientConnection() {
+	if (_response)
+		delete _response;
+	if (_request)
+		delete _request;
 
 }
 
@@ -280,7 +284,6 @@ void ClientConnection::readData()
 			break ;
 		}
 	}
-	count += 1;
 	return ;
 }
 

@@ -92,9 +92,6 @@ private:
 	std::string _readBuffer;
 	std::vector<char> _writeBuffer;
 	bool _timeout;
-
-
-	int count;
 };
 
 

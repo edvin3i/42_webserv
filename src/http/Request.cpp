@@ -4,25 +4,6 @@ Request::Request(Logger& logger)
 : Message<RequestLine>(), _logger(logger), _error_code(STATUS_OK), _error(false)
 {}
 
-// Request::Request(Logger & logger, const std::string & str)
-// : Message<RequestLine>(), _logger(logger), _error_code(STATUS_OK), _error(false)
-// {
-// 	try
-// 	{
-// 		_parse(str);
-// 	}
-// 	catch (enum e_status_code error_code)
-// 	{
-// 		_error = true;
-// 		_error_code = error_code;
-// 	}
-// 	catch (...)
-// 	{
-// 		_error = true;
-// 		_error_code = STATUS_BAD_REQUEST;
-// 	}
-// }
-
 Request::~Request() {}
 
 Request::Request(const Request & other)
@@ -71,24 +52,6 @@ void Request::_split_request(const std::string& str, std::string & request_line,
 	}
 }
 
-// void Request::_parse(const std::string & str)
-// {
-// 	std::string request_line, body_str;
-// 	std::vector<std::string> fields;
-
-// 	_split_request(str, request_line, fields, body_str);
-// 	start_line = RequestLine(request_line);
-// 	headers = Headers(fields);
-// 	_check_headers();
-// 	body = Body(body_str, headers);
-// 	if (body.is_chunked())
-// 	{
-// 		Headers::iterator transfer_encoding_it = headers.find(Headers::getTypeStr(HEADER_TRANSFER_ENCODING));
-
-// 		transfer_encoding_it->second.setValue("");
-// 		headers.insert(SingleField(Headers::getTypeStr(HEADER_CONTENT_LENGTH), Utils::size_t_to_str(body.getContentLength())));
-// 	}
-// }
 
 void Request::_check_headers()
 {
@@ -100,26 +63,6 @@ void Request::_check_headers()
 		Headers::iterator host_it = headers.find(Headers::getTypeStr(HEADER_HOST));
 		host_it->second = authority;
 	}
-
-	// Headers::iterator host_it = headers.find(Headers::getTypeStr(HEADER_HOST));
-	// std::string host_field_value = host_it->second.getValue();
-	// std::string port_str;
-
-	// size_t colon_pos = host_field_value.find(':');
-
-	// if (colon_pos != host_field_value.length() && host_field_value.find(':', colon_pos + 1) != std::string::npos)
-	// 	throw (STATUS_BAD_REQUEST);
-	// _host = host_field_value.substr(0, colon_pos);
-	// try
-	// {
-	// 	port_str = host_field_value.substr(colon_pos + 1);
-	// 	_port = Utils::stoi(port_str);
-	// }
-	// catch (const std::exception& e)
-	// {
-	// 	throw (STATUS_BAD_REQUEST);
-	// }
-
 }
 
 void Request::print() const

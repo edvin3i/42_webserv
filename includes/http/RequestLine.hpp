@@ -42,7 +42,6 @@ private:
 	Method _method;
 	Uri _uri;
 	std::string _http_version;
-	// TargetForm _target_form;
 	static const size_t _max_request_line_length;
 };
 

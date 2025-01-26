@@ -33,9 +33,6 @@ void ClientConnection::buildResponse() {
 	_response = new Response(_logger, *_currentServerConfig, _currentLocationConfig, *_request, _env);
 	_keep_alive = _response->keep_alive();
 	std::stringstream ss;
-	// ss << "RESPONSE:"<< '\n' << _response->toString();
-	// _logger.writeToLog(DEBUG, ss.str());
-	// ss.str("");
 
 	std::string response_html = _response->toHtml();
 	_writeBuffer.clear();
@@ -131,28 +128,7 @@ void ClientConnection::_checkChunked()
 	}
 }
 
-// void ClientConnection::_readChunkedContent(std::string& readBuffer)
-// {
-// 	char buffer[BUFFER_SIZE + 1];
-// 	ssize_t bytesReceived;
 
-// 	std::memset(buffer, 0, BUFFER_SIZE);
-// 	while (((bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0)) > 0))
-// 	{
-// 		readBuffer.insert(readBuffer.end(), buffer, buffer + bytesReceived);
-// 		if (std::strcmp(buffer + bytesReceived - 4, "\r\n\r\n") == 0)
-// 			return ;
-// 		std::memset(buffer, 0, BUFFER_SIZE);
-// 	}
-// 	if (bytesReceived == 0)
-// 	{
-// 		_request->setError(STATUS_BAD_REQUEST);
-// 	}
-// 	else if (bytesReceived < 0)
-// 	{
-// 		_request->setError(STATUS_INTERNAL_ERR);
-// 	}
-// }
 void ClientConnection::_handle_request_line()
 {
 	size_t pos_delimiter = _readBuffer.find("\r\n");
@@ -271,12 +247,6 @@ ssize_t ClientConnection::readData(short revents)
 	{
 		_request->setError(STATUS_REQUEST_TIMEOUT);
 	}
-	// if (bytesReceived < 0)
-	// {
-	// 	std::cerr << "ERREUR, _readBuffer.length()" << _readBuffer.length() << "count: " << count << '\n';
-	// 	std::cerr << "errno: " << errno << " " << std::strerror(errno) << "\n\n";
-	// 	_request->setError(STATUS_INTERNAL_ERR);
-	// }
 	switch (_read_state)
 	{
 		case READ_REQUEST_LINE:
@@ -301,8 +271,7 @@ ssize_t ClientConnection::readData(short revents)
 		}
 		case READ_FINISH:
 		{
-			// if (bytesReceived != 0)
-			// 	_request->setError(STATUS_BAD_REQUEST);
+
 			_handle_finish();
 			break ;
 		}
@@ -310,91 +279,6 @@ ssize_t ClientConnection::readData(short revents)
 	count += 1;
 	return (bytesReceived);
 }
-
-// void ClientConnection::readData()
-// {
-// 	std::string readBuffer, content_begin;
-// 	size_t content_length = 0;
-// 	bool is_content_length = false;
-// 	bool is_chunked = false;
-// 	_readRequestLineHeaders(readBuffer, content_begin);
-// 	_setRequestLineHeaders(readBuffer);
-// 	if (_request->error())
-// 	{
-// 		_connectionState = CLOSING;
-// 		return ;
-// 	}
-// 	readBuffer.clear();
-// 	readBuffer.append(content_begin);
-// 	_checkChunked(is_chunked);
-// 	if (_request->error())
-// 	{
-// 		_connectionState = CLOSING;
-// 		return ;
-// 	}
-// 	if (is_chunked)
-// 		_readChunkedContent(readBuffer);
-// 	else
-// 	{
-// 		_checkContentLength(content_length, is_content_length);
-// 		if (_request->error())
-// 		{
-// 			_connectionState = CLOSING;
-// 			return ;
-// 		}
-// 		if (is_content_length)
-// 			_readContent(readBuffer, content_length);
-// 	}
-// 	if (is_chunked || is_content_length)
-// 		_request->setBody(readBuffer, content_length, is_chunked);
-// 	_connectionState = CLOSING;
-// }
-
-// void ClientConnection::readData() {
-// 	char buffer[BUFFER_SIZE + 1];
-// 	size_t content_length = 0;
-// 	std::memset(buffer, 0, BUFFER_SIZE + 1);
-// 	ssize_t bytesReceived; //= recv(_clientSocketFD, buffer, BUFFER_SIZE, 0);
-// 	bool delimiter_found = false;
-
-//     while ((bytesReceived = recv(_clientSocketFD, buffer, BUFFER_SIZE, 0)) > 0)
-// 	{
-// 		char *pos_delimiter = std::strstr(buffer, "\r\n\r\n");
-// 		if (!delimiter_found && pos_delimiter != NULL)
-// 		{
-// 			delimiter_found = true;
-// 			_readBuffer.insert(_readBuffer.end(), buffer, buffer + (pos_delimiter - buffer + 2));
-// 			_setRequestLineHeaders(_readBuffer);
-// 			if (_request->error())
-// 				return ;
-// 			content_length = _getContentLength();
-// 			if (_request->error())
-// 				return ;
-// 			_readBuffer.clear();
-// 			_readBuffer.insert(_readBuffer.end(), buffer + (pos_delimiter - buffer + 2), buffer + bytesReceived);
-// 		}
-// 		else
-// 		{
-//         	_readBuffer.insert(_readBuffer.end(), buffer, buffer + bytesReceived);
-// 		}
-//         std::memset(buffer, 0, BUFFER_SIZE);
-//     }
-// 	if (bytesReceived == 0)
-// 	{
-
-// 	}
-// 	// Add EAGAIN and EWOULDBLOCK checking
-//     if ((bytesReceived < 0 && errno != EAGAIN && errno != EWOULDBLOCK)) {
-//         _connectionState = CLOSING;
-//         return;
-//     }
-
-// 	std::stringstream ss;
-// 	ss << "BUFFER Content:\n" << _readBuffer << "BUFFER Length:\n" << _readBuffer.length();
-// 	_logger.writeToLog(DEBUG, ss.str());
-// 	ss.str("");
-// }
-
 
 void ClientConnection::writeData() {
 	if (_writeOffset >= _writeBuffer.size()) {
@@ -467,36 +351,6 @@ static size_t matching_prefix_depth(const std::string& location_path, const std:
 		i += 1;
 	return (i);
 }
-
-// static bool is_localhost(const std::string& str)
-// {
-// 	return (str == "127.0.0.1" || str == "localhost");
-// }
-
-// void ClientConnection::select_server_config(const std::vector<ServerConfig>& configs)
-// {
-// 	const ServerConfig *config_ptr = NULL;
-// 	bool host_equal, port_equal;
-
-// 	for (size_t i = 0; i < configs.size(); ++i)
-// 	{
-// 		host_equal = false;
-// 		port_equal = false;
-// 		if (is_localhost(configs[i].host) && is_localhost(_request->getHost()))
-// 			host_equal = true;
-// 		else if (configs[i].host == _request->getHost())
-// 			host_equal = true;
-// 		if (configs[i].port == _request->getPort())
-// 			port_equal = true;
-// 		if (host_equal && port_equal)
-// 			config_ptr = &configs[i];
-
-// 	}
-// 	if (config_ptr == NULL)
-// 		_currentServerConfig = &configs[0];
-// 	else
-// 		_currentServerConfig = config_ptr;
-// }
 
 void ClientConnection::select_location()
 {
@@ -580,11 +434,6 @@ void ClientConnection::select_location()
 		_logger.writeToLog(DEBUG, ss.str());
 	}
 }
-
-// void ClientConnection::setRequest()
-// {
-// 	_request = new Request(_logger, _readBuffer);
-// }
 
 void ClientConnection::initRequest()
 {

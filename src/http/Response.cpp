@@ -903,25 +903,6 @@ const char *Response::ChildProcessException::what() const throw ()
 Response::ChildProcessException::~ChildProcessException() throw()
 {}
 
-// void Response::_setConnectionHeader()
-// {
-// 	const Headers& request_headers = _request.getHeaders();
-// 	Headers::const_iterator connection_it = request_headers.find(Headers::getTypeStr(HEADER_CONNECTION));
-// 	std::string state;
-
-
-// 	if (connection_it == request_headers.end() || connection_it->second.getValue() == "close")
-// 	{
-// 		state = "close";
-// 		_keep_alive = false;
-// 	}
-// 	else
-// 	{
-// 		state  = "keep-alive";
-// 	}
-// 	headers.insert(SingleField(Headers::getTypeStr(HEADER_CONNECTION), FieldValue(state)));
-// }
-
 
 bool Response::keep_alive() const
 {

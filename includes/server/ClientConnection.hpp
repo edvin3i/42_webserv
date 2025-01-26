@@ -55,7 +55,6 @@ public:
 
 	void setRequest();
 	void select_location();
-	// void select_server_config(const std::vector<ServerConfig>&);
 	bool keep_alive() const;
 	void initRequest();
 	bool isParsingFinish() const;
@@ -70,9 +69,6 @@ private:
 	void _handle_content();
 	void _handle_chunked_content();
 	void _handle_finish();
-	// void _readRequestLineHeaders(std::string& readBuffer, std::string& content_begin);
-	// void _readContent(std::string& readBuffer, size_t content_length);
-	// void _readChunkedContent(std::string& readBuffer);
 
 private:
 	Logger &_logger;
@@ -81,7 +77,6 @@ private:
 	ConnectionState _connectionState;
 	std::string _responseMessage;
 	size_t _writeOffset;
-	// size_t _currentClientBodySize;
 	LocationConfig *_currentLocationConfig;
 	Request *_request;
 	Response *_response;

@@ -79,8 +79,6 @@ void MasterServer::run() {
 	while(!g_sig) {
 		int polling = poll(_fds.data(), _fds.size(), TIMEOUT);
 		if (polling < 0) {
-			// if (errno == EINTR) {continue;} // added checking of errno for "interrupted by signal"
-			// _logger.writeToLog(ERROR, "poll() return -1!");
 			break;
 		}
 		if (polling == 0)
@@ -95,7 +93,6 @@ void MasterServer::run() {
 				if (revents & POLLIN) {
 					int new_socket = server->acceptConnection();
 					if (new_socket >= 0) {
-						// fcntl(new_socket, F_SETFL, O_NONBLOCK);
 
 						pollfd client_fd;
 						client_fd.fd = new_socket;
@@ -125,8 +122,7 @@ void MasterServer::run() {
 						if ((revents & POLLIN) || !client->isParsingFinish()) {
 							if (client->getRequest() == NULL)
 								client->initRequest();
-							ssize_t bytes = client->readData();
-							(void)bytes;
+							client->readData();
 							if (client->getRequest()->error() || client->isParsingFinish())
 							{
 								_fds[i].events = POLLOUT;

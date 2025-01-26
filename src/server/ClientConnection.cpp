@@ -217,7 +217,7 @@ void ClientConnection::_handle_finish()
 		_request->setError(STATUS_BAD_REQUEST);
 }
 
-ssize_t ClientConnection::readData()
+void ClientConnection::readData()
 {
 	char buffer[BUFFER_SIZE];
 	ssize_t bytesReceived;
@@ -242,7 +242,7 @@ ssize_t ClientConnection::readData()
 
 	}
 	if (bytesReceived == 0)
-		return (bytesReceived);
+		return ;
 	if (bytesReceived < 0 && _timeout)
 	{
 		_request->setError(STATUS_REQUEST_TIMEOUT);
@@ -277,7 +277,7 @@ ssize_t ClientConnection::readData()
 		}
 	}
 	count += 1;
-	return (bytesReceived);
+	return ;
 }
 
 void ClientConnection::writeData() {

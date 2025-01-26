@@ -48,7 +48,7 @@ public:
 
 	bool isReadyToWrite();
 
-	ssize_t readData();
+	void readData();
 	void writeData();
 	void buildResponse();
 	const Request* getRequest() const;

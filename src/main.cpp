@@ -35,16 +35,16 @@ int main(int argc, char **argv, char **env) {
 	std::string config_filename;
 
 	if (argc == 1) {
-		// logger.writeToLog(INFO, INF_DEFAULT_CONF);
+		logger.writeToLog(INFO, INF_DEFAULT_CONF);
 		std::cout << INF_DEFAULT_CONF << std::endl;
 		config_filename = "config/default.cfg";
 	}
 	else if (argc == 2) {
 		config_filename = argv[1];
-		// logger.writeToLog(INFO, INF_USE_CONF + config_filename);
+		logger.writeToLog(INFO, INF_USE_CONF + config_filename);
 	}
 	else {
-		// logger.writeToLog(ERROR, ERR_WRNG_NUM_ARGS);
+		logger.writeToLog(ERROR, ERR_WRNG_NUM_ARGS);
 		std::cerr << ERR_WRNG_NUM_ARGS << std::endl;
 		std::cout << "USAGE: ./webserv <config.cfg>" << std::endl;;
 		return 1;
@@ -65,8 +65,7 @@ int main(int argc, char **argv, char **env) {
 		return (EXIT_FAILURE);
 	}
 
-	// conf_parser.printConfig();
-	// logger.writeToLog(INFO, "Program Start Server!");
+	logger.writeToLog(INFO, "Program Start Server!");
 
 	/*
 	 * Fourth: Start Master Server with main loop

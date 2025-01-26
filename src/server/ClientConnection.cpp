@@ -411,10 +411,6 @@ void ClientConnection::writeData() {
 	                         bytesToSend, MSG_NOSIGNAL | MSG_DONTWAIT);
 
 	if (bytesSent < 0) {
-		if (errno == EAGAIN || errno == EWOULDBLOCK) {
-			_logger.writeToLog(DEBUG, "socket not ready, try send next time...");
-			return;
-		}
 		_logger.writeToLog(ERROR, "can not send the data to socket");
 		_connectionState = CLOSING;
 		return;

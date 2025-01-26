@@ -27,7 +27,7 @@ int main(int argc, char **argv, char **env) {
 	 *	Details level: ERROR, INFO, DEBUG
 	 *	Output mode: CONSOLE, LOGFILE, DUAL
 	 */
-	Logger &logger = Logger::get_logger(DEBUG, CONSOLE, "webserv.log");
+	Logger &logger = Logger::get_logger(INFO, CONSOLE, "webserv.log");
 
 	/*
 	 * Second: Check args and set config path

@@ -18,6 +18,7 @@ void StatusLine::_init_status_code_message()
 	_status_code_message[STATUS_FORBIDDEN] = "Forbidden";
 	_status_code_message[STATUS_NOT_FOUND] = "Not Found";
 	_status_code_message[STATUS_NOT_ALLOWED] = "Method Not Allowed";
+	_status_code_message[STATUS_REQUEST_TIMEOUT] = "Request Timeout";
 	_status_code_message[STATUS_CONFLICT] = "Conflict";
 	_status_code_message[STATUS_LENGTH_REQUIRED] = "Length Required";
 	_status_code_message[STATUS_TOO_LARGE] = "Content Too Large";

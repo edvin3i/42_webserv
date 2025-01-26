@@ -269,9 +269,7 @@ ssize_t ClientConnection::readData(short revents)
 		return (bytesReceived);
 	if (bytesReceived < 0 && _timeout)
 	{
-		std::cerr << "tieout and bytesreceived < 0\n";
-		std::cerr << "errno: " << errno << '\n';
-		_request->setError(STATUS_INTERNAL_ERR);
+		_request->setError(STATUS_REQUEST_TIMEOUT);
 	}
 	// if (bytesReceived < 0)
 	// {

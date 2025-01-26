@@ -149,7 +149,7 @@ void MasterServer::run() {
 							if (client->getState() != WRITING || !client->keep_alive()) {
 								client->setState(CLOSING);
 							}
-							_fds[i].events = POLLIN; // set POLLIN
+							_fds[i].events = POLLIN;
 						}
 						if (revents & (POLLERR | POLLHUP)) {
 							client->setState(CLOSING);

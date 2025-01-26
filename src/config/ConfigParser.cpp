@@ -28,7 +28,8 @@ ConfigParser::~ConfigParser() {
 		std::cout << "logfile is open" << std::endl;
 		_config_file.close();
 	} else {
-		std::cout << "logfile is closed" << std::endl;
+		std::cout << "See you later!" << std::endl;
+		// std::cout << "logfile is closed" << std::endl;
 	}
 
 }

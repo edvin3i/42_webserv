@@ -2,7 +2,7 @@
 #include "../../includes/http/Request.hpp"
 #include <iterator>
 
-ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerConfig & config, Env& env)
+ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerConfig & config, Env & env)
 									:	_logger(logger),
 										_clientSocketFD(socketFD),
 										_currentServerConfig(&config),
@@ -54,7 +54,7 @@ void ClientConnection::buildResponse() {
 	}
 }
 
-void ClientConnection::_setRequestLineHeaders(const std::string& str)
+void ClientConnection::_setRequestLineHeaders(const std::string & str)
 {
 	std::string request_line;
 	std::string fields_str;
@@ -340,7 +340,7 @@ bool ClientConnection::isReadyToWrite() {
 			&& _connectionState == WRITING;
 }
 
-static size_t matching_prefix_depth(const std::string& location_path, const std::string& uri)
+static size_t matching_prefix_depth(const std::string & location_path, const std::string & uri)
 {
 	std::vector<std::string> split_root = Utils::split_path(location_path);
 	std::vector<std::string> split_uri = Utils::split_path(uri);

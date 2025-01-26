@@ -244,7 +244,7 @@ void ClientConnection::readData()
 	if (bytesReceived == 0)
 	{
 		if (_read_state != READ_FINISH)
-			setState(CLOSING);
+			_connectionState = CLOSING;
 		return ;
 	}
 	if (bytesReceived < 0 && _timeout)

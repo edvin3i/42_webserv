@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sys/stat.h>
 #include "../includes/signals/signals.hpp"
 #include "../includes/server/TcpServer.hpp"
 #include "../includes/config/ServerConfig.hpp"
@@ -9,7 +10,7 @@
 
 
 
-#define INF_DEFAULT_CONF "config path not specified, using default configuration!"
+#define INF_DEFAULT_CONF "looking for default config file in the config directory: "
 #define INF_USE_CONF "using the config file: "
 #define ERR_WRNG_NUM_ARGS "wrong number of args!"
 
@@ -34,14 +35,24 @@ int main(int argc, char **argv, char **env) {
 	 */
 	std::string config_filename;
 
-	if (argc == 1) {
-		logger.writeToLog(INFO, INF_DEFAULT_CONF);
-		std::cout << INF_DEFAULT_CONF << std::endl;
-		config_filename = "config/default.cfg";
-	}
-	else if (argc == 2) {
-		config_filename = argv[1];
-		logger.writeToLog(INFO, INF_USE_CONF + config_filename);
+	if (argc == 2) {
+		struct stat st;
+
+		std::string config_path = argv[1];
+		if (stat(config_path.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
+			
+			config_filename = config_path;
+			if (config_filename[config_filename.size() - 1] != '/') {
+				config_filename += "/";
+			}
+			config_filename += "default.cfg";
+			logger.writeToLog(INFO, INF_DEFAULT_CONF + config_path);
+		}
+		else {
+			config_filename = config_path;
+			logger.writeToLog(INFO, INF_USE_CONF + config_filename);
+		}
+		
 	}
 	else {
 		logger.writeToLog(ERROR, ERR_WRNG_NUM_ARGS);

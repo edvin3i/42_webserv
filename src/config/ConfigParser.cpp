@@ -2,7 +2,7 @@
 #include <sstream>
 #include "../../includes/config/ConfigParser.hpp"
 
-#define ERR_CONF_FNAME "CONFIG: config file name is wrong!"
+#define ERR_CONF_FNAME "CONFIG: config file name is wrong: "
 #define ERR_CONF_BRACE_OPN "CONFIG: awaiting  '{' after "
 #define ERR_CONF_BRACE_CLS "CONFIG: awaiting '}' "
 #define ERR_CONF_UNKN_DIRECTIVE "CONFIG: unknown directive "
@@ -428,6 +428,6 @@ std::vector<ServerConfig> ConfigParser::getConfig() {
 
 void ConfigParser::_handleError(const std::string & err_message) {
 	std::string err_msg = err_message;
-	// _logger.writeToLog(ERROR, err_msg);
+	_logger.writeToLog(ERROR, err_msg);
 	throw std::runtime_error(err_msg);
 }

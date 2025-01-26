@@ -18,7 +18,6 @@ ClientConnection::ClientConnection(Logger & logger, int socketFD, const ServerCo
 										_is_content_length(false),
 										_content_length(0),
 										_timeout(false)
-
 									{
 
 }

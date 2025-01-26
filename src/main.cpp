@@ -89,6 +89,7 @@ int main(int argc, char **argv, char **env) {
 	}
 	catch (const Response::ChildProcessException& e)
 	{
+		delete &logger;
 		return (EXIT_FAILURE);
 	}
 	catch (const std::exception &e) {
@@ -98,6 +99,7 @@ int main(int argc, char **argv, char **env) {
 	}
 	catch (...)
 	{
+		delete &logger;
 		return (EXIT_FAILURE);
 	}
 

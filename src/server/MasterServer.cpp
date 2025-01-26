@@ -105,7 +105,6 @@ void MasterServer::run() {
 																client_fd.fd,
 																_serversMap[_fds[i].fd]->getConfig(),
 																_env);
-
 					}
 				}
 			}

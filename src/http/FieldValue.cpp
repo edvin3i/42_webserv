@@ -68,11 +68,13 @@ void FieldValue::_parse_value(const std::string & str)
 					throw (STATUS_BAD_REQUEST);
 				_handle_quote(str, _value, i);
 
-				if (Utils::is_whitespace(str[i]) || str[i] == ';')
+				if (i == str.length())
+					break ;
+				if ((Utils::is_whitespace(str[i]) || str[i] == ';'))
 				{
-					while (Utils::is_whitespace(str[i]))
+					while (i != str.length() && Utils::is_whitespace(str[i]))
 						i += 1;
-					if (str[i] != ';')
+					if (i != str.length() && str[i] != ';')
 						throw (STATUS_BAD_REQUEST);
 				}
 				else

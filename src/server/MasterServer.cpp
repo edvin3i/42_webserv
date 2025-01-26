@@ -12,7 +12,7 @@ MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & co
 		oss << "MasterServer constructor called!\t";
 		oss << "Size of configs: " << _configs.size() << "\n";
 		MimeType::init_mime_type();
-		// _logger.writeToLog(DEBUG, oss.str());
+		_logger.writeToLog(DEBUG, oss.str());
 
 		_fds.reserve(_configs.size());
 		_servers.reserve(_configs.size());
@@ -26,7 +26,7 @@ MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & co
 
 			std::ostringstream ss;
 			ss << "Created server number: " << i;
-			// _logger.writeToLog(DEBUG, ss.str());
+			_logger.writeToLog(DEBUG, ss.str());
 
 			// Creating new pollfd element and setup it
 			pollfd server_fd;
@@ -46,12 +46,12 @@ MasterServer::MasterServer(Logger & logger, const std::vector<ServerConfig> & co
 
 		std::ostringstream os;
 		os << "Size of _fds = " << _fds.size();
-		// _logger.writeToLog(DEBUG, os.str());
+		_logger.writeToLog(DEBUG, os.str());
 	}
 	catch (const std::exception &e)
 	{
 		_free();
-		// _logger.writeToLog(ERROR, e.what());
+		_logger.writeToLog(ERROR, e.what());
 		throw (std::runtime_error(e.what()));
 	}
 }
@@ -149,7 +149,7 @@ void MasterServer::run() {
 							if (client->getState() != WRITING || !client->keep_alive()) {
 								client->setState(CLOSING);
 							}
-							_fds[i].events = POLLIN; // set POLLIN
+							_fds[i].events = POLLIN;
 						}
 						if (revents & (POLLERR | POLLHUP)) {
 							client->setState(CLOSING);
@@ -177,12 +177,12 @@ void MasterServer::stop() {
 		if (close(_fds[i].fd) == 0) {
 			std::ostringstream oss;
 			oss << "Closed connection: i = " << i << ", FD = " << _fds[i].fd;
-			// _logger.writeToLog(DEBUG, oss.str());
+			_logger.writeToLog(DEBUG, oss.str());
 		}
 		else {
 			std::ostringstream oss;
 			oss << "Closing connection problem!" << " i = " << i << ", FD = " << _fds[i].fd;
-			// _logger.writeToLog(DEBUG, oss.str());
+			_logger.writeToLog(DEBUG, oss.str());
 		}
 	}
 }

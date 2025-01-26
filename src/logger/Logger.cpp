@@ -168,11 +168,3 @@ void Logger::closeLogFile() {
 Logger * Logger::get_ptr() {
 	return _logger_ptr;
 }
-
-//Logger::Logger(const Logger & other): _logFile(other.getLogFile()) {
-
-//}
-
-//const std::ofstream & Logger::getLogFile() const {
-//	return _logFile;
-//}

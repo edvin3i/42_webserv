@@ -6,7 +6,7 @@ volatile sig_atomic_t g_sig = 0;
 void sigHandler(int sig) {
 	if (sig == SIGINT) {
 		g_sig = 1;
-    	std::cout << "\nCTRL+C pressed" << std::endl;
+    	std::cout << "\nCTRL+C pressed\nWebserver stopped." << std::endl;
 	}
 	else if (sig == SIGTERM) {
 		g_sig = 1;

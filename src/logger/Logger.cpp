@@ -116,32 +116,17 @@ void Logger::_writeToConsole(const std::string & message) {
 
 
 void Logger::writeToLog(LogDetail detail, const std::string & message) {
-	_setMessagePrefix(detail);
-
-	std::ostringstream ss;
-	ss << getCurrentDateTime() << _msgPrefix;
-
-	/*
-	 * Chose detail level for logging
-	 */
-	switch (_detail) {
-		case DEBUG:
-				ss << message << std::endl;
-				break;
-		case INFO:
-			if (detail == _detail || detail == ERROR) {
-				_logFile << ss.str();
-				break;
-			}
-		// fall through
-		case ERROR:
-			if (detail == _detail) {
-				_logFile << ss.str();
-			}
+	if (detail > _detail) {
+		return;
 	}
 
+	_setMessagePrefix(detail);
+	std::ostringstream ss;
+	ss << getCurrentDateTime() << _msgPrefix;
+	ss << message << std::endl;
+
 	/*
-	 * Chose the way to write log message
+	 * Choose the way to write log message
 	 */
 	switch (_mode) {
 		case DUAL:
@@ -159,7 +144,6 @@ void Logger::writeToLog(LogDetail detail, const std::string & message) {
 	if (_logFile.fail())
 		std::cout << "LOG out stream error!" << std::endl;
 	_logFile.flush();
-
 }
 
 

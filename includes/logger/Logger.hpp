@@ -38,9 +38,9 @@ enum LogMode {
 };
 
 enum LogDetail {
-	ERROR,
-	INFO,
-	DEBUG
+	ERROR = 0,
+	INFO = 1,
+	DEBUG = 2
 };
 
 class Logger {

@@ -242,7 +242,11 @@ void ClientConnection::readData()
 
 	}
 	if (bytesReceived == 0)
+	{
+		if (_read_state != READ_FINISH)
+			_connectionState = CLOSING;
 		return ;
+	}
 	if (bytesReceived < 0 && _timeout)
 	{
 		_request->setError(STATUS_REQUEST_TIMEOUT);

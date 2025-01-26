@@ -5,6 +5,9 @@ curl -H 'Host:' -H 'User-Agent:' -H 'Accept:' -v http://localhost:8230
 
 curl -X POST -H "Content-Type: text/plain" --data "..." http://localhost:8000/
 
++ test POST chunked
+curl -v -X POST http://localhost:8000/upload -H "Transfer-Encoding: chunked" -H "Content-Type: text/plain"  -d  @file.txt
+
 + test CGI POST
 curl -X POST -d "key1=value1&key2=value2" http://localhost:8080/cgi/test_post.php_
 

@@ -230,7 +230,15 @@ void ClientConnection::readData()
 		char *dynamic_buffer = NULL;
 		size_t dynamic_buffer_size = _content_length - _readBuffer.length();
 
-		dynamic_buffer = new char[dynamic_buffer_size];
+		try
+		{
+			dynamic_buffer = new char[dynamic_buffer_size];
+		}
+		catch (const std::bad_alloc& e)
+		{
+			_connectionState = CLOSING;
+			return ;
+		}
 		bytesReceived = recv(_clientSocketFD, dynamic_buffer, dynamic_buffer_size, MSG_DONTWAIT);
 		if (bytesReceived > 0)
 			_readBuffer.append(dynamic_buffer, dynamic_buffer + bytesReceived);
